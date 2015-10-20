@@ -1,0 +1,16 @@
+{% load staticfiles %}
+{% load i18n %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset=utf-8>
+    <title>Experience Database</title>
+    <link rel='stylesheet' type='text/css' href='{% static "exdb/css/welcome.css" %}'/>
+    <script src='{% static "exdb/js/welcome.js" %}'></script>
+</head>
+<body>
+    {% get_current_language as CODE %}
+    <!-- Current language: {{ CODE }} -->
+    <h1>{% trans 'Welcome' %}</h1>
+</body>
+</html>
