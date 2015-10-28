@@ -127,6 +127,9 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+# override the default test runner
+TEST_RUNNER = 'exdb.tests.CustomRunner'
+
 # override settings with settings_local
 try:
     from exdbproject.settings_local import *
