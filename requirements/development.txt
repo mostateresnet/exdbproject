@@ -2,3 +2,4 @@
 -r server.txt
 fabric
 coverage
+django_nose
