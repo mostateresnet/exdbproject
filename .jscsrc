@@ -1,0 +1,8 @@
+{
+    "validateIndentation": 4,
+    "requireSemicolons": true,
+    "disallowKeywordsInComments": true,
+    "requireCurlyBraces": true,
+    "requireSpaceBeforeBinaryOperators": true,
+    "requireSpaceAfterBinaryOperators": true,
+}

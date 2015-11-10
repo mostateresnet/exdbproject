@@ -1,4 +1,4 @@
 # to keep this file from being empty
 -r server.txt
-fabric
 selenium
+nodeenv
