@@ -4,6 +4,8 @@ from django.utils.translation import ugettext as _
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+import selenium
+import copy
 import os
 import socket
 import re
@@ -79,13 +81,75 @@ class CustomRunner(DiscoverRunner):
     def add_arguments(cls, parser):
         parser.add_argument('-b', '--browser')
 
-class WelcomeViewTest(StaticLiveServerTestCase):
+class IstanbulCoverage(object):
+    # this class assumes that the mappings for a file will not change during a single test run
+
+    # the counting keys
+    count_keys = ['s', 'b', 'f']
+
+    def __init__(self):
+        self.coverage_files = {}
+
+    def _combine_count(self, x, y):
+        """takes two dictionaries with values that are either ints or lists of ints and returns a similar structure with
+        the sum of similarly nested integers
+
+        the dictionaries are assumed to have the same keys as one another and the nested lists are assumed to be of the same length
+        """
+        result = {}
+        assert type(x) is type(y) is dict
+        for key, value in x.items():
+            if type(value) is int:
+                result[key] = y[key] + value
+            elif type(value) is list:
+                result[key] = [value[i] + y[key][i] for i in range(len(x))]
+
+        return result
+
+    def _dict_add(self, operand_coverage_files):
+        # the operand files need be what is iterated over since the aggregated object will likely know about many more files than the operand
+        # also the operand will likely know of things to be added
+        for filename, operand_file_cov in operand_coverage_files.items():
+            current_file_cov = self.coverage_files.get(filename)
+            if not current_file_cov:
+                self.coverage_files[filename] = copy.deepcopy(operand_file_cov)
+            else:
+                for count_key in self.count_keys:
+                    self.coverage_files[filename][count_key] = self._combine_count(operand_file_cov[count_key], current_file_cov[count_key])
+
+    def __iadd__(self, operand):
+        if type(operand) is dict:
+            self._dict_add(operand)
+        elif type(operand) == self.__class__:
+            self._dict_add(operand.coverage_files)
+        else:
+            raise TypeError("unsupported operand type(s) for +: '%s' and '%s'" % (self.__class__.__name__, operand.__class__.__name__))
+        return self
+
+class DefaultLiveServerTestCase(StaticLiveServerTestCase):
+    running_total = IstanbulCoverage()
+
     def setUp(self):
         self.driver = CustomRunner.browser_driver()
 
     def tearDown(self):
-        self.driver.quit()
+        try:
+            self.running_total += self.driver.execute_script('return __coverage__')
+        except selenium.common.exceptions.WebDriverException:
+            pass # if __coverage__ doesn't exist ignore it and move on
 
+class SeleniumJSCoverage(DefaultLiveServerTestCase):
+    def test_load(self):
+        self.driver.get(CustomRunner.live_server_url)
+        self.assertEquals(self.driver.find_element(By.XPATH, '//h1').text, _('Welcome'))
+
+    def test_something_else(self):
+        self.driver.get(CustomRunner.live_server_url)
+        self.assertEquals(self.driver.find_element(By.XPATH, '//h1').text, _('Welcome'))
+        self.driver.execute_script('f()')
+
+
+class WelcomeViewTest(DefaultLiveServerTestCase):
     def test_load(self):
         self.driver.get(CustomRunner.live_server_url)
         self.assertEquals(self.driver.find_element(By.XPATH, '//h1').text, _('Welcome'))
