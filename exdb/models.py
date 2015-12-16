@@ -57,7 +57,7 @@ class Experience(models.Model):
 
     author = models.ForeignKey(settings.AUTH_USER_MODEL)
     planners = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='planner_set', blank=True)
-    title = models.CharField(max_length=300)
+    name = models.CharField(max_length=300)
     description = models.TextField()
     start_datetime = models.DateTimeField()
     end_datetime = models.DateTimeField()
