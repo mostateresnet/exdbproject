@@ -2,8 +2,12 @@ from django.test import TestCase
 from django.test.runner import DiscoverRunner
 from django.utils.translation import ugettext as _
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
+from django.conf import settings
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+import json
+import tempfile
+import subprocess
 import selenium
 import copy
 import os
@@ -41,6 +45,13 @@ class CustomRunner(DiscoverRunner):
             if match:
                 live_server_url = 'http://' + socket.gethostname() + ':' + match.groupdict()['port']
         self.__class__.live_server_url = live_server_url
+
+        IstanbulCoverage.instrument_istanbul()
+
+
+    def teardown_test_environment(self, **kwargs):
+        IstanbulCoverage.output_coverage(DefaultLiveServerTestCase.running_total.coverage_files)
+        super(self.__class__, self).teardown_test_environment(**kwargs)
 
     def get_drivers(self):
         chrome = lambda : 'chrome'
@@ -125,6 +136,38 @@ class IstanbulCoverage(object):
         else:
             raise TypeError("unsupported operand type(s) for +: '%s' and '%s'" % (self.__class__.__name__, operand.__class__.__name__))
         return self
+
+    @classmethod
+    def output_coverage(cls, coverage_files):
+        f = tempfile.NamedTemporaryFile('w')
+        f.write(json.dumps(coverage_files))
+        f.flush()
+
+        args = ['istanbul', 'report', '--include=' + f.name]
+        subprocess.run(args + ['text-summary'])
+        subprocess.run(args + ['html'])
+
+        f.close()
+
+    @classmethod
+    def instrument_istanbul(cls):
+        # this copies all information in the static directory to a new directory and replaces
+        # all js files with an istanbul instrumented version of it
+        instrumented_static = 'instrumented_static'
+        app_root = os.path.dirname(__file__)
+
+        settings.STATICFILES_DIRS = [os.path.join(app_root, instrumented_static)]
+        # this could be made to accept many different directories
+        # for now it is just the default "static/"
+        istanbul_process = subprocess.run([
+            'istanbul',
+            'instrument',
+            os.path.join(app_root, 'static'),
+            '--output',
+            os.path.join(app_root, instrumented_static)])
+
+        if istanbul_process.returncode != 0:
+            raise Exception('Instrumentation failed')
 
 class DefaultLiveServerTestCase(StaticLiveServerTestCase):
     running_total = IstanbulCoverage()

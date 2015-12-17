@@ -51,6 +51,8 @@ nosetests.xml
 coverage.xml
 *,cover
 .hypothesis/
+coverage/
+instrumented_static
 
 # Translations
 *.mo
