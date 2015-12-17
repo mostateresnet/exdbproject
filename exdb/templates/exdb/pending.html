@@ -1,0 +1,47 @@
+{% extends "exdb/base.html" %}
+{% load staticfiles %}
+{% block css %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/pending.css' %}"/>
+{% endblock %}
+{% block javascript %}
+    {{ block.super }}
+    <script type="text/javascript" src="{% static 'exdb/js/jquery.tablesorter.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'exdb/js/pending.js' %}"></script>
+{% endblock %}
+{% block body %}
+    {% block content %}
+        <h1>Experiences Pending Approval</h1>
+        <table id="pending-queue" class="tablesorter">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Submitted By</th>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Credited Sections</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for exp in experiences %}
+                    <tr>
+                        <td>{{ exp.name }}</td>
+                        <td>{{ exp.author }}</td>
+                        <td>{{ exp.start_datetime }}</td>
+                        <td>{{ exp.end_datetime }}</td>
+                        <td>
+                            {% with exp.recognition.all as rec %}
+                                {% for section in rec %}
+                                    {{ section }}
+                                        {% if not forloop.last %}
+                                            , 
+                                        {% endif %}
+                                {% endfor %}
+                            {% endwith %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endblock %}
+{% endblock %}

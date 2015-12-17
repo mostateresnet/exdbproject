@@ -1,0 +1,18 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html lang-"en">
+    <head>
+        <meta charset="utf-8"/>
+        {% block css %}
+        {% endblock %}
+        {% block javascript %}
+            <script type="text/javascript" src="{% static 'exdb/js/jquery-2.1.4.min.js' %}"></script>
+        {% endblock %}
+        <title>{% block title %}Experience Database{% endblock %}</title>
+    </head>
+    <body>
+        {% block body %}
+            {% block content %}{% endblock %}
+        {% endblock %}
+    </body>
+<html>
