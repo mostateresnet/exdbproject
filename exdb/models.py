@@ -24,13 +24,6 @@ class Category(models.Model):
         return self.name
 
 
-class Audience(models.Model):
-    name = models.CharField(max_length=300)
-
-    def __str__(self):
-        return self.name
-
-
 class Organization(models.Model):
     name = models.CharField(max_length=300)
 
@@ -55,6 +48,12 @@ class Experience(models.Model):
         ('ca', 'Cancelled')
     )
 
+    AUDIENCE_TYPES = (
+        ('b', 'Building'),
+        ('c', 'Campus'),
+        ('f', 'Floor'),
+    )
+
     author = models.ForeignKey(settings.AUTH_USER_MODEL)
     planners = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='planner_set', blank=True)
     name = models.CharField(max_length=300)
@@ -65,16 +64,16 @@ class Experience(models.Model):
     sub_type = models.ForeignKey(SubType)
     goal = models.TextField()
     keywords = models.ManyToManyField(Keyword)
-    audience = models.ForeignKey(Audience)
-    guest = models.CharField(max_length=300)
-    guest_office = models.CharField(max_length=300)
+    audience = models.CharField(max_length=2, choices=AUDIENCE_TYPES)
+    guest = models.CharField(max_length=300, blank=True)
+    guest_office = models.CharField(max_length=300, blank=True)
     attendance = models.IntegerField(null=True, blank=True)
     created_datetime = models.DateTimeField(default=now, blank=True)
     recognition = models.ManyToManyField(Organization)
     status = models.CharField(max_length=2, choices=STATUS_TYPES, default=STATUS_TYPES[0][0])
 
     def __str__(self):
-        return self.title
+        return self.name
 
 
 class ExperienceComment(models.Model):
