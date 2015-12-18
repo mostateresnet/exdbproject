@@ -1,3 +1,5 @@
 $(document).ready(function(){
-    $('#pending-queue').tablesorter();
+    $('#pending-queue').tablesorter({
+        widgets: ["filter"],
+    });
 });

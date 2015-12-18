@@ -6,7 +6,6 @@
 {% endblock %}
 {% block javascript %}
     {{ block.super }}
-    <script type="text/javascript" src="{% static 'exdb/js/jquery.tablesorter.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'exdb/js/pending.js' %}"></script>
 {% endblock %}
 {% block body %}
@@ -15,11 +14,11 @@
         <table id="pending-queue" class="tablesorter">
             <thead>
                 <tr>
-                    <th>Name</th>
-                    <th>Submitted By</th>
-                    <th>Start</th>
-                    <th>End</th>
-                    <th>Credited Sections</th>
+                    <th data-placeholder="Filter">Name</th>
+                    <th data-placeholder="Filter">Submitted By</th>
+                    <th data-placeholder="Filter">Start</th>
+                    <th data-placeholder="Filter">End</th>
+                    <th data-placeholder="Filter">Credited Sections</th>
                 </tr>
             </thead>
             <tbody>
