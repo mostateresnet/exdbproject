@@ -207,19 +207,28 @@ class PendingApprovalQueueBrowserTest(DefaultLiveServerTestCase):
         self.driver.get(CustomRunner.live_server_url + '/pending')
         self.assertEquals(self.driver.find_element(By.XPATH, '//h1').text, _('Experiences Pending Approval'))
 
-class PendingApprovalQueueViewTest(TestCase):
+
+"""*******************Integration Tests**********************"""
+
+class StandardTestCase(TestCase):
+    def setUp(self):
+        self.test_user = User.objects.create(username="Test User")
+        self.test_user.set_password('a')
+        self.test_user.save()
+        self.test_type = Type.objects.create(name="Test Type")
+        self.test_sub_type = SubType.objects.create(name="Test Sub Type")
+        self.test_org = Organization.objects.create(name="Test Organization")
+
+class PendingApprovalQueueViewTest(StandardTestCase):
+    def setUp(self):
+        StandardTestCase.setUp(self)
+
     def test_get_pending_queues(self):
-        test_user = User.objects.create(username="Test User")
-        test_user.set_password('asdf')
-        test_user.save()
-        test_type = Type.objects.create(name="Test Type")
-        test_sub_type = SubType.objects.create(name="Test Sub Type")
-        test_org = Organization.objects.create(name="Test Organization")
-        Experience.objects.create(author=test_user, name="E1", description="test description", start_datetime=now(),\
-                end_datetime=now(), type=test_type, sub_type=test_sub_type, goal="Test Goal", audience="b", \
+        Experience.objects.create(author=self.test_user, name="E1", description="test description", start_datetime=now(),\
+                end_datetime=now(), type=self.test_type, sub_type=self.test_sub_type, goal="Test Goal", audience="b", \
                  status="pe")
-        Experience.objects.create(author=test_user, name="E1", description="test description", start_datetime=now(),\
-                end_datetime=now(), type=test_type, sub_type=test_sub_type, goal="Test Goal", audience="b", \
+        Experience.objects.create(author=self.test_user, name="E1", description="test description", start_datetime=now(),\
+                end_datetime=now(), type=self.test_type, sub_type=self.test_sub_type, goal="Test Goal", audience="b", \
                  status="dr")
         client = Client()
         response = client.get('/pending')
