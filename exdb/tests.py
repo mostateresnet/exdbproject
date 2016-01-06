@@ -5,7 +5,7 @@ from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.conf import settings
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from django.utils.timezone import now
+from django.utils.timezone import now, timedelta
 from django.contrib.auth.models import User
 
 from exdb.models import Experience, Type, SubType, Organization
@@ -225,11 +225,19 @@ class PendingApprovalQueueViewTest(StandardTestCase):
 
     def test_get_pending_queues(self):
         Experience.objects.create(author=self.test_user, name="E1", description="test description", start_datetime=now(),\
-                end_datetime=now(), type=self.test_type, sub_type=self.test_sub_type, goal="Test Goal", audience="b", \
+                end_datetime=(now() + timedelta(days=1)), type=self.test_type, sub_type=self.test_sub_type, goal="Test Goal", audience="b", \
                  status="pe")
         Experience.objects.create(author=self.test_user, name="E1", description="test description", start_datetime=now(),\
-                end_datetime=now(), type=self.test_type, sub_type=self.test_sub_type, goal="Test Goal", audience="b", \
+                end_datetime=(now() + timedelta(days=1)), type=self.test_type, sub_type=self.test_sub_type, goal="Test Goal", audience="b", \
                  status="dr")
         client = Client()
         response = client.get('/pending')
         self.assertEqual(len(response.context["experiences"]), 1, "Only pending queues should be returned")
+
+    def test_does_not_get_spontaneous(self):
+        Experience.objects.create(author=self.test_user, name="E1", description="test description", start_datetime=(now() - timedelta(days=2)),\
+                end_datetime=(now() - timedelta(days=1)), type=self.test_type, sub_type=self.test_sub_type, goal="Test Goal", audience="b", \
+                 status="co", attendance=3)
+        client = Client()
+        response = client.get('/pending')
+        self.assertEqual(len(response.context["experiences"]), 0, "Spontaneous experiences should not be returned")
