@@ -1,2 +1,3 @@
 jscs
 jslint
+istanbul

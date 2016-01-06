@@ -15,6 +15,8 @@ import socket
 import re
 
 class CustomRunner(DiscoverRunner):
+    _do_coverage = False
+
     def __init__(self, *args, **kwargs):
         # running DiscoverRunner constructor for default behavior
         super(self.__class__, self).__init__(*args, **kwargs)
@@ -46,11 +48,14 @@ class CustomRunner(DiscoverRunner):
                 live_server_url = 'http://' + socket.gethostname() + ':' + match.groupdict()['port']
         self.__class__.live_server_url = live_server_url
 
-        IstanbulCoverage.instrument_istanbul()
+        if kwargs.get('coverage'):
+            IstanbulCoverage.instrument_istanbul()
+            self._do_coverage = True
 
 
     def teardown_test_environment(self, **kwargs):
-        IstanbulCoverage.output_coverage(DefaultLiveServerTestCase.running_total.coverage_files)
+        if self._do_coverage:
+            IstanbulCoverage.output_coverage(DefaultLiveServerTestCase.running_total.coverage_files)
         super(self.__class__, self).teardown_test_environment(**kwargs)
 
     def get_drivers(self):
@@ -91,6 +96,7 @@ class CustomRunner(DiscoverRunner):
     @classmethod
     def add_arguments(cls, parser):
         parser.add_argument('-b', '--browser')
+        parser.add_argument('-c', '--coverage', action='store_true')
 
 class IstanbulCoverage(object):
     # this class assumes that the mappings for a file will not change during a single test run
