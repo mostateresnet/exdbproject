@@ -6,7 +6,8 @@ from django.conf import settings
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from django.utils.timezone import now, timedelta
-from django.contrib.auth.models import User
+from django.core.urlresolvers import reverse
+from django.contrib.auth import get_user_model
 
 from exdb.models import Experience, Type, SubType, Organization
 
@@ -204,7 +205,7 @@ class WelcomeViewTest(DefaultLiveServerTestCase):
 
 class PendingApprovalQueueBrowserTest(DefaultLiveServerTestCase):
     def test_load(self):
-        self.driver.get(CustomRunner.live_server_url + '/pending')
+        self.driver.get(CustomRunner.live_server_url + reverse('pending'))
         self.assertEquals(self.driver.find_element(By.XPATH, '//h1').text, _('Experiences Pending Approval'))
 
 
@@ -212,17 +213,12 @@ class PendingApprovalQueueBrowserTest(DefaultLiveServerTestCase):
 
 class StandardTestCase(TestCase):
     def setUp(self):
-        self.test_user = User.objects.create(username="Test User")
-        self.test_user.set_password('a')
-        self.test_user.save()
+        self.test_user = get_user_model().objects.create_user('test_user', 't@u.com', 'a')
         self.test_type = Type.objects.create(name="Test Type")
         self.test_sub_type = SubType.objects.create(name="Test Sub Type")
         self.test_org = Organization.objects.create(name="Test Organization")
 
 class PendingApprovalQueueViewTest(StandardTestCase):
-    def setUp(self):
-        StandardTestCase.setUp(self)
-
     def test_get_pending_queues(self):
         Experience.objects.create(author=self.test_user, name="E1", description="test description", start_datetime=now(),\
                 end_datetime=(now() + timedelta(days=1)), type=self.test_type, sub_type=self.test_sub_type, goal="Test Goal", audience="b", \
@@ -231,7 +227,7 @@ class PendingApprovalQueueViewTest(StandardTestCase):
                 end_datetime=(now() + timedelta(days=1)), type=self.test_type, sub_type=self.test_sub_type, goal="Test Goal", audience="b", \
                  status="dr")
         client = Client()
-        response = client.get('/pending')
+        response = client.get(reverse('pending'))
         self.assertEqual(len(response.context["experiences"]), 1, "Only pending queues should be returned")
 
     def test_does_not_get_spontaneous(self):
@@ -239,5 +235,5 @@ class PendingApprovalQueueViewTest(StandardTestCase):
                 end_datetime=(now() - timedelta(days=1)), type=self.test_type, sub_type=self.test_sub_type, goal="Test Goal", audience="b", \
                  status="co", attendance=3)
         client = Client()
-        response = client.get('/pending')
+        response = client.get(reverse('pending'))
         self.assertEqual(len(response.context["experiences"]), 0, "Spontaneous experiences should not be returned")
