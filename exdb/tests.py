@@ -5,7 +5,7 @@ from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.conf import settings
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from django.utils.timezone import now, timedelta
+from django.utils.timezone import datetime, timedelta, make_aware, utc
 from django.core.urlresolvers import reverse
 from django.contrib.auth import get_user_model
 
@@ -220,19 +220,21 @@ class StandardTestCase(TestCase):
 
 class PendingApprovalQueueViewTest(StandardTestCase):
     def test_get_pending_queues(self):
-        Experience.objects.create(author=self.test_user, name="E1", description="test description", start_datetime=now(),\
-                end_datetime=(now() + timedelta(days=1)), type=self.test_type, sub_type=self.test_sub_type, goal="Test Goal", audience="b", \
+        test_date = make_aware(datetime(2015, 1, 1, 1, 30), timezone=utc)
+        Experience.objects.create(author=self.test_user, name="E1", description="test description", start_datetime=test_date,\
+                end_datetime=(test_date + timedelta(days=1)), type=self.test_type, sub_type=self.test_sub_type, goal="Test Goal", audience="b", \
                  status="pe")
-        Experience.objects.create(author=self.test_user, name="E1", description="test description", start_datetime=now(),\
-                end_datetime=(now() + timedelta(days=1)), type=self.test_type, sub_type=self.test_sub_type, goal="Test Goal", audience="b", \
+        Experience.objects.create(author=self.test_user, name="E1", description="test description", start_datetime=test_date,\
+                end_datetime=(test_date + timedelta(days=1)), type=self.test_type, sub_type=self.test_sub_type, goal="Test Goal", audience="b", \
                  status="dr")
         client = Client()
         response = client.get(reverse('pending'))
         self.assertEqual(len(response.context["experiences"]), 1, "Only pending queues should be returned")
 
     def test_does_not_get_spontaneous(self):
-        Experience.objects.create(author=self.test_user, name="E1", description="test description", start_datetime=(now() - timedelta(days=2)),\
-                end_datetime=(now() - timedelta(days=1)), type=self.test_type, sub_type=self.test_sub_type, goal="Test Goal", audience="b", \
+        test_date = make_aware(datetime(2015, 1, 1, 1, 30), timezone=utc)
+        Experience.objects.create(author=self.test_user, name="E1", description="test description", start_datetime=(test_date - timedelta(days=2)),\
+                end_datetime=(test_date - timedelta(days=1)), type=self.test_type, sub_type=self.test_sub_type, goal="Test Goal", audience="b", \
                  status="co", attendance=3)
         client = Client()
         response = client.get(reverse('pending'))

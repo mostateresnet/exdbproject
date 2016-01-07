@@ -8,39 +8,37 @@
     {{ block.super }}
     <script type="text/javascript" src="{% static 'exdb/js/pending.js' %}"></script>
 {% endblock %}
-{% block body %}
-    {% block content %}
-        <h1>Experiences Pending Approval</h1>
-        <table id="pending-queue" class="tablesorter">
-            <thead>
+{% block content %}
+    <h1>Experiences Pending Approval</h1>
+    <table id="pending-queue" class="tablesorter">
+        <thead>
+            <tr>
+                <th data-placeholder="Filter">Name</th>
+                <th data-placeholder="Filter">Submitted By</th>
+                <th data-placeholder="Filter">Start</th>
+                <th data-placeholder="Filter">End</th>
+                <th data-placeholder="Filter">Credited Sections</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for exp in experiences %}
                 <tr>
-                    <th data-placeholder="Filter">Name</th>
-                    <th data-placeholder="Filter">Submitted By</th>
-                    <th data-placeholder="Filter">Start</th>
-                    <th data-placeholder="Filter">End</th>
-                    <th data-placeholder="Filter">Credited Sections</th>
+                    <td>{{ exp.name }}</td>
+                    <td>{{ exp.author }}</td>
+                    <td>{{ exp.start_datetime }}</td>
+                    <td>{{ exp.end_datetime }}</td>
+                    <td>
+                        {% with exp.recognition.all as rec %}
+                            {% for section in rec %}
+                                {{ section }}
+                                    {% if not forloop.last %}
+                                        ,
+                                    {% endif %}
+                            {% endfor %}
+                        {% endwith %}
+                    </td>
                 </tr>
-            </thead>
-            <tbody>
-                {% for exp in experiences %}
-                    <tr>
-                        <td>{{ exp.name }}</td>
-                        <td>{{ exp.author }}</td>
-                        <td>{{ exp.start_datetime }}</td>
-                        <td>{{ exp.end_datetime }}</td>
-                        <td>
-                            {% with exp.recognition.all as rec %}
-                                {% for section in rec %}
-                                    {{ section }}
-                                        {% if not forloop.last %}
-                                            , 
-                                        {% endif %}
-                                {% endfor %}
-                            {% endwith %}
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% endblock %}
+            {% endfor %}
+        </tbody>
+    </table>
 {% endblock %}
