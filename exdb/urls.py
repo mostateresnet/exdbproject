@@ -18,4 +18,5 @@ from exdb import views
 
 urlpatterns = [
     url(r'^$', views.WelcomeView.as_view(), name='welcome'),
+    url(r'^create$', views.CreateExperienceView.as_view(), name='create-experience'),
 ]

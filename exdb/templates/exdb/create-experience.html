@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+
+{% load staticfiles %}
+<html>
+    <head>
+        <link href="{% static 'exdb/css/create-experience.css' %}" rel="stylesheet">
+    </head>
+    <body>
+        <div class="create-experience-div">
+            <h1>Add Experience</h1>
+            <form action="{% url "create-experience" %}" method="POST">
+                {% csrf_token %}
+                <span class="form-errors">{{ form.non_field_errors }}</span>
+                <table class="create-experience-table">
+                    {% for field in form %}
+                        <tr>
+                            <th>{{ field.label_tag }}</th>
+                            <td>
+                                <div class="field-error">{{ field.errors }}</div>
+                                {{ field }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </table>
+                <input id="save_experiance" class="create-experience-save" type="submit" value="Save" />
+            </form>
+        </div>
+    </body>
+</html

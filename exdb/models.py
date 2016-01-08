@@ -12,6 +12,7 @@ class SubType(models.Model):
 
 class Type(models.Model):
     name = models.CharField(max_length=300)
+    needs_verification = models.BooleanField(default=True)
 
     def __str__(self):
         return self.name
@@ -64,13 +65,15 @@ class Experience(models.Model):
     sub_type = models.ForeignKey(SubType)
     goal = models.TextField()
     keywords = models.ManyToManyField(Keyword)
-    audience = models.CharField(max_length=2, choices=AUDIENCE_TYPES)
+    audience = models.CharField(max_length=1, choices=AUDIENCE_TYPES)
     guest = models.CharField(max_length=300, blank=True)
     guest_office = models.CharField(max_length=300, blank=True)
     attendance = models.IntegerField(null=True, blank=True)
     created_datetime = models.DateTimeField(default=now, blank=True)
     recognition = models.ManyToManyField(Organization)
     status = models.CharField(max_length=2, choices=STATUS_TYPES, default=STATUS_TYPES[0][0])
+    approved_timestamp = models.DateTimeField(blank=True, null=True)
+    approver = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True, related_name="approver")
 
     def __str__(self):
         return self.name
