@@ -19,4 +19,5 @@ from exdb import views
 urlpatterns = [
     url(r'^$', views.WelcomeView.as_view(), name='welcome'),
     url(r'^pending$', views.PendingApprovalQueueView.as_view(), name='pending'),
+    url(r'^pending/approval/(?P<pk>\d+)$', views.ExperienceApprovalView.as_view(), name='approval'),
 ]

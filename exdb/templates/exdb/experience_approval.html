@@ -1,0 +1,72 @@
+{% extends "exdb/base.html" %}
+{% load staticfiles %}
+{% block content %}
+        <h1>Experience Approval</h1>
+        <hr/>
+        <table>
+            <tr>
+                <th>Experience:</th>
+                <td>{{ experience.name }}</td>
+            </tr>
+            <tr>
+                <th>Author:</th>
+                <td>{{ experience.author }}</td>
+            </tr>
+            <tr>
+                <th>Planners:</th>
+                <td>
+                    {% for p in experience.planners.all %}
+                        {{ p }}{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                </td>
+            </tr>
+            <tr>
+                <th>Credited:</th>
+                <td>
+                    {% for org in experience.recognition.all %}
+                        {{ org }}{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                </td>
+            </tr>
+            <tr>
+                <th>Created:</th>
+                <td>{{ experience.created_datetime }}</td>
+            </tr>
+            <tr>
+                <th>Type/Sub-Type:</th>
+                <td>{{ experience.type }}/{{ experience.sub_type }}</td>
+            </tr>
+            <tr>
+                <th>Start/End:</th>
+                <td>{{ experience.start_datetime }}/{{ experience.end_datetime }}</td>
+            </tr>
+            <tr>
+                <th>Description:</th>
+                <td>{{ experience.description }}</td>
+            </tr>
+            <tr>
+                <th>Goal:</th>
+                <td>{{ experience.goal }}</td>
+            </tr>
+            <tr>
+                <th>Keywords</th>
+                <td>
+                    {% for kwd in experience.keywords.all %}
+                        {{ kwd }}{% if not forloop.last %}, {% endif %}
+                    {% empty %}
+                        None
+                    {% endfor %}
+                </td>
+            </tr>
+            {% if experience.guest %}
+                <tr>
+                    <th>Guest:</th>
+                    <td>{{ experience.guest }}</td>
+                </tr>
+                <tr>
+                    <th>Guest Office:</th>
+                    <td>{{ experience.guest_office }}</td>
+                </tr>
+            {% endif %}
+        </table>
+{% endblock %}
