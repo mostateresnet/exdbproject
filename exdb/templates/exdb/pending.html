@@ -18,6 +18,7 @@
                 <th data-placeholder="Filter">Start</th>
                 <th data-placeholder="Filter">End</th>
                 <th data-placeholder="Filter">Credited Sections</th>
+                <th data-placeholder="Filter">Keywords</th>
             </tr>
         </thead>
         <tbody>
@@ -30,10 +31,16 @@
                     <td>
                         {% with exp.recognition.all as rec %}
                             {% for section in rec %}
-                                {{ section }}
-                                    {% if not forloop.last %}
-                                        ,
-                                    {% endif %}
+                                {% if forloop.last and rec|length > 1 %} and {% endif %}
+                                {{ section }}{% if not forloop.last and rec|length > 2 %}, {% endif %}
+                            {% endfor %}
+                        {% endwith %}
+                    </td>
+                    <td>
+                        {% with exp.keywords.all as kwds %}
+                            {% for kwd in kwds %}
+                                {% if forloop.last and kwds|length > 1 %} and {% endif %}
+                                {{ kwd }}{% if not forloop.last and kwds|length > 2 %}, {% endif %}
                             {% endfor %}
                         {% endwith %}
                     </td>
