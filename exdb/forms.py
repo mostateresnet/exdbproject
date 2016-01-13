@@ -3,14 +3,15 @@ from django.core.exceptions import ValidationError
 from django.forms import ModelForm
 from django.utils.timezone import now
 from exdb.models import Experience
-from django.contrib.auth.models import User
 
 
-class ExperienceForm(ModelForm):
+class ExperienceSaveForm(ModelForm):
 
     class Meta:
         model = Experience
-        fields = ['name', 'description', 'planners', 'start_datetime', 'end_datetime', 'type', 'sub_type', 'recognition', 'audience', 'attendance', 'keywords', 'goal', 'guest', 'guest_office']
+        fields = ['name', 'description', 'planners', 'start_datetime', 'end_datetime', 'type',
+                  'sub_type', 'recognition', 'audience', 'attendance', 'keywords', 'goal', 'guest',
+                  'guest_office']
         
         widgets = {
             'description': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
@@ -26,42 +27,40 @@ class ExperienceForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.when = kwargs.pop('when', now())
-        return super(ExperienceForm, self).__init__(*args, **kwargs)
+        return super(ExperienceSaveForm, self).__init__(*args, **kwargs)
 
+
+class ExperienceSubmitForm(ExperienceSaveForm):
     def clean(self):
-        if(not self.cleaned_data.get('end_datetime')):
+
+        if not self.cleaned_data.get('end_datetime'):
             raise ValidationError("Need a end date!")
 
-        if(not self.cleaned_data.get('start_datetime')):
+        if not self.cleaned_data.get('start_datetime'):
             raise ValidationError("Need a start time!")
 
-        if(not self.cleaned_data.get('sub_type')):
+        if not self.cleaned_data.get('sub_type'):
             raise ValidationError("Need a subType")
 
-        if(not self.cleaned_data.get('type')):
+        if not self.cleaned_data.get('type'):
             raise ValidationError("Need a subType")
 
-        if(self.cleaned_data.get('start_datetime') >= self.cleaned_data.get('end_datetime')):
+        if self.cleaned_data.get('start_datetime') >= self.cleaned_data.get('end_datetime'):
             raise ValidationError("Start date must be before end date")
 
-        if(not self.cleaned_data.get('type').needs_verification and self.cleaned_data.get('start_datetime') > self.when):
-            raise ValidationError("Spontanious experiences must have happened in the past")
-            print(self.cleaned_data.get('start_datetime'))
-            print(self.when)
-        
-        if(self.cleaned_data.get('type').needs_verification and self.cleaned_data.get('start_datetime') < self.when):
+        if not self.cleaned_data.get('type').needs_verification and self.cleaned_data.get('start_datetime') > self.when:
+            raise ValidationError("Spontaneous experiences must have happened in the past")
+
+        if self.cleaned_data.get('type').needs_verification and self.cleaned_data.get('start_datetime') < self.when:
             raise ValidationError("Only Spontaneous events can happen in the past")
-        
-        if(not self.cleaned_data.get('type').needs_verification and not self.cleaned_data.get('attendance')):
+
+        if not self.cleaned_data.get('type').needs_verification and not self.cleaned_data.get('attendance'):
             raise ValidationError("Spontaneous events must have an attendance")
-        
-        if(not self.cleaned_data.get('type').needs_verification and self.cleaned_data.get('attendance') and self.cleaned_data.get('attendance') < 1):
+
+        if not self.cleaned_data.get('type').needs_verification and self.cleaned_data.get('attendance') and self.cleaned_data.get('attendance') < 1:
             raise ValidationError("Spontaneous events must have an attendance greater than 0")
-        
-        if(self.cleaned_data.get('type').needs_verification and self.cleaned_data.get('attendance')):
+
+        if self.cleaned_data.get('type').needs_verification and self.cleaned_data.get('attendance'):
             raise ValidationError("Future events cannot have an attendance")
 
-
         return self.cleaned_data
-    
-

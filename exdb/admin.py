@@ -1,9 +1,9 @@
 from django.contrib import admin
 from .models import SubType, Type, Category, Organization, Keyword, Experience, ExperienceComment
 
+
 class ExperienceAdmin(admin.ModelAdmin):
     list_display = ('name', 'description', 'created_datetime', 'author')
-
 
 
 admin.site.register(SubType)
