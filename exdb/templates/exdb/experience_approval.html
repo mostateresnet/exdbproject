@@ -1,7 +1,10 @@
 {% extends "exdb/base.html" %}
 {% load staticfiles %}
 {% block content %}
+    <form method="POST">
+        {% csrf_token %}
         <h1>Experience Approval</h1>
+        <span>{{ form.non_field_errors }}</span>
         <hr/>
         <table>
             <tr>
@@ -69,4 +72,18 @@
                 </tr>
             {% endif %}
         </table>
+        <table>
+            <tr><th>Comments</th></tr>
+            {% for comment in comments %}
+                <tr><td>{{ comment.message }}</td></tr>
+            {% empty %}
+                <tr><td>No comments</td></tr>
+            {% endfor %}
+        </table>
+        <div>Comments:</div>
+        <span>{{ form.message.errors }}</span>
+        <div>{{ form.message }}</div>
+        <input type="submit" value="deny" name="deny" />
+        <input type="submit" value="approve" name="approve" />
+    </form>
 {% endblock %}
