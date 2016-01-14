@@ -1,4 +1,5 @@
 {% extends "exdb/base.html" %}
+{% load i18n %}
 {% load staticfiles %}
 {% block css %}
     {{ block.super }}
@@ -9,16 +10,17 @@
     <script type="text/javascript" src="{% static 'exdb/js/pending.js' %}"></script>
 {% endblock %}
 {% block content %}
-    <trans><h1>Experiences Pending Approval</h1></trans>
+{{ block.super }}
+<h1>{% trans 'Experiences Pending Approval' %}</h1>
     <table id="pending-queue" class="tablesorter">
         <thead>
             <tr>
-                <trans><th data-placeholder="Filter">Name</th></trans>
-                <trans><th data-placeholder="Filter">Submitted By</th></trans>
-                <trans><th data-placeholder="Filter">Start</th></trans>
-                <trans><th data-placeholder="Filter">End</th></trans>
-                <trans><th data-placeholder="Filter">Credited Sections</th></trans>
-                <trans><th data-placeholder="Filter">Keywords</th></trans>
+                <th data-placeholder="Filter">{% trans 'Name' %}</th>
+                <th data-placeholder="Filter">{% trans 'Submitted By' %}</th>
+                <th data-placeholder="Filter">{% trans 'Start' %}</th>
+                <th data-placeholder="Filter">{% trans 'End' %}</th>
+                <th data-placeholder="Filter">{% trans 'Credited Sections' %}</th>
+                <th data-placeholder="Filter">{% trans 'Keywords' %}</th>
             </tr>
         </thead>
         <tbody>

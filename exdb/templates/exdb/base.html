@@ -1,4 +1,5 @@
 {% load staticfiles %}
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -11,11 +12,14 @@
             <script type="text/javascript" src="{% static 'exdb/js/jquery.tablesorter.js' %}"></script>
             <script type="text/javascript" src="{% static 'exdb/js/jquery.tablesorter.widgets.js' %}"></script>
         {% endblock %}
-        <trans><title>{% block title %}Experience Database{% endblock %}</title></trans>
+        <title>{% block title %}Experience Database{% endblock %}</title>
     </head>
     <body>
         {% block body %}
-            {% block content %}{% endblock %}
+            {% block content %}
+                {% get_current_language as CODE %}
+                <!-- Current language: {{ CODE }} -->
+            {% endblock %}
         {% endblock %}
     </body>
 </html>
