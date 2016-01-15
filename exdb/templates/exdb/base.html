@@ -1,0 +1,25 @@
+{% load staticfiles %}
+{% load i18n %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8"/>
+        {% block css %}
+            <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/tablesorter_themes.css' %}"/>
+        {% endblock %}
+        {% block javascript %}
+            <script type="text/javascript" src="{% static 'exdb/js/jquery-2.1.4.min.js' %}"></script>
+            <script type="text/javascript" src="{% static 'exdb/js/jquery.tablesorter.js' %}"></script>
+            <script type="text/javascript" src="{% static 'exdb/js/jquery.tablesorter.widgets.js' %}"></script>
+        {% endblock %}
+        <title>{% block title %}Experience Database{% endblock %}</title>
+    </head>
+    <body>
+        {% block body %}
+            {% block content %}
+                {% get_current_language as CODE %}
+                <!-- Current language: {{ CODE }} -->
+            {% endblock %}
+        {% endblock %}
+    </body>
+</html>

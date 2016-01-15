@@ -1,0 +1,11 @@
+table#pending-queue
+{
+    border-collapse: collapse;
+}
+
+table#pending-queue tr,
+table#pending-queue th,
+table#pending-queue td
+{
+    border: solid black 1px;
+}
