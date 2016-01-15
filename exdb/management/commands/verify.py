@@ -1,12 +1,13 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.core.management import call_command
+from django.conf import settings
 import os
 import re
 import subprocess
 import argparse
 
 class Command(BaseCommand):
-    help = 'Closes the specified poll for voting'
+    help = 'Verify the code with tests and linting'
     allow_modification = False
 
     def test(self, options):
@@ -26,6 +27,7 @@ class Command(BaseCommand):
         js_regex = re.compile(r'.*\.js$')
         file_list = []
         for root, folders, files in os.walk('.'):
+            folders[:] = [f for f in folders if f not in settings.JS_FILE_EXCLUDED_DIRS]
             for filename in files:
                 if js_regex.match(filename):
                     file_list.append(os.path.join(root, filename))
@@ -47,5 +49,5 @@ class Command(BaseCommand):
         else:
             self.js_cs()
             self.js_lint()
-            self.test([])
+            self.test(['-c'])
 

@@ -1,4 +1,5 @@
 {% extends "exdb/base.html" %}
+{% load i18n %}
 {% load staticfiles %}
 {% block css %}
     {{ block.super }}
@@ -9,15 +10,17 @@
     <script type="text/javascript" src="{% static 'exdb/js/pending.js' %}"></script>
 {% endblock %}
 {% block content %}
-    <h1>Experiences Pending Approval</h1>
+{{ block.super }}
+<h1>{% trans 'Experiences Pending Approval' %}</h1>
     <table id="pending-queue" class="tablesorter">
         <thead>
             <tr>
-                <th data-placeholder="Filter">Name</th>
-                <th data-placeholder="Filter">Submitted By</th>
-                <th data-placeholder="Filter">Start</th>
-                <th data-placeholder="Filter">End</th>
-                <th data-placeholder="Filter">Credited Sections</th>
+                <th data-placeholder="Filter">{% trans 'Name' %}</th>
+                <th data-placeholder="Filter">{% trans 'Submitted By' %}</th>
+                <th data-placeholder="Filter">{% trans 'Start' %}</th>
+                <th data-placeholder="Filter">{% trans 'End' %}</th>
+                <th data-placeholder="Filter">{% trans 'Credited Sections' %}</th>
+                <th data-placeholder="Filter">{% trans 'Keywords' %}</th>
             </tr>
         </thead>
         <tbody>
@@ -34,10 +37,16 @@
                     <td>
                         {% with exp.recognition.all as rec %}
                             {% for section in rec %}
-                                {{ section }}
-                                    {% if not forloop.last %}
-                                        ,
-                                    {% endif %}
+                                {% if forloop.last and rec|length > 1 %} and {% endif %}
+                                {{ section }}{% if not forloop.last and rec|length > 2 %}, {% endif %}
+                            {% endfor %}
+                        {% endwith %}
+                    </td>
+                    <td>
+                        {% with exp.keywords.all as kwds %}
+                            {% for kwd in kwds %}
+                                {% if forloop.last and kwds|length > 1 %} and {% endif %}
+                                {{ kwd }}{% if not forloop.last and kwds|length > 2 %}, {% endif %}
                             {% endfor %}
                         {% endwith %}
                     </td>

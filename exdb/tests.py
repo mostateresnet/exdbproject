@@ -21,6 +21,8 @@ import socket
 import re
 
 class CustomRunner(DiscoverRunner):
+    _do_coverage = False
+
     def __init__(self, *args, **kwargs):
         # running DiscoverRunner constructor for default behavior
         super(self.__class__, self).__init__(*args, **kwargs)
@@ -52,11 +54,14 @@ class CustomRunner(DiscoverRunner):
                 live_server_url = 'http://' + socket.gethostname() + ':' + match.groupdict()['port']
         self.__class__.live_server_url = live_server_url
 
-        IstanbulCoverage.instrument_istanbul()
+        if kwargs.get('coverage'):
+            IstanbulCoverage.instrument_istanbul()
+            self._do_coverage = True
 
 
     def teardown_test_environment(self, **kwargs):
-        IstanbulCoverage.output_coverage(DefaultLiveServerTestCase.running_total.coverage_files)
+        if self._do_coverage:
+            IstanbulCoverage.output_coverage(DefaultLiveServerTestCase.running_total.coverage_files)
         super(self.__class__, self).teardown_test_environment(**kwargs)
 
     def get_drivers(self):
@@ -97,6 +102,7 @@ class CustomRunner(DiscoverRunner):
     @classmethod
     def add_arguments(cls, parser):
         parser.add_argument('-b', '--browser')
+        parser.add_argument('-c', '--coverage', action='store_true')
 
 class IstanbulCoverage(object):
     # this class assumes that the mappings for a file will not change during a single test run
@@ -214,27 +220,34 @@ class PendingApprovalQueueBrowserTest(DefaultLiveServerTestCase):
 class StandardTestCase(TestCase):
     def setUp(self):
         self.test_user = get_user_model().objects.create_user('test_user', 't@u.com', 'a')
-        self.test_type = Type.objects.create(name="Test Type")
-        self.test_sub_type = SubType.objects.create(name="Test Sub Type")
-        self.test_org = Organization.objects.create(name="Test Organization")
+        self.test_date = make_aware(datetime(2015, 1, 1, 1, 30), timezone=utc)
+
+    def create_type(self):
+        return Type.objects.create(name="Test Type")
+
+    def create_sub_type(self):
+        return SubType.objects.create(name="Test Sub Type")
+
+    def create_org(self):
+        return Organization.objects.create(name="Test Organization")
+
+    def create_experience(self, exp_status):
+        """Creates and returns an experience object with status of your choice"""
+        return Experience.objects.create(author=self.test_user, name="E1", description="test description", start_datetime=self.test_date,\
+                end_datetime=(self.test_date + timedelta(days=1)), type=self.create_type(), sub_type=self.create_sub_type(), goal="Test Goal", audience="b", \
+                 status=exp_status)
 
 class PendingApprovalQueueViewTest(StandardTestCase):
     def test_get_pending_queues(self):
-        test_date = make_aware(datetime(2015, 1, 1, 1, 30), timezone=utc)
-        Experience.objects.create(author=self.test_user, name="E1", description="test description", start_datetime=test_date,\
-                end_datetime=(test_date + timedelta(days=1)), type=self.test_type, sub_type=self.test_sub_type, goal="Test Goal", audience="b", \
-                 status="pe")
-        Experience.objects.create(author=self.test_user, name="E1", description="test description", start_datetime=test_date,\
-                end_datetime=(test_date + timedelta(days=1)), type=self.test_type, sub_type=self.test_sub_type, goal="Test Goal", audience="b", \
-                 status="dr")
+        self.create_experience('pe')
+        self.create_experience('dr')
         client = Client()
         response = client.get(reverse('pending'))
         self.assertEqual(len(response.context["experiences"]), 1, "Only pending queues should be returned")
 
     def test_does_not_get_spontaneous(self):
-        test_date = make_aware(datetime(2015, 1, 1, 1, 30), timezone=utc)
-        Experience.objects.create(author=self.test_user, name="E1", description="test description", start_datetime=(test_date - timedelta(days=2)),\
-                end_datetime=(test_date - timedelta(days=1)), type=self.test_type, sub_type=self.test_sub_type, goal="Test Goal", audience="b", \
+        Experience.objects.create(author=self.test_user, name="E1", description="test description", start_datetime=(self.test_date - timedelta(days=2)),\
+                end_datetime=(self.test_date - timedelta(days=1)), type=self.create_type(), sub_type=self.create_sub_type(), goal="Test Goal", audience="b", \
                  status="co", attendance=3)
         client = Client()
         response = client.get(reverse('pending'))
