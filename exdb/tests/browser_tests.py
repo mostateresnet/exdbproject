@@ -1,15 +1,10 @@
-from django.test import TestCase, Client
 from django.test.runner import DiscoverRunner
 from django.utils.translation import ugettext as _
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.conf import settings
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from django.utils.timezone import datetime, timedelta, make_aware, utc
 from django.core.urlresolvers import reverse
-from django.contrib.auth import get_user_model
-
-from exdb.models import Experience, Type, SubType, Organization
 
 import json
 import tempfile
@@ -166,7 +161,7 @@ class IstanbulCoverage(object):
         # this copies all information in the static directory to a new directory and replaces
         # all js files with an istanbul instrumented version of it
         instrumented_static = 'instrumented_static'
-        app_root = os.path.dirname(__file__)
+        app_root = os.path.join(os.path.dirname(__file__), '..')
 
         settings.STATICFILES_DIRS = [os.path.join(app_root, instrumented_static)]
         # this could be made to accept many different directories
@@ -215,40 +210,3 @@ class PendingApprovalQueueBrowserTest(DefaultLiveServerTestCase):
         self.assertEquals(self.driver.find_element(By.XPATH, '//h1').text, _('Experiences Pending Approval'))
 
 
-"""*******************Integration Tests**********************"""
-
-class StandardTestCase(TestCase):
-    def setUp(self):
-        self.test_user = get_user_model().objects.create_user('test_user', 't@u.com', 'a')
-        self.test_date = make_aware(datetime(2015, 1, 1, 1, 30), timezone=utc)
-
-    def create_type(self):
-        return Type.objects.create(name="Test Type")
-
-    def create_sub_type(self):
-        return SubType.objects.create(name="Test Sub Type")
-
-    def create_org(self):
-        return Organization.objects.create(name="Test Organization")
-
-    def create_experience(self, exp_status):
-        """Creates and returns an experience object with status of your choice"""
-        return Experience.objects.create(author=self.test_user, name="E1", description="test description", start_datetime=self.test_date,\
-                end_datetime=(self.test_date + timedelta(days=1)), type=self.create_type(), sub_type=self.create_sub_type(), goal="Test Goal", audience="b", \
-                 status=exp_status)
-
-class PendingApprovalQueueViewTest(StandardTestCase):
-    def test_get_pending_queues(self):
-        self.create_experience('pe')
-        self.create_experience('dr')
-        client = Client()
-        response = client.get(reverse('pending'))
-        self.assertEqual(len(response.context["experiences"]), 1, "Only pending queues should be returned")
-
-    def test_does_not_get_spontaneous(self):
-        Experience.objects.create(author=self.test_user, name="E1", description="test description", start_datetime=(self.test_date - timedelta(days=2)),\
-                end_datetime=(self.test_date - timedelta(days=1)), type=self.create_type(), sub_type=self.create_sub_type(), goal="Test Goal", audience="b", \
-                 status="co", attendance=3)
-        client = Client()
-        response = client.get(reverse('pending'))
-        self.assertEqual(len(response.context["experiences"]), 0, "Spontaneous experiences should not be returned")
