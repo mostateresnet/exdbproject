@@ -1,30 +1,30 @@
-<!DOCTYPE html>
-
+{% extends "exdb/base.html" %}
+{% load i18n %}
 {% load staticfiles %}
-<html>
-    <head>
-        <link href="{% static 'exdb/css/create-experience.css' %}" rel="stylesheet">
-    </head>
-    <body>
-        <div class="create-experience-div">
-            <h1>Add Experience</h1>
-            <form action="{% url "create-experience" %}" method="POST">
-                {% csrf_token %}
-                <span class="form-errors">{{ form.non_field_errors }}</span>
-                <table class="create-experience-table">
-                    {% for field in form %}
-                        <tr>
-                            <th>{{ field.label_tag }}</th>
-                            <td>
-                                <div class="field-error">{{ field.errors }}</div>
-                                {{ field }}
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </table>
-                <input id="save_experiance" class="create-experience-save" type="submit" value="Save as draft" name="save" />
-                <input id="submit_experiance" class="create-experience-save" type="submit" value="Submit" name="submit" />
-            </form>
-        </div>
-    </body>
-</html>
+{% block css %}
+    {{ block.super }}
+    <link href="{% static 'exdb/css/create-experience.css' %}" rel="stylesheet">
+{% endblock %}
+{% block content %}
+{{ block.super }}
+    <div class="create-experience-div">
+        <h1>{% trans 'Add Experience' %}</h1>
+        <form action="{% url "create-experience" %}" method="POST">
+            {% csrf_token %}
+            <span class="form-errors">{{ form.non_field_errors }}</span>
+            <table class="create-experience-table">
+                {% for field in form %}
+                    <tr>
+                        <th>{{ field.label_tag }}</th>
+                        <td>
+                            <div class="field-error">{{ field.errors }}</div>
+                            {{ field }}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </table>
+            <input id="save_experiance" class="create-experience-save" type="submit" value="{% trans 'Save as draft' %}" name="save" />
+            <input id="submit_experiance" class="create-experience-save" type="submit" value="{% trans 'Submit' %}" name="submit" />
+        </form>
+    </div>
+{% endblock %}

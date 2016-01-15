@@ -18,7 +18,7 @@ import os
 import socket
 import re
 
-from exdb.models import Type, SubType, Organization, Keyword
+from exdb.models import Type, SubType, Organization, Keyword, Experience
 from exdb.forms import ExperienceSubmitForm
 
 class CustomRunner(DiscoverRunner):
@@ -330,3 +330,52 @@ class ExperienceCreationFormTest(StandardTestCase):
                 'guest': '1', 'recognition': [1], 'keywords': [1], 'goal': 'a', 'attendance': -1}
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
+
+
+class ExperienceCreationViewTest(StandardTestCase):
+    def setUp(self):
+        self.test_user = get_user_model().objects.create_user('test_user', 't@u.com', 'a')
+        self.test_type = Type.objects.create(name="Test Type", needs_verification=True)
+        self.test_sub_type = SubType.objects.create(name="Test Sub Type")
+        self.test_org = Organization.objects.create(name="Test Organization")
+        Keyword.objects.create(name="test keyword")
+
+    def test_valid_future_experience_creation_view_submit(self):
+        c = Client()
+        start = now() + timedelta(days=1)
+        end = now() + timedelta(days=2)
+        c.login(username="test_user", password='a')
+        data = {'name': 'test', 'description': 'test', 'start_datetime_month': start.month,
+                'start_datetime_day': start.day, 'start_datetime_year': start.year,
+                'end_datetime_month': end.month, 'end_datetime_day': end.day, 'end_datetime_year': end.year,
+                'type': 1, 'sub_type': 1, 'audience': 'c',
+                'guest': '1', 'recognition': 1, 'keywords': 1, 'goal': 'a', 'submit': 'Submit'}
+        response = c.post('/create', data)
+        self.assertEqual('pe', Experience.objects.get(pk=1).status, "Experience should have been saved with pending status")
+
+    def test_valid_experience_creation_view_save(self):
+        c = Client()
+        start = now() + timedelta(days=1)
+        end = now() + timedelta(days=2)
+        c.login(username="test_user", password='a')
+        data = {'name': 'test', 'description': 'test', 'start_datetime_month': start.month,
+                'start_datetime_day': start.day, 'start_datetime_year': start.year,
+                'end_datetime_month': end.month, 'end_datetime_day': end.day, 'end_datetime_year': end.year,
+                'type': 1, 'sub_type': 1, 'audience': 'c',
+                'guest': '1', 'recognition': 1, 'keywords': 1, 'goal': 'a', 'save': 'Save'}
+        response = c.post('/create', data)
+        self.assertEqual('dr', Experience.objects.get(pk=1).status, "Experience should have been saved with draft status")
+
+    def test_valid_past_experience_creation_view_submit(self):
+        Type.objects.create(name="past", needs_verification=False)
+        c = Client()
+        start = now() - timedelta(days=2)
+        end = now() - timedelta(days=1)
+        c.login(username="test_user", password='a')
+        data = {'name': 'test', 'description': 'test', 'start_datetime_month': start.month,
+                'start_datetime_day': start.day, 'start_datetime_year': start.year,
+                'end_datetime_month': end.month, 'end_datetime_day': end.day, 'end_datetime_year': end.year,
+                'type': 2, 'sub_type': 1, 'audience': 'c', 'attendance': 1,
+                'guest': '1', 'recognition': 1, 'keywords': 1, 'goal': 'a', 'submit': 'Save'}
+        response = c.post('/create', data)
+        self.assertEqual('co', Experience.objects.get(pk=1).status, "Experience should have been saved with completed status")
