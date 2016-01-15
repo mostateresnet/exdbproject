@@ -24,7 +24,7 @@ class ExperienceApprovalView(CreateView):
         return reverse('pending')
 
     def get_experience(self):
-        return get_object_or_404(Experience, pk=self.kwargs['pk'])
+        return get_object_or_404(Experience, pk=self.kwargs['pk'], status='pe')
 
     def get_context_data(self, **kwargs):
         context = super(ExperienceApprovalView, self).get_context_data()

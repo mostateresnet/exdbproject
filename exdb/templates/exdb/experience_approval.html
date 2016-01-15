@@ -4,6 +4,7 @@
     <form method="POST">
         {% csrf_token %}
         <h1>Experience Approval</h1>
+        <a href="{% url 'pending' %}"><p>Return to Pending Experiences</p></a>
         <span>{{ form.non_field_errors }}</span>
         <hr/>
         <table>
