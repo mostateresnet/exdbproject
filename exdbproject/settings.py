@@ -130,6 +130,9 @@ STATIC_URL = '/static/'
 # override the default test runner
 TEST_RUNNER = 'exdb.tests.CustomRunner'
 
+# excludes directories with these names from being included in linting
+JS_FILE_EXCLUDED_DIRS = ['coverage', 'instrumented_static']
+
 # override settings with settings_local
 try:
     from exdbproject.settings_local import *
