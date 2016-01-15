@@ -5,8 +5,10 @@ from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.conf import settings
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from django.utils.timezone import now, timedelta, make_aware, datetime, utc
-from django.contrib.auth.models import User
+from django.utils.timezone import now, datetime, timedelta, make_aware, utc
+from django.core.urlresolvers import reverse
+from django.contrib.auth import get_user_model
+from exdb.models import Experience, Type, SubType, Organization
 import json
 import tempfile
 import subprocess
@@ -20,6 +22,8 @@ from exdb.models import Type, SubType, Organization, Keyword
 from exdb.forms import ExperienceSubmitForm
 
 class CustomRunner(DiscoverRunner):
+    _do_coverage = False
+
     def __init__(self, *args, **kwargs):
         # running DiscoverRunner constructor for default behavior
         super(self.__class__, self).__init__(*args, **kwargs)
@@ -51,11 +55,14 @@ class CustomRunner(DiscoverRunner):
                 live_server_url = 'http://' + socket.gethostname() + ':' + match.groupdict()['port']
         self.__class__.live_server_url = live_server_url
 
-        IstanbulCoverage.instrument_istanbul()
+        if kwargs.get('coverage'):
+            IstanbulCoverage.instrument_istanbul()
+            self._do_coverage = True
 
 
     def teardown_test_environment(self, **kwargs):
-        IstanbulCoverage.output_coverage(DefaultLiveServerTestCase.running_total.coverage_files)
+        if self._do_coverage:
+            IstanbulCoverage.output_coverage(DefaultLiveServerTestCase.running_total.coverage_files)
         super(self.__class__, self).teardown_test_environment(**kwargs)
 
     def get_drivers(self):
@@ -96,6 +103,7 @@ class CustomRunner(DiscoverRunner):
     @classmethod
     def add_arguments(cls, parser):
         parser.add_argument('-b', '--browser')
+        parser.add_argument('-c', '--coverage', action='store_true')
 
 class IstanbulCoverage(object):
     # this class assumes that the mappings for a file will not change during a single test run
@@ -203,90 +211,122 @@ class WelcomeViewTest(DefaultLiveServerTestCase):
         self.assertEquals(self.driver.find_element(By.XPATH, '//h1').text, _('Welcome'))
 
 
-class ExperienceCreationFormTest(TestCase):
+class PendingApprovalQueueBrowserTest(DefaultLiveServerTestCase):
+    def test_load(self):
+        self.driver.get(CustomRunner.live_server_url + reverse('pending'))
+        self.assertEquals(self.driver.find_element(By.XPATH, '//h1').text, _('Experiences Pending Approval'))
+
+
+"""*******************Integration Tests**********************"""
+
+class StandardTestCase(TestCase):
     def setUp(self):
-        self.test_user = User.objects.create(username="Test User")
-        self.test_user.set_password('a')
-        self.test_user.save()
-        self.test_type = Type.objects.create(name="Test Type", needs_verification=True)
-        self.test_sub_type = SubType.objects.create(name="Test Sub Type")
-        self.test_org = Organization.objects.create(name="Test Organization")
-        Keyword.objects.create(name="test keyword")
+        self.test_user = get_user_model().objects.create_user('test_user', 't@u.com', 'a')
+        self.test_date = make_aware(datetime(2015, 1, 1, 1, 30), timezone=utc)
+        self.test_type = self.create_type()
+        self.test_sub_type = self.create_sub_type()
+        self.test_org = self.create_org()
+        Keyword.objects.create(name="test")
+
+    def create_type(self, needs_verification=True):
+        return Type.objects.create(name="Test Type", needs_verification=needs_verification)
+
+    def create_sub_type(self):
+        return SubType.objects.create(name="Test Sub Type")
+
+    def create_org(self):
+        return Organization.objects.create(name="Test Organization")
+
+    def create_experience(self, exp_status):
+        """Creates and returns an experience object with status of your choice"""
+        return Experience.objects.create(author=self.test_user, name="E1", description="test description", start_datetime=self.test_date,\
+                end_datetime=(self.test_date + timedelta(days=1)), type=self.create_type(), sub_type=self.create_sub_type(), goal="Test Goal", audience="b", \
+                 status=exp_status)
+
+class PendingApprovalQueueViewTest(StandardTestCase):
+    def test_get_pending_queues(self):
+        self.create_experience('pe')
+        self.create_experience('dr')
+        client = Client()
+        response = client.get(reverse('pending'))
+        self.assertEqual(len(response.context["experiences"]), 1, "Only pending queues should be returned")
+
+    def test_does_not_get_spontaneous(self):
+        Experience.objects.create(author=self.test_user, name="E1", description="test description", start_datetime=(self.test_date - timedelta(days=2)),\
+                end_datetime=(self.test_date - timedelta(days=1)), type=self.create_type(), sub_type=self.create_sub_type(), goal="Test Goal", audience="b", \
+                 status="co", attendance=3)
+        client = Client()
+        response = client.get(reverse('pending'))
+        self.assertEqual(len(response.context["experiences"]), 0, "Spontaneous experiences should not be returned")
+
+
+class ExperienceCreationFormTest(StandardTestCase):
 
     def test_valid_experience_creation_form(self):
-        test_date = make_aware(datetime(2015, 1, 1, 1, 30), timezone=utc)
-        data = {'name': 'test', 'description': 'test', 'start_datetime': (test_date + timedelta(days=1)),
-                'end_datetime': (test_date + timedelta(days=2)), 'type': 1, 'sub_type': 1, 'audience': 'c',
+        data = {'name': 'test', 'description': 'test', 'start_datetime': (self.test_date + timedelta(days=1)),
+                'end_datetime': (self.test_date + timedelta(days=2)), 'type': 1, 'sub_type': 1, 'audience': 'c',
                 'guest': '1', 'recognition': [1], 'keywords': [1], 'goal': 'a'}
-        form = ExperienceSubmitForm(data, when=test_date)
+        form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertTrue(form.is_valid(), "Form should have been valid")
 
     def test_valid_past_experience_creation(self):
-        Type.objects.create(name="Spontaneous", needs_verification=False)
-        test_date = make_aware(datetime(2015, 1, 1, 1, 30), timezone=utc)
-        data = {'name': 'test', 'description': 'test', 'start_datetime': (test_date - timedelta(days=2)),
-                'end_datetime': (test_date - timedelta(days=1)), 'type': 2, 'sub_type': 1, 'audience': 'c',
+        self.create_type(needs_verification=False)
+        data = {'name': 'test', 'description': 'test', 'start_datetime': (self.test_date - timedelta(days=2)),
+                'end_datetime': (self.test_date - timedelta(days=1)), 'type': 2, 'sub_type': 1, 'audience': 'c',
                 'guest': '1', 'recognition': [1], 'keywords': [1], 'goal': 'a', 'attendance': 1}
-        form = ExperienceSubmitForm(data, when=test_date)
+        form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertTrue(form.is_valid(), "Form should have been valid")
 
     def test_past_experience_without_audience(self):
-        Type.objects.create(name="Spontaneous", needs_verification=False)
-        test_date = make_aware(datetime(2015, 1, 1, 1, 30), timezone=utc)
-        data = {'name': 'test', 'description': 'test', 'start_datetime': (test_date - timedelta(days=2)),
-                'end_datetime': (test_date - timedelta(days=1)), 'type': 2, 'sub_type': 1, 'audience': 'c',
+        self.create_type(needs_verification=False)
+        data = {'name': 'test', 'description': 'test', 'start_datetime': (self.test_date - timedelta(days=2)),
+                'end_datetime': (self.test_date - timedelta(days=1)), 'type': 2, 'sub_type': 1, 'audience': 'c',
                 'guest': '1', 'recognition': [1], 'keywords': [1], 'goal': 'a'}
-        form = ExperienceSubmitForm(data, when=test_date)
+        form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
 
     def test_past_experience_type_with_future_dates(self):
-        Type.objects.create(name="Spontaneous", needs_verification=False)
-        test_date = make_aware(datetime(2015, 1, 1, 1, 30), timezone=utc)
-        data = {'name': 'test', 'description': 'test', 'start_datetime': (test_date + timedelta(days=2)),
-                'end_datetime': (test_date + timedelta(days=3)), 'type': 2, 'sub_type': 1, 'audience': 'c',
+        self.create_type(needs_verification=False)
+        data = {'name': 'test', 'description': 'test', 'start_datetime': (self.test_date + timedelta(days=2)),
+                'end_datetime': (self.test_date + timedelta(days=3)), 'type': 2, 'sub_type': 1, 'audience': 'c',
                 'guest': '1', 'recognition': [1], 'keywords': [1], 'goal': 'a', 'attendance': 1}
-        form = ExperienceSubmitForm(data, when=test_date)
+        form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
 
     def test_future_experience_type_with_past_dates(self):
-        Type.objects.create(name="Spontaneous", needs_verification=True)
-        test_date = make_aware(datetime(2015, 1, 1, 1, 30), timezone=utc)
-        data = {'name': 'test', 'description': 'test', 'start_datetime': (test_date - timedelta(days=2)),
-                'end_datetime': (test_date - timedelta(days=1)), 'type': 2, 'sub_type': 1, 'audience': 'c',
+        self.create_type(needs_verification=False)
+        data = {'name': 'test', 'description': 'test', 'start_datetime': (self.test_date - timedelta(days=2)),
+                'end_datetime': (self.test_date - timedelta(days=1)), 'type': 1, 'sub_type': 1, 'audience': 'c',
                 'guest': '1', 'recognition': [1], 'keywords': [1], 'goal': 'a', 'attendance': 1}
-        form = ExperienceSubmitForm(data, when=test_date)
+        form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
 
     def test_future_experience_with_start_date_after_end_date(self):
-        test_date = make_aware(datetime(2015, 1, 1, 1, 30), timezone=utc)
-        data = {'name': 'test', 'description': 'test', 'start_datetime': (test_date + timedelta(days=3)),
-                'end_datetime': (test_date + timedelta(days=2)), 'type': 1, 'sub_type': 1, 'audience': 'c',
+        data = {'name': 'test', 'description': 'test', 'start_datetime': (self.test_date + timedelta(days=3)),
+                'end_datetime': (self.test_date + timedelta(days=2)), 'type': 1, 'sub_type': 1, 'audience': 'c',
                 'guest': '1', 'recognition': [1], 'keywords': [1], 'goal': 'a'}
-        form = ExperienceSubmitForm(data, when=test_date)
+        form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
 
     def test_past_experience_creation_no_attendance(self):
-        Type.objects.create(name="Spontaneous", needs_verification=False)
-        test_date = make_aware(datetime(2015, 1, 1, 1, 30), timezone=utc)
-        data = {'name': 'test', 'description': 'test', 'start_datetime': (test_date - timedelta(days=2)),
-                'end_datetime': (test_date - timedelta(days=1)), 'type': 2, 'sub_type': 1, 'audience': 'c',
+        self.create_type(needs_verification=False)
+        data = {'name': 'test', 'description': 'test', 'start_datetime': (self.test_date - timedelta(days=2)),
+                'end_datetime': (self.test_date - timedelta(days=1)), 'type': 2, 'sub_type': 1, 'audience': 'c',
                 'guest': '1', 'recognition': [1], 'keywords': [1], 'goal': 'a'}
-        form = ExperienceSubmitForm(data, when=test_date)
+        form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
 
     def test_experience_creation_with_attendance(self):
-        test_date = make_aware(datetime(2015, 1, 1, 1, 30), timezone=utc)
-        data = {'name': 'test', 'description': 'test', 'start_datetime': (test_date + timedelta(days=1)),
-                'end_datetime': (test_date + timedelta(days=2)), 'type': 1, 'sub_type': 1, 'audience': 'c',
+        data = {'name': 'test', 'description': 'test', 'start_datetime': (self.test_date + timedelta(days=1)),
+                'end_datetime': (self.test_date + timedelta(days=2)), 'type': 1, 'sub_type': 1, 'audience': 'c',
                 'guest': '1', 'recognition': [1], 'keywords': [1], 'goal': 'a', 'attendance': 1}
-        form = ExperienceSubmitForm(data, when=test_date)
+        form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
 
     def test_past_experience_creation_negative_attendance(self):
-        Type.objects.create(name="Spontaneous", needs_verification=False)
-        test_date = make_aware(datetime(2015, 1, 1, 1, 30), timezone=utc)
-        data = {'name': 'test', 'description': 'test', 'start_datetime': (test_date - timedelta(days=2)),
-                'end_datetime': (test_date - timedelta(days=1)), 'type': 2, 'sub_type': 1, 'audience': 'c',
+        self.create_type(needs_verification=False)
+        data = {'name': 'test', 'description': 'test', 'start_datetime': (self.test_date - timedelta(days=2)),
+                'end_datetime': (self.test_date - timedelta(days=1)), 'type': 2, 'sub_type': 1, 'audience': 'c',
                 'guest': '1', 'recognition': [1], 'keywords': [1], 'goal': 'a', 'attendance': -1}
-        form = ExperienceSubmitForm(data, when=test_date)
+        form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")

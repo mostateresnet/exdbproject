@@ -1,9 +1,9 @@
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, ListView
 from django.views.generic.edit import CreateView
 from django.core.urlresolvers import reverse
 from django.utils import timezone
 
-from .models import Experience
+from exdb.models import Experience
 from .forms import ExperienceSubmitForm, ExperienceSaveForm
 
 
@@ -40,3 +40,12 @@ class CreateExperienceView(CreateView):
             return ExperienceSubmitForm
         else:
             return ExperienceSaveForm
+
+
+class PendingApprovalQueueView(ListView):
+    template_name = 'exdb/pending.html'
+    context_object_name = "experiences"
+
+    def get_queryset(self):
+        return Experience.objects.filter(status='pe')
+
