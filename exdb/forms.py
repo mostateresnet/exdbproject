@@ -57,6 +57,9 @@ class ExperienceSubmitForm(ExperienceSaveForm):
         if not self.cleaned_data.get('type').needs_verification and not self.cleaned_data.get('attendance'):
             raise ValidationError("Spontaneous events must have an attendance")
 
+        if not self.cleaned_data.get('type').needs_verification and not self.cleaned_data.get('audience'):
+            raise ValidationError("Spontaneous events must have an attendance")
+
         if not self.cleaned_data.get('type').needs_verification and self.cleaned_data.get('attendance') and self.cleaned_data.get('attendance') < 1:
             raise ValidationError("Spontaneous events must have an attendance greater than 0")
 

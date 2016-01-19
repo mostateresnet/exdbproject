@@ -18,9 +18,6 @@ class CreateExperienceView(CreateView):
     def get_success_url(self):
         return reverse('welcome')
 
-    def get_form_kwargs(self):
-        return super(CreateExperienceView, self).get_form_kwargs()
-
     def form_valid(self, form):
         form.instance.author = self.request.user
 

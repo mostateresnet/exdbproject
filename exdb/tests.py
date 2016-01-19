@@ -8,7 +8,8 @@ from selenium.webdriver.common.by import By
 from django.utils.timezone import now, datetime, timedelta, make_aware, utc
 from django.core.urlresolvers import reverse
 from django.contrib.auth import get_user_model
-from exdb.models import Experience, Type, SubType, Organization
+from exdb.models import Experience, Type, SubType, Organization, Keyword
+from exdb.forms import ExperienceSubmitForm
 import json
 import tempfile
 import subprocess
@@ -18,8 +19,6 @@ import os
 import socket
 import re
 
-from exdb.models import Type, SubType, Organization, Keyword, Experience
-from exdb.forms import ExperienceSubmitForm
 
 class CustomRunner(DiscoverRunner):
     _do_coverage = False
@@ -224,9 +223,10 @@ class StandardTestCase(TestCase):
         self.test_user = get_user_model().objects.create_user('test_user', 't@u.com', 'a')
         self.test_date = make_aware(datetime(2015, 1, 1, 1, 30), timezone=utc)
         self.test_type = self.create_type()
+        self.test_past_type = self.create_type(needs_verification=False)
         self.test_sub_type = self.create_sub_type()
         self.test_org = self.create_org()
-        Keyword.objects.create(name="test")
+        self.test_keyword = Keyword.objects.create(name="test")
 
     def create_type(self, needs_verification=True):
         return Type.objects.create(name="Test Type", needs_verification=needs_verification)
@@ -264,81 +264,73 @@ class ExperienceCreationFormTest(StandardTestCase):
 
     def test_valid_experience_creation_form(self):
         data = {'name': 'test', 'description': 'test', 'start_datetime': (self.test_date + timedelta(days=1)),
-                'end_datetime': (self.test_date + timedelta(days=2)), 'type': 1, 'sub_type': 1, 'audience': 'c',
-                'guest': '1', 'recognition': [1], 'keywords': [1], 'goal': 'a'}
+                'end_datetime': (self.test_date + timedelta(days=2)), 'type': self.test_type.pk, 'sub_type': self.test_sub_type.pk, 'audience': 'c',
+                'guest': '1', 'recognition': [self.test_org.pk], 'keywords': [self.test_keyword.pk], 'goal': 'a'}
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertTrue(form.is_valid(), "Form should have been valid")
 
     def test_valid_past_experience_creation(self):
-        self.create_type(needs_verification=False)
         data = {'name': 'test', 'description': 'test', 'start_datetime': (self.test_date - timedelta(days=2)),
-                'end_datetime': (self.test_date - timedelta(days=1)), 'type': 2, 'sub_type': 1, 'audience': 'c',
-                'guest': '1', 'recognition': [1], 'keywords': [1], 'goal': 'a', 'attendance': 1}
+                'end_datetime': (self.test_date - timedelta(days=1)), 'type': self.test_past_type.pk, 'sub_type': self.test_sub_type.pk, 'audience': 'c',
+                'guest': '1', 'recognition': [self.test_org.pk], 'keywords': [self.test_keyword.pk], 'goal': 'a', 'attendance': 1}
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertTrue(form.is_valid(), "Form should have been valid")
 
     def test_past_experience_without_audience(self):
         self.create_type(needs_verification=False)
         data = {'name': 'test', 'description': 'test', 'start_datetime': (self.test_date - timedelta(days=2)),
-                'end_datetime': (self.test_date - timedelta(days=1)), 'type': 2, 'sub_type': 1, 'audience': 'c',
-                'guest': '1', 'recognition': [1], 'keywords': [1], 'goal': 'a'}
+                'end_datetime': (self.test_date - timedelta(days=1)), 'type': self.test_past_type.pk, 'sub_type': self.test_sub_type.pk,
+                'guest': '1', 'recognition': [self.test_org.pk], 'keywords': [self.test_keyword.pk], 'goal': 'a', 'attendance': 1}
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
 
     def test_past_experience_type_with_future_dates(self):
         self.create_type(needs_verification=False)
-        data = {'name': 'test', 'description': 'test', 'start_datetime': (self.test_date + timedelta(days=2)),
-                'end_datetime': (self.test_date + timedelta(days=3)), 'type': 2, 'sub_type': 1, 'audience': 'c',
-                'guest': '1', 'recognition': [1], 'keywords': [1], 'goal': 'a', 'attendance': 1}
+        data = {'name': 'test', 'description': 'test', 'start_datetime': (self.test_date + timedelta(days=1)),
+                'end_datetime': (self.test_date + timedelta(days=2)), 'type': self.test_past_type.pk, 'sub_type': self.test_sub_type.pk, 'audience': 'c',
+                'guest': '1', 'recognition': [self.test_org.pk], 'keywords': [self.test_keyword.pk], 'goal': 'a', 'attendance': 1}
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
 
     def test_future_experience_type_with_past_dates(self):
         self.create_type(needs_verification=False)
         data = {'name': 'test', 'description': 'test', 'start_datetime': (self.test_date - timedelta(days=2)),
-                'end_datetime': (self.test_date - timedelta(days=1)), 'type': 1, 'sub_type': 1, 'audience': 'c',
-                'guest': '1', 'recognition': [1], 'keywords': [1], 'goal': 'a', 'attendance': 1}
+                'end_datetime': (self.test_date - timedelta(days=1)), 'type': self.test_type.pk, 'sub_type': self.test_sub_type.pk, 'audience': 'c',
+                'guest': '1', 'recognition': [self.test_org.pk], 'keywords': [self.test_keyword.pk], 'goal': 'a'}
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
 
     def test_future_experience_with_start_date_after_end_date(self):
         data = {'name': 'test', 'description': 'test', 'start_datetime': (self.test_date + timedelta(days=3)),
-                'end_datetime': (self.test_date + timedelta(days=2)), 'type': 1, 'sub_type': 1, 'audience': 'c',
-                'guest': '1', 'recognition': [1], 'keywords': [1], 'goal': 'a'}
+                'end_datetime': (self.test_date + timedelta(days=2)), 'type': self.test_type.pk, 'sub_type': self.test_sub_type.pk, 'audience': 'c',
+                'guest': '1', 'recognition': [self.test_org.pk], 'keywords': [self.test_keyword.pk], 'goal': 'a'}
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
 
     def test_past_experience_creation_no_attendance(self):
-        self.create_type(needs_verification=False)
         data = {'name': 'test', 'description': 'test', 'start_datetime': (self.test_date - timedelta(days=2)),
-                'end_datetime': (self.test_date - timedelta(days=1)), 'type': 2, 'sub_type': 1, 'audience': 'c',
-                'guest': '1', 'recognition': [1], 'keywords': [1], 'goal': 'a'}
+                'end_datetime': (self.test_date - timedelta(days=1)), 'type': self.test_past_type.pk, 'sub_type': self.test_sub_type.pk, 'audience': 'c',
+                'guest': '1', 'recognition': [self.test_org.pk], 'keywords': [self.test_keyword.pk], 'goal': 'a'}
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
 
     def test_experience_creation_with_attendance(self):
         data = {'name': 'test', 'description': 'test', 'start_datetime': (self.test_date + timedelta(days=1)),
-                'end_datetime': (self.test_date + timedelta(days=2)), 'type': 1, 'sub_type': 1, 'audience': 'c',
-                'guest': '1', 'recognition': [1], 'keywords': [1], 'goal': 'a', 'attendance': 1}
+                'end_datetime': (self.test_date + timedelta(days=2)), 'type': self.test_type.pk, 'sub_type': self.test_sub_type.pk, 'audience': 'c',
+                'guest': '1', 'recognition': [self.test_org.pk], 'keywords': [self.test_keyword.pk], 'goal': 'a', 'attendance': 1}
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
 
     def test_past_experience_creation_negative_attendance(self):
         self.create_type(needs_verification=False)
         data = {'name': 'test', 'description': 'test', 'start_datetime': (self.test_date - timedelta(days=2)),
-                'end_datetime': (self.test_date - timedelta(days=1)), 'type': 2, 'sub_type': 1, 'audience': 'c',
-                'guest': '1', 'recognition': [1], 'keywords': [1], 'goal': 'a', 'attendance': -1}
+                'end_datetime': (self.test_date - timedelta(days=1)), 'type': self.test_past_type.pk, 'sub_type': self.test_sub_type.pk, 'audience': 'c',
+                'guest': '1', 'recognition': [self.test_org.pk], 'keywords': [self.test_keyword.pk], 'goal': 'a', 'attendance': -1}
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
 
 
 class ExperienceCreationViewTest(StandardTestCase):
-    def setUp(self):
-        self.test_user = get_user_model().objects.create_user('test_user', 't@u.com', 'a')
-        self.test_type = Type.objects.create(name="Test Type", needs_verification=True)
-        self.test_sub_type = SubType.objects.create(name="Test Sub Type")
-        self.test_org = Organization.objects.create(name="Test Organization")
-        Keyword.objects.create(name="test keyword")
 
     def test_valid_future_experience_creation_view_submit(self):
         c = Client()
@@ -348,10 +340,10 @@ class ExperienceCreationViewTest(StandardTestCase):
         data = {'name': 'test', 'description': 'test', 'start_datetime_month': start.month,
                 'start_datetime_day': start.day, 'start_datetime_year': start.year,
                 'end_datetime_month': end.month, 'end_datetime_day': end.day, 'end_datetime_year': end.year,
-                'type': 1, 'sub_type': 1, 'audience': 'c',
-                'guest': '1', 'recognition': 1, 'keywords': 1, 'goal': 'a', 'submit': 'Submit'}
-        response = c.post('/create', data)
-        self.assertEqual('pe', Experience.objects.get(pk=1).status, "Experience should have been saved with pending status")
+                'type': self.test_type.pk, 'sub_type': self.test_sub_type.pk, 'audience': 'c',
+                'guest': '1', 'recognition': self.test_org.pk, 'keywords': self.test_keyword.pk, 'goal': 'a', 'submit': 'Submit'}
+        response = c.post(reverse('create-experience'), data)
+        self.assertEqual('pe', Experience.objects.get(name='test').status, "Experience should have been saved with pending status")
 
     def test_valid_experience_creation_view_save(self):
         c = Client()
@@ -361,13 +353,12 @@ class ExperienceCreationViewTest(StandardTestCase):
         data = {'name': 'test', 'description': 'test', 'start_datetime_month': start.month,
                 'start_datetime_day': start.day, 'start_datetime_year': start.year,
                 'end_datetime_month': end.month, 'end_datetime_day': end.day, 'end_datetime_year': end.year,
-                'type': 1, 'sub_type': 1, 'audience': 'c',
-                'guest': '1', 'recognition': 1, 'keywords': 1, 'goal': 'a', 'save': 'Save'}
-        response = c.post('/create', data)
-        self.assertEqual('dr', Experience.objects.get(pk=1).status, "Experience should have been saved with draft status")
+                'type': self.test_type.pk, 'sub_type': self.test_sub_type.pk, 'audience': 'c',
+                'guest': '1', 'recognition': self.test_org.pk, 'keywords': self.test_keyword.pk, 'goal': 'a', 'save': 'Save'}
+        response = c.post(reverse('create-experience'), data)
+        self.assertEqual('dr', Experience.objects.get(name='test').status, "Experience should have been saved with draft status")
 
     def test_valid_past_experience_creation_view_submit(self):
-        Type.objects.create(name="past", needs_verification=False)
         c = Client()
         start = now() - timedelta(days=2)
         end = now() - timedelta(days=1)
@@ -375,7 +366,7 @@ class ExperienceCreationViewTest(StandardTestCase):
         data = {'name': 'test', 'description': 'test', 'start_datetime_month': start.month,
                 'start_datetime_day': start.day, 'start_datetime_year': start.year,
                 'end_datetime_month': end.month, 'end_datetime_day': end.day, 'end_datetime_year': end.year,
-                'type': 2, 'sub_type': 1, 'audience': 'c', 'attendance': 1,
-                'guest': '1', 'recognition': 1, 'keywords': 1, 'goal': 'a', 'submit': 'Save'}
-        response = c.post('/create', data)
-        self.assertEqual('co', Experience.objects.get(pk=1).status, "Experience should have been saved with completed status")
+                'type': self.test_past_type.pk, 'sub_type': self.test_sub_type.pk, 'audience': 'c', 'attendance': 1,
+                'guest': '1', 'recognition': self.test_org.pk, 'keywords': self.test_keyword.pk, 'goal': 'a', 'submit': 'Submit'}
+        response = c.post(reverse('create-experience'), data)
+        self.assertEqual('co', Experience.objects.get(name='test').status, "Experience should have been saved with completed status")
