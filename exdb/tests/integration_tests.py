@@ -10,6 +10,9 @@ class StandardTestCase(TestCase):
     def setUp(self):
         self.test_user = get_user_model().objects.create_user('test_user', 't@u.com', 'a')
         self.test_date = make_aware(datetime(2015, 1, 1, 1, 30), timezone=utc)
+        self.anon_client = Client()
+        self.login_client = Client()
+        self.login_client.login(username='test_user', password='a')
 
     def create_type(self):
         return Type.objects.create(name="Test Type")
@@ -30,14 +33,12 @@ class PendingApprovalQueueViewTest(StandardTestCase):
     def test_get_pending_queues(self):
         self.create_experience('pe')
         self.create_experience('dr')
-        client = Client()
-        response = client.get(reverse('pending'))
+        response = self.anon_client.get(reverse('pending'))
         self.assertEqual(len(response.context["experiences"]), 1, "Only pending queues should be returned")
 
     def test_does_not_get_spontaneous(self):
         Experience.objects.create(author=self.test_user, name="E1", description="test description", start_datetime=(self.test_date - timedelta(days=2)),\
                 end_datetime=(self.test_date - timedelta(days=1)), type=self.create_type(), sub_type=self.create_sub_type(), goal="Test Goal", audience="b", \
                  status="co", attendance=3)
-        client = Client()
-        response = client.get(reverse('pending'))
+        response = self.anon_client.get(reverse('pending'))
         self.assertEqual(len(response.context["experiences"]), 0, "Spontaneous experiences should not be returned")
