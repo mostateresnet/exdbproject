@@ -1,0 +1,7 @@
+span.form-errors{
+    color: red;
+}
+
+span.form-errors ul{
+    list-style-type: None;
+}

@@ -1,23 +1,28 @@
 {% extends "exdb/base.html" %}
+{% load i18n %}
 {% load staticfiles %}
+{% block css %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/experience_approval.css' %}" />
+{% endblock %}
 {% block content %}
     <form method="POST">
         {% csrf_token %}
-        <h1>Experience Approval</h1>
+        <h1>{% trans "Experience Approval" %}</h1>
         <a href="{% url 'pending' %}"><p>Return to Pending Experiences</p></a>
-        <span>{{ form.non_field_errors }}</span>
+        <span class="form-errors">{{ form.non_field_errors }}</span>
         <hr/>
         <table>
             <tr>
-                <th>Experience:</th>
+                <th>{% trans "Experience" %}:</th>
                 <td>{{ experience.name }}</td>
             </tr>
             <tr>
-                <th>Author:</th>
+                <th>{% trans "Author" %}:</th>
                 <td>{{ experience.author }}</td>
             </tr>
             <tr>
-                <th>Planners:</th>
+                <th>{% trans "Planners" %}:</th>
                 <td>
                     {% for p in experience.planners.all %}
                         {{ p }}{% if not forloop.last %}, {% endif %}
@@ -25,7 +30,7 @@
                 </td>
             </tr>
             <tr>
-                <th>Credited:</th>
+                <th>{% trans "Credited" %}:</th>
                 <td>
                     {% for org in experience.recognition.all %}
                         {{ org }}{% if not forloop.last %}, {% endif %}
@@ -33,27 +38,27 @@
                 </td>
             </tr>
             <tr>
-                <th>Created:</th>
+                <th>{% trans "Created" %}:</th>
                 <td>{{ experience.created_datetime }}</td>
             </tr>
             <tr>
-                <th>Type/Sub-Type:</th>
+                <th>{% trans "Type/Sub-Type" %}:</th>
                 <td>{{ experience.type }}/{{ experience.sub_type }}</td>
             </tr>
             <tr>
-                <th>Start/End:</th>
+                <th>{% trans "Start/End" %}:</th>
                 <td>{{ experience.start_datetime }}/{{ experience.end_datetime }}</td>
             </tr>
             <tr>
-                <th>Description:</th>
+                <th>{% trans "Description" %}:</th>
                 <td>{{ experience.description }}</td>
             </tr>
             <tr>
-                <th>Goal:</th>
+                <th>{% trans "Goals" %}:</th>
                 <td>{{ experience.goal }}</td>
             </tr>
             <tr>
-                <th>Keywords</th>
+                <th>{% trans "Keywords" %}</th>
                 <td>
                     {% for kwd in experience.keywords.all %}
                         {{ kwd }}{% if not forloop.last %}, {% endif %}
@@ -64,25 +69,25 @@
             </tr>
             {% if experience.guest %}
                 <tr>
-                    <th>Guest:</th>
+                    <th>{% trans "Guest" %}:</th>
                     <td>{{ experience.guest }}</td>
                 </tr>
                 <tr>
-                    <th>Guest Office:</th>
+                    <th>{% trans "Guest Office" %}:</th>
                     <td>{{ experience.guest_office }}</td>
                 </tr>
             {% endif %}
         </table>
         <table>
-            <tr><th>Comments</th></tr>
+            <tr><th>{% trans "Comments" %}</th></tr>
             {% for comment in comments %}
-                <tr><td>{{ comment.message }}</td></tr>
+                <tr><td>{% trans comment.message %}</td></tr>
             {% empty %}
-                <tr><td>No comments</td></tr>
+            <tr><td>{% trans "No comments" %}</td></tr>
             {% endfor %}
         </table>
-        <div>Comments:</div>
-        <span>{{ form.message.errors }}</span>
+        <div>{% trans "Comments" %}:</div>
+        <span class="form-errors">{{ form.message.errors }}</span>
         <div>{{ form.message }}</div>
         <input type="submit" value="deny" name="deny" />
         <input type="submit" value="approve" name="approve" />
