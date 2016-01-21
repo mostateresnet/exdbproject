@@ -34,36 +34,38 @@ class ExperienceSubmitForm(ExperienceSaveForm):
     def clean(self):
 
         if not self.cleaned_data.get('end_datetime'):
-            raise ValidationError("Need a end date!")
+            raise ValidationError("An end time is required")
 
         if not self.cleaned_data.get('start_datetime'):
-            raise ValidationError("Need a start time!")
+            raise ValidationError("A start time is required")
 
         if not self.cleaned_data.get('sub_type'):
-            raise ValidationError("Need a subType")
+            raise ValidationError("The sub type field is required")
 
         if not self.cleaned_data.get('type'):
-            raise ValidationError("Need a subType")
+            raise ValidationError("The type field is required")
+
+        ex_type = self.cleaned_data.get('type')
 
         if self.cleaned_data.get('start_datetime') >= self.cleaned_data.get('end_datetime'):
-            raise ValidationError("Start date must be before end date")
+            raise ValidationError("Start time must be before end time")
 
-        if not self.cleaned_data.get('type').needs_verification and self.cleaned_data.get('start_datetime') > self.when:
-            raise ValidationError("Spontaneous experiences must have happened in the past")
+        if not ex_type.needs_verification and self.cleaned_data.get('start_datetime') > self.when:
+            raise ValidationError(ex_type.name +  " experiences must have happened in the past")
 
-        if self.cleaned_data.get('type').needs_verification and self.cleaned_data.get('start_datetime') < self.when:
-            raise ValidationError("Only Spontaneous events can happen in the past")
+        if ex_type.needs_verification and self.cleaned_data.get('start_datetime') < self.when:
+            raise ValidationError(ex_type.name + " events cannot happen in the past")
 
-        if not self.cleaned_data.get('type').needs_verification and not self.cleaned_data.get('attendance'):
-            raise ValidationError("Spontaneous events must have an attendance")
+        if not ex_type.needs_verification and not self.cleaned_data.get('attendance'):
+            raise ValidationError(ex_type.name + " events must have an attendance")
 
-        if not self.cleaned_data.get('type').needs_verification and not self.cleaned_data.get('audience'):
-            raise ValidationError("Spontaneous events must have an attendance")
+        if not ex_type.needs_verification and not self.cleaned_data.get('audience'):
+            raise ValidationError(ex_type.name + " events must have an audience")
 
-        if not self.cleaned_data.get('type').needs_verification and self.cleaned_data.get('attendance') and self.cleaned_data.get('attendance') < 1:
-            raise ValidationError("Spontaneous events must have an attendance greater than 0")
+        if not ex_type.needs_verification and self.cleaned_data.get('attendance') and self.cleaned_data.get('attendance') < 1:
+            raise ValidationError(ex_type.name + " events must have an attendance greater than 0")
 
-        if self.cleaned_data.get('type').needs_verification and self.cleaned_data.get('attendance'):
-            raise ValidationError("Future events cannot have an attendance")
+        if ex_type.needs_verification and self.cleaned_data.get('attendance'):
+            raise ValidationError(ex_type.name + " events cannot have an attendance")
 
         return self.cleaned_data

@@ -6,7 +6,7 @@
     <link href="{% static 'exdb/css/create-experience.css' %}" rel="stylesheet">
 {% endblock %}
 {% block content %}
-{{ block.super }}
+    {{ block.super }}
     <div class="create-experience-div">
         <h1>{% trans 'Add Experience' %}</h1>
         <form action="{% url "create-experience" %}" method="POST">
@@ -23,8 +23,8 @@
                     </tr>
                 {% endfor %}
             </table>
-            <input id="save_experiance" class="create-experience-save" type="submit" value="{% trans 'Save as draft' %}" name="save" />
-            <input id="submit_experiance" class="create-experience-save" type="submit" value="{% trans 'Submit' %}" name="submit" />
+            <input id="save_experience" class="create-experience-save" type="submit" value="{% trans 'Save as draft' %}" name="save" />
+            <input id="submit_experience" class="create-experience-save" type="submit" value="{% trans 'Submit' %}" name="submit" />
         </form>
     </div>
 {% endblock %}

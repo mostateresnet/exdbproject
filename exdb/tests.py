@@ -277,7 +277,6 @@ class ExperienceCreationFormTest(StandardTestCase):
         self.assertTrue(form.is_valid(), "Form should have been valid")
 
     def test_past_experience_without_audience(self):
-        self.create_type(needs_verification=False)
         data = {'name': 'test', 'description': 'test', 'start_datetime': (self.test_date - timedelta(days=2)),
                 'end_datetime': (self.test_date - timedelta(days=1)), 'type': self.test_past_type.pk, 'sub_type': self.test_sub_type.pk,
                 'guest': '1', 'recognition': [self.test_org.pk], 'keywords': [self.test_keyword.pk], 'goal': 'a', 'attendance': 1}
@@ -285,7 +284,6 @@ class ExperienceCreationFormTest(StandardTestCase):
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
 
     def test_past_experience_type_with_future_dates(self):
-        self.create_type(needs_verification=False)
         data = {'name': 'test', 'description': 'test', 'start_datetime': (self.test_date + timedelta(days=1)),
                 'end_datetime': (self.test_date + timedelta(days=2)), 'type': self.test_past_type.pk, 'sub_type': self.test_sub_type.pk, 'audience': 'c',
                 'guest': '1', 'recognition': [self.test_org.pk], 'keywords': [self.test_keyword.pk], 'goal': 'a', 'attendance': 1}
@@ -293,7 +291,6 @@ class ExperienceCreationFormTest(StandardTestCase):
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
 
     def test_future_experience_type_with_past_dates(self):
-        self.create_type(needs_verification=False)
         data = {'name': 'test', 'description': 'test', 'start_datetime': (self.test_date - timedelta(days=2)),
                 'end_datetime': (self.test_date - timedelta(days=1)), 'type': self.test_type.pk, 'sub_type': self.test_sub_type.pk, 'audience': 'c',
                 'guest': '1', 'recognition': [self.test_org.pk], 'keywords': [self.test_keyword.pk], 'goal': 'a'}
@@ -322,7 +319,6 @@ class ExperienceCreationFormTest(StandardTestCase):
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
 
     def test_past_experience_creation_negative_attendance(self):
-        self.create_type(needs_verification=False)
         data = {'name': 'test', 'description': 'test', 'start_datetime': (self.test_date - timedelta(days=2)),
                 'end_datetime': (self.test_date - timedelta(days=1)), 'type': self.test_past_type.pk, 'sub_type': self.test_sub_type.pk, 'audience': 'c',
                 'guest': '1', 'recognition': [self.test_org.pk], 'keywords': [self.test_keyword.pk], 'goal': 'a', 'attendance': -1}
