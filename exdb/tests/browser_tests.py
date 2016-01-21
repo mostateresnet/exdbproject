@@ -15,6 +15,7 @@ import os
 import socket
 import re
 
+
 class CustomRunner(DiscoverRunner):
     _do_coverage = False
 
@@ -204,9 +205,9 @@ class WelcomeViewTest(DefaultLiveServerTestCase):
         self.driver.get(CustomRunner.live_server_url)
         self.assertEquals(self.driver.find_element(By.XPATH, '//h1').text, _('Welcome'))
 
+
 class PendingApprovalQueueBrowserTest(DefaultLiveServerTestCase):
     def test_load(self):
         self.driver.get(CustomRunner.live_server_url + reverse('pending'))
         self.assertEquals(self.driver.find_element(By.XPATH, '//h1').text, _('Experiences Pending Approval'))
-
 
