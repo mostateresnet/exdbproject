@@ -1,8 +1,9 @@
-from django.core.checks import Warning, register
+from django.core.checks import Warning, register  # pylint: disable=redefined-builtin
 from django.conf import settings
 
+
 @register()
-def check_secret_key(app_configs, **kwargs):
+def check_secret_key(**kwargs):
     errors = []
     if settings.BAD_SECRET_KEY == settings.SECRET_KEY:
         errors.append(

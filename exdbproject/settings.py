@@ -131,10 +131,11 @@ STATIC_URL = '/static/'
 TEST_RUNNER = 'exdb.tests.CustomRunner'
 
 # excludes directories with these names from being included in linting
-JS_FILE_EXCLUDED_DIRS = ['coverage', 'instrumented_static']
+JS_FILE_EXCLUDED_DIRS = ['coverage', 'instrumented_static', 'libraries']
+PY_FILE_EXCLUDED_DIRS = ['migrations']
 
 # override settings with settings_local
 try:
-    from exdbproject.settings_local import *
-except:
+    from exdbproject.settings_local import *  # pylint: disable=wildcard-import,unused-wildcard-import,wrong-import-position
+except ImportError:
     pass

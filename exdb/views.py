@@ -45,4 +45,3 @@ class PendingApprovalQueueView(ListView):
 
     def get_queryset(self):
         return Experience.objects.filter(status='pe')
-

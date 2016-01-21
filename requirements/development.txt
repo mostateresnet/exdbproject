@@ -2,3 +2,7 @@
 -r server.txt
 selenium
 nodeenv
+pylint
+coverage
+autopep8
+colorama
