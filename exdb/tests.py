@@ -339,6 +339,34 @@ class ExperienceCreationFormTest(StandardTestCase):
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
 
+    def test_experience_creation_form_no_end_date(self):
+        data = {'name': 'test', 'description': 'test', 'start_datetime': (self.test_date + timedelta(days=1)),
+                'type': self.test_type.pk, 'sub_type': self.test_sub_type.pk, 'audience': 'c',
+                'guest': '1', 'recognition': [self.test_org.pk], 'keywords': [self.test_keyword.pk], 'goal': 'a'}
+        form = ExperienceSubmitForm(data, when=self.test_date)
+        self.assertFalse(form.is_valid(), "Form should NOT have been valid")
+
+    def test_experience_creation_form_no_start_date(self):
+        data = {'name': 'test', 'description': 'test', 'end_datetime': (self.test_date + timedelta(days=2)),
+                'type': self.test_type.pk, 'sub_type': self.test_sub_type.pk, 'audience': 'c',
+                'guest': '1', 'recognition': [self.test_org.pk], 'keywords': [self.test_keyword.pk], 'goal': 'a'}
+        form = ExperienceSubmitForm(data, when=self.test_date)
+        self.assertFalse(form.is_valid(), "Form should NOT have been valid")
+
+    def test_experience_creation_form_no_sub_type(self):
+        data = {'name': 'test', 'description': 'test', 'start_datetime': (self.test_date + timedelta(days=1)),
+                'end_datetime': (self.test_date + timedelta(days=2)), 'type': self.test_type.pk, 'audience': 'c',
+                'guest': '1', 'recognition': [self.test_org.pk], 'keywords': [self.test_keyword.pk], 'goal': 'a'}
+        form = ExperienceSubmitForm(data, when=self.test_date)
+        self.assertFalse(form.is_valid(), "Form should NOT have been valid")
+
+    def test_experience_creation_form_no_type(self):
+        data = {'name': 'test', 'description': 'test', 'start_datetime': (self.test_date + timedelta(days=1)),
+                'end_datetime': (self.test_date + timedelta(days=2)), 'sub_type': self.test_sub_type.pk, 'audience': 'c',
+                'guest': '1', 'recognition': [self.test_org.pk], 'keywords': [self.test_keyword.pk], 'goal': 'a'}
+        form = ExperienceSubmitForm(data, when=self.test_date)
+        self.assertFalse(form.is_valid(), "Form should NOT have been valid")
+
 
 class ExperienceCreationViewTest(StandardTestCase):
 
