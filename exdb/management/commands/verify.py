@@ -63,6 +63,7 @@ class Command(BaseCommand):
         # shell and because it was easier to write
         subprocess.call('coverage run --source="%s" --omit="%s" manage.py test -c' % (source, omitted), shell=True)
         report = subprocess.check_output('coverage report'.split()).decode('utf-8')
+        subprocess.call('coverage html --omit="%s"' % omitted, shell=True)
 
         match = re.search(r'TOTAL\s+\d+\s+\d+\s+(?P<total_coverage>\d+%)\s*', report)
         if not match:
