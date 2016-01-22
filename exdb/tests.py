@@ -17,7 +17,7 @@ from django.utils.timezone import now, datetime, timedelta, make_aware, utc
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.conf import settings
 
-from exdb.models import Experience, Type, SubType, Organization, Keyword
+from exdb.models import Experience, Type, SubType, Organization, Keyword, ExperienceComment, Category
 from exdb.forms import ExperienceSubmitForm
 
 
@@ -238,7 +238,7 @@ class StandardTestCase(TestCase):
         self.test_past_type = self.create_type(needs_verification=False)
         self.test_sub_type = self.create_sub_type()
         self.test_org = self.create_org()
-        self.test_keyword = Keyword.objects.create(name="test")
+        self.test_keyword = self.create_keyword()
 
     def create_type(self, needs_verification=True):
         return Type.objects.create(name="Test Type", needs_verification=needs_verification)
@@ -249,11 +249,57 @@ class StandardTestCase(TestCase):
     def create_org(self):
         return Organization.objects.create(name="Test Organization")
 
+    def create_keyword(self):
+        return Keyword.objects.create(name="Test Keyword")
+
+    def create_category(self):
+        return Category.objects.create(name="Test Category")
+
     def create_experience(self, exp_status):
         """Creates and returns an experience object with status of your choice"""
         return Experience.objects.create(author=self.test_user, name="E1", description="test description", start_datetime=self.test_date,
                                          end_datetime=(self.test_date + timedelta(days=1)), type=self.create_type(), sub_type=self.create_sub_type(), goal="Test Goal", audience="b",
                                          status=exp_status)
+
+    def create_experience_comment(self, exp):
+        """Creates experience comment, must pass an experience"""
+        return ExperienceComment.objects.create(
+            experience=exp, message="Test message", author=self.test_user, timestamp=self.test_date)
+
+
+class ModelCoverageTest(StandardTestCase):
+
+    def test_create_sub_type(self):
+        st = self.create_sub_type()
+        self.assertEqual(str(SubType.objects.get(pk=st.pk)), "Test Sub Type",
+                         "SubType object should have been created.")
+
+    def test_create_type(self):
+        t = self.create_type()
+        self.assertEqual(str(Type.objects.get(pk=t.pk)), "Test Type", "Type object should have been created.")
+
+    def test_create_category(self):
+        c = self.create_category()
+        self.assertEqual(str(Category.objects.get(pk=c.pk)), "Test Category",
+                         "Category object should have been created.")
+
+    def test_create_organization(self):
+        o = self.create_org()
+        self.assertEqual(str(Organization.objects.get(pk=o.pk)), "Test Organization",
+                         "Organization object should have been created.")
+
+    def test_create_keyword(self):
+        k = self.create_keyword()
+        self.assertEqual(str(Keyword.objects.get(pk=k.pk)), "Test Keyword", "Keyword object should have been created.")
+
+    def test_create_experience(self):
+        e = self.create_experience('dr')
+        self.assertEqual(str(Experience.objects.get(pk=e.pk)), "E1", "Experience object should have been created.")
+
+    def test_create_experience_comment(self):
+        ec = self.create_experience_comment(self.create_experience('de'))
+        self.assertEqual(ExperienceComment.objects.get(pk=ec.pk).message, ec.message,
+                         "ExperienceComment object should have been created.")
 
 
 class PendingApprovalQueueViewTest(StandardTestCase):
