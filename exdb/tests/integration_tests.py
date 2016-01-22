@@ -8,6 +8,7 @@ from exdb.forms import ExperienceSubmitForm
 
 
 class StandardTestCase(TestCase):
+
     def setUp(self):
         self.test_user = get_user_model().objects.create_user('test_user', 't@u.com', 'a')
         self.test_date = make_aware(datetime(2015, 1, 1, 1, 30), timezone=utc)
@@ -29,9 +30,9 @@ class StandardTestCase(TestCase):
 
     def create_experience(self, exp_status):
         """Creates and returns an experience object with status of your choice"""
-        return Experience.objects.create(author=self.test_user, name="E1", description="test description", start_datetime=self.test_date,\
-                end_datetime=(self.test_date + timedelta(days=1)), type=self.create_type(), sub_type=self.create_sub_type(), goal="Test Goal", audience="b", \
-                 status=exp_status)
+        return Experience.objects.create(author=self.test_user, name="E1", description="test description", start_datetime=self.test_date,
+                                         end_datetime=(self.test_date + timedelta(days=1)), type=self.create_type(), sub_type=self.create_sub_type(), goal="Test Goal", audience="b",
+                                         status=exp_status)
 
 
 class ExperienceCreationFormTest(StandardTestCase):

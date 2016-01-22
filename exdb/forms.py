@@ -12,7 +12,7 @@ class ExperienceSaveForm(ModelForm):
         fields = ['name', 'description', 'planners', 'start_datetime', 'end_datetime', 'type',
                   'sub_type', 'recognition', 'audience', 'attendance', 'keywords', 'goal', 'guest',
                   'guest_office']
-        
+
         widgets = {
             'description': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
             'goal': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
@@ -26,11 +26,13 @@ class ExperienceSaveForm(ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
-        self.when = kwargs.pop('when', now())
-        return super(ExperienceSaveForm, self).__init__(*args, **kwargs)
+        when = kwargs.pop('when', now())
+        super(ExperienceSaveForm, self).__init__(*args, **kwargs)
+        self.when = when
 
 
 class ExperienceSubmitForm(ExperienceSaveForm):
+
     def clean(self):
 
         if not self.cleaned_data.get('end_datetime'):
@@ -51,7 +53,7 @@ class ExperienceSubmitForm(ExperienceSaveForm):
             raise ValidationError("Start time must be before end time")
 
         if not ex_type.needs_verification and self.cleaned_data.get('start_datetime') > self.when:
-            raise ValidationError(ex_type.name +  " experiences must have happened in the past")
+            raise ValidationError(ex_type.name + " experiences must have happened in the past")
 
         if ex_type.needs_verification and self.cleaned_data.get('start_datetime') < self.when:
             raise ValidationError(ex_type.name + " events cannot happen in the past")
@@ -62,7 +64,8 @@ class ExperienceSubmitForm(ExperienceSaveForm):
         if not ex_type.needs_verification and not self.cleaned_data.get('audience'):
             raise ValidationError(ex_type.name + " events must have an audience")
 
-        if not ex_type.needs_verification and self.cleaned_data.get('attendance') and self.cleaned_data.get('attendance') < 1:
+        if not ex_type.needs_verification and self.cleaned_data.get(
+                'attendance') and self.cleaned_data.get('attendance') < 1:
             raise ValidationError(ex_type.name + " events must have an attendance greater than 0")
 
         if ex_type.needs_verification and self.cleaned_data.get('attendance'):
