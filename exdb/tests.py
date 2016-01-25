@@ -31,7 +31,7 @@ class CustomRunner(DiscoverRunner):
         # deciding which driver to use
         drivers = self.get_drivers()
         browser_arg = kwargs.get('browser')
-        if browser_arg:
+        if browser_arg:  # pragma: no cover
             driver_obj = drivers.get(browser_arg)
             if not driver_obj:
                 error = _('Unknown browser %(argument)s\nThe known browsers are: %(browsers)s')
@@ -47,7 +47,7 @@ class CustomRunner(DiscoverRunner):
         # default from the docs
         live_server_url = 'http://localhost:8081'
         os_address_key = 'DJANGO_LIVE_TEST_SERVER_ADDRESS'
-        if os.environ.get(os_address_key):
+        if os.environ.get(os_address_key):  # pragma: no cover
             port_regex = r'0(\.0){3}:(?P<port>\d+)$'
             match = re.match(port_regex, os.environ[os_address_key])
             if match:
@@ -144,9 +144,9 @@ class IstanbulCoverage(object):
     def __iadd__(self, operand):
         if isinstance(operand, dict):
             self._dict_add(operand)
-        elif isinstance(operand, self.__class__):
+        elif isinstance(operand, self.__class__):  # pragma: no cover
             self._dict_add(operand.coverage_files)
-        else:
+        else:  # pragma: no cover
             raise TypeError("unsupported operand type(s) for +: '%s' and '%s'" %
                             (self.__class__.__name__, operand.__class__.__name__))
         return self
@@ -184,7 +184,7 @@ class IstanbulCoverage(object):
                 '--output', os.path.join(app_root, instrumented_static)
             ] + exclusions)
 
-        if istanbul_process.returncode != 0:
+        if istanbul_process.returncode != 0:  # pragma: no cover
             raise Exception('Instrumentation failed')
 
 
@@ -197,7 +197,7 @@ class DefaultLiveServerTestCase(StaticLiveServerTestCase):
     def tearDown(self):
         try:
             self.running_total += self.driver.execute_script('return __coverage__')
-        except selenium.common.exceptions.WebDriverException:
+        except selenium.common.exceptions.WebDriverException:  # pragma: no cover
             pass  # if __coverage__ doesn't exist ignore it and move on
 
 
