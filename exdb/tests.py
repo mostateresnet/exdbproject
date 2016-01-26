@@ -241,62 +241,62 @@ class StandardTestCase(TestCase):
         self.test_keyword = self.create_keyword()
 
     def create_type(self, needs_verification=True):
-        return Type.objects.create(name="Test Type", needs_verification=needs_verification)
+        return Type.objects.get_or_create(name="Test Type", needs_verification=needs_verification)[0]
 
     def create_sub_type(self):
-        return SubType.objects.create(name="Test Sub Type")
+        return SubType.objects.get_or_create(name="Test Sub Type")[0]
 
     def create_org(self):
-        return Organization.objects.create(name="Test Organization")
+        return Organization.objects.get_or_create(name="Test Organization")[0]
 
     def create_keyword(self):
-        return Keyword.objects.create(name="Test Keyword")
+        return Keyword.objects.get_or_create(name="Test Keyword")[0]
 
     def create_category(self):
-        return Category.objects.create(name="Test Category")
+        return Category.objects.get_or_create(name="Test Category")[0]
 
     def create_experience(self, exp_status):
         """Creates and returns an experience object with status of your choice"""
-        return Experience.objects.create(author=self.test_user, name="E1", description="test description", start_datetime=self.test_date,
-                                         end_datetime=(self.test_date + timedelta(days=1)), type=self.create_type(), sub_type=self.create_sub_type(), goal="Test Goal", audience="b",
-                                         status=exp_status)
+        return Experience.objects.get_or_create(author=self.test_user, name="E1", description="test description", start_datetime=self.test_date,
+                                                end_datetime=(self.test_date + timedelta(days=1)), type=self.create_type(), sub_type=self.create_sub_type(), goal="Test Goal", audience="b",
+                                                status=exp_status)[0]
 
     def create_experience_comment(self, exp):
         """Creates experience comment, must pass an experience"""
-        return ExperienceComment.objects.create(
-            experience=exp, message="Test message", author=self.test_user, timestamp=self.test_date)
+        return ExperienceComment.objects.get_or_create(
+            experience=exp, message="Test message", author=self.test_user, timestamp=self.test_date)[0]
 
 
 class ModelCoverageTest(StandardTestCase):
 
-    def test_create_sub_type(self):
+    def test_sub_type_str_method(self):
         st = self.create_sub_type()
-        self.assertEqual(str(SubType.objects.get(pk=st.pk)), "Test Sub Type",
+        self.assertEqual(str(SubType.objects.get(pk=st.pk)), st.name,
                          "SubType object should have been created.")
 
-    def test_create_type(self):
+    def test_type_str_method(self):
         t = self.create_type()
-        self.assertEqual(str(Type.objects.get(pk=t.pk)), "Test Type", "Type object should have been created.")
+        self.assertEqual(str(Type.objects.get(pk=t.pk)), t.name, "Type object should have been created.")
 
-    def test_create_category(self):
+    def test_category_str_method(self):
         c = self.create_category()
-        self.assertEqual(str(Category.objects.get(pk=c.pk)), "Test Category",
+        self.assertEqual(str(Category.objects.get(pk=c.pk)), c.name,
                          "Category object should have been created.")
 
-    def test_create_organization(self):
+    def test_organization_str_method(self):
         o = self.create_org()
-        self.assertEqual(str(Organization.objects.get(pk=o.pk)), "Test Organization",
+        self.assertEqual(str(Organization.objects.get(pk=o.pk)), o.name,
                          "Organization object should have been created.")
 
-    def test_create_keyword(self):
+    def test_keyword_str_method(self):
         k = self.create_keyword()
-        self.assertEqual(str(Keyword.objects.get(pk=k.pk)), "Test Keyword", "Keyword object should have been created.")
+        self.assertEqual(str(Keyword.objects.get(pk=k.pk)), k.name, "Keyword object should have been created.")
 
-    def test_create_experience(self):
+    def test_experience_str_method(self):
         e = self.create_experience('dr')
-        self.assertEqual(str(Experience.objects.get(pk=e.pk)), "E1", "Experience object should have been created.")
+        self.assertEqual(str(Experience.objects.get(pk=e.pk)), e.name, "Experience object should have been created.")
 
-    def test_create_experience_comment(self):
+    def test_experience_comment_message(self):
         ec = self.create_experience_comment(self.create_experience('de'))
         self.assertEqual(ExperienceComment.objects.get(pk=ec.pk).message, ec.message,
                          "ExperienceComment object should have been created.")
