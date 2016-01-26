@@ -240,31 +240,31 @@ class StandardTestCase(TestCase):
         self.test_org = self.create_org()
         self.test_keyword = self.create_keyword()
 
-    def create_type(self, needs_verification=True):
-        return Type.objects.get_or_create(name="Test Type", needs_verification=needs_verification)[0]
+    def create_type(self, needs_verification=True, name="Test Type"):
+        return Type.objects.get_or_create(name=name, needs_verification=needs_verification)[0]
 
-    def create_sub_type(self):
-        return SubType.objects.get_or_create(name="Test Sub Type")[0]
+    def create_sub_type(self, name="Test Sub Type"):
+        return SubType.objects.get_or_create(name=name)[0]
 
-    def create_org(self):
-        return Organization.objects.get_or_create(name="Test Organization")[0]
+    def create_org(self, name="Test Organization"):
+        return Organization.objects.get_or_create(name=name)[0]
 
-    def create_keyword(self):
-        return Keyword.objects.get_or_create(name="Test Keyword")[0]
+    def create_keyword(self, name="Test Keyword"):
+        return Keyword.objects.get_or_create(name=name)[0]
 
-    def create_category(self):
-        return Category.objects.get_or_create(name="Test Category")[0]
+    def create_category(self, name="Test Category"):
+        return Category.objects.get_or_create(name=name)[0]
 
-    def create_experience(self, exp_status):
+    def create_experience(self, exp_status, name="Test Experience"):
         """Creates and returns an experience object with status of your choice"""
-        return Experience.objects.get_or_create(author=self.test_user, name="E1", description="test description", start_datetime=self.test_date,
+        return Experience.objects.get_or_create(author=self.test_user, name=name, description="test description", start_datetime=self.test_date,
                                                 end_datetime=(self.test_date + timedelta(days=1)), type=self.create_type(), sub_type=self.create_sub_type(), goal="Test Goal", audience="b",
                                                 status=exp_status)[0]
 
-    def create_experience_comment(self, exp):
+    def create_experience_comment(self, exp, message="Test message"):
         """Creates experience comment, must pass an experience"""
         return ExperienceComment.objects.get_or_create(
-            experience=exp, message="Test message", author=self.test_user, timestamp=self.test_date)[0]
+            experience=exp, message=message, author=self.test_user, timestamp=self.test_date)[0]
 
 
 class ModelCoverageTest(StandardTestCase):
