@@ -17,7 +17,7 @@ from django.utils.timezone import now, datetime, timedelta, make_aware, utc
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.conf import settings
 
-from exdb.models import Experience, Type, SubType, Organization, Keyword
+from exdb.models import Experience, Type, SubType, Organization, Keyword, ExperienceComment, Category
 from exdb.forms import ExperienceSubmitForm
 
 
@@ -31,7 +31,7 @@ class CustomRunner(DiscoverRunner):
         # deciding which driver to use
         drivers = self.get_drivers()
         browser_arg = kwargs.get('browser')
-        if browser_arg:
+        if browser_arg:  # pragma: no cover
             driver_obj = drivers.get(browser_arg)
             if not driver_obj:
                 error = _('Unknown browser %(argument)s\nThe known browsers are: %(browsers)s')
@@ -47,7 +47,7 @@ class CustomRunner(DiscoverRunner):
         # default from the docs
         live_server_url = 'http://localhost:8081'
         os_address_key = 'DJANGO_LIVE_TEST_SERVER_ADDRESS'
-        if os.environ.get(os_address_key):
+        if os.environ.get(os_address_key):  # pragma: no cover
             port_regex = r'0(\.0){3}:(?P<port>\d+)$'
             match = re.match(port_regex, os.environ[os_address_key])
             if match:
@@ -144,9 +144,9 @@ class IstanbulCoverage(object):
     def __iadd__(self, operand):
         if isinstance(operand, dict):
             self._dict_add(operand)
-        elif isinstance(operand, self.__class__):
+        elif isinstance(operand, self.__class__):  # pragma: no cover
             self._dict_add(operand.coverage_files)
-        else:
+        else:  # pragma: no cover
             raise TypeError("unsupported operand type(s) for +: '%s' and '%s'" %
                             (self.__class__.__name__, operand.__class__.__name__))
         return self
@@ -184,7 +184,7 @@ class IstanbulCoverage(object):
                 '--output', os.path.join(app_root, instrumented_static)
             ] + exclusions)
 
-        if istanbul_process.returncode != 0:
+        if istanbul_process.returncode != 0:  # pragma: no cover
             raise Exception('Instrumentation failed')
 
 
@@ -197,7 +197,7 @@ class DefaultLiveServerTestCase(StaticLiveServerTestCase):
     def tearDown(self):
         try:
             self.running_total += self.driver.execute_script('return __coverage__')
-        except selenium.common.exceptions.WebDriverException:
+        except selenium.common.exceptions.WebDriverException:  # pragma: no cover
             pass  # if __coverage__ doesn't exist ignore it and move on
 
 
@@ -238,22 +238,68 @@ class StandardTestCase(TestCase):
         self.test_past_type = self.create_type(needs_verification=False)
         self.test_sub_type = self.create_sub_type()
         self.test_org = self.create_org()
-        self.test_keyword = Keyword.objects.create(name="test")
+        self.test_keyword = self.create_keyword()
 
-    def create_type(self, needs_verification=True):
-        return Type.objects.create(name="Test Type", needs_verification=needs_verification)
+    def create_type(self, needs_verification=True, name="Test Type"):
+        return Type.objects.get_or_create(name=name, needs_verification=needs_verification)[0]
 
-    def create_sub_type(self):
-        return SubType.objects.create(name="Test Sub Type")
+    def create_sub_type(self, name="Test Sub Type"):
+        return SubType.objects.get_or_create(name=name)[0]
 
-    def create_org(self):
-        return Organization.objects.create(name="Test Organization")
+    def create_org(self, name="Test Organization"):
+        return Organization.objects.get_or_create(name=name)[0]
 
-    def create_experience(self, exp_status):
+    def create_keyword(self, name="Test Keyword"):
+        return Keyword.objects.get_or_create(name=name)[0]
+
+    def create_category(self, name="Test Category"):
+        return Category.objects.get_or_create(name=name)[0]
+
+    def create_experience(self, exp_status, name="Test Experience"):
         """Creates and returns an experience object with status of your choice"""
-        return Experience.objects.create(author=self.test_user, name="E1", description="test description", start_datetime=self.test_date,
-                                         end_datetime=(self.test_date + timedelta(days=1)), type=self.create_type(), sub_type=self.create_sub_type(), goal="Test Goal", audience="b",
-                                         status=exp_status)
+        return Experience.objects.get_or_create(author=self.test_user, name=name, description="test description", start_datetime=self.test_date,
+                                                end_datetime=(self.test_date + timedelta(days=1)), type=self.create_type(), sub_type=self.create_sub_type(), goal="Test Goal", audience="b",
+                                                status=exp_status)[0]
+
+    def create_experience_comment(self, exp, message="Test message"):
+        """Creates experience comment, must pass an experience"""
+        return ExperienceComment.objects.get_or_create(
+            experience=exp, message=message, author=self.test_user, timestamp=self.test_date)[0]
+
+
+class ModelCoverageTest(StandardTestCase):
+
+    def test_sub_type_str_method(self):
+        st = self.create_sub_type()
+        self.assertEqual(str(SubType.objects.get(pk=st.pk)), st.name,
+                         "SubType object should have been created.")
+
+    def test_type_str_method(self):
+        t = self.create_type()
+        self.assertEqual(str(Type.objects.get(pk=t.pk)), t.name, "Type object should have been created.")
+
+    def test_category_str_method(self):
+        c = self.create_category()
+        self.assertEqual(str(Category.objects.get(pk=c.pk)), c.name,
+                         "Category object should have been created.")
+
+    def test_organization_str_method(self):
+        o = self.create_org()
+        self.assertEqual(str(Organization.objects.get(pk=o.pk)), o.name,
+                         "Organization object should have been created.")
+
+    def test_keyword_str_method(self):
+        k = self.create_keyword()
+        self.assertEqual(str(Keyword.objects.get(pk=k.pk)), k.name, "Keyword object should have been created.")
+
+    def test_experience_str_method(self):
+        e = self.create_experience('dr')
+        self.assertEqual(str(Experience.objects.get(pk=e.pk)), e.name, "Experience object should have been created.")
+
+    def test_experience_comment_message(self):
+        ec = self.create_experience_comment(self.create_experience('de'))
+        self.assertEqual(ExperienceComment.objects.get(pk=ec.pk).message, ec.message,
+                         "ExperienceComment object should have been created.")
 
 
 class PendingApprovalQueueViewTest(StandardTestCase):
@@ -336,6 +382,34 @@ class ExperienceCreationFormTest(StandardTestCase):
         data = {'name': 'test', 'description': 'test', 'start_datetime': (self.test_date - timedelta(days=2)),
                 'end_datetime': (self.test_date - timedelta(days=1)), 'type': self.test_past_type.pk, 'sub_type': self.test_sub_type.pk, 'audience': 'c',
                 'guest': '1', 'recognition': [self.test_org.pk], 'keywords': [self.test_keyword.pk], 'goal': 'a', 'attendance': -1}
+        form = ExperienceSubmitForm(data, when=self.test_date)
+        self.assertFalse(form.is_valid(), "Form should NOT have been valid")
+
+    def test_experience_creation_form_no_end_date(self):
+        data = {'name': 'test', 'description': 'test', 'start_datetime': (self.test_date + timedelta(days=1)),
+                'type': self.test_type.pk, 'sub_type': self.test_sub_type.pk, 'audience': 'c',
+                'guest': '1', 'recognition': [self.test_org.pk], 'keywords': [self.test_keyword.pk], 'goal': 'a'}
+        form = ExperienceSubmitForm(data, when=self.test_date)
+        self.assertFalse(form.is_valid(), "Form should NOT have been valid")
+
+    def test_experience_creation_form_no_start_date(self):
+        data = {'name': 'test', 'description': 'test', 'end_datetime': (self.test_date + timedelta(days=2)),
+                'type': self.test_type.pk, 'sub_type': self.test_sub_type.pk, 'audience': 'c',
+                'guest': '1', 'recognition': [self.test_org.pk], 'keywords': [self.test_keyword.pk], 'goal': 'a'}
+        form = ExperienceSubmitForm(data, when=self.test_date)
+        self.assertFalse(form.is_valid(), "Form should NOT have been valid")
+
+    def test_experience_creation_form_no_sub_type(self):
+        data = {'name': 'test', 'description': 'test', 'start_datetime': (self.test_date + timedelta(days=1)),
+                'end_datetime': (self.test_date + timedelta(days=2)), 'type': self.test_type.pk, 'audience': 'c',
+                'guest': '1', 'recognition': [self.test_org.pk], 'keywords': [self.test_keyword.pk], 'goal': 'a'}
+        form = ExperienceSubmitForm(data, when=self.test_date)
+        self.assertFalse(form.is_valid(), "Form should NOT have been valid")
+
+    def test_experience_creation_form_no_type(self):
+        data = {'name': 'test', 'description': 'test', 'start_datetime': (self.test_date + timedelta(days=1)),
+                'end_datetime': (self.test_date + timedelta(days=2)), 'sub_type': self.test_sub_type.pk, 'audience': 'c',
+                'guest': '1', 'recognition': [self.test_org.pk], 'keywords': [self.test_keyword.pk], 'goal': 'a'}
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
 
