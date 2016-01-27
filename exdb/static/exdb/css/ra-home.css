@@ -1,0 +1,6 @@
+.experience-list , .experience-list td,
+.experience-list th {
+    padding: .4em;
+    border: solid black 1px;
+    border-collapse: collapse;
+}

@@ -45,3 +45,16 @@ class PendingApprovalQueueView(ListView):
 
     def get_queryset(self):
         return Experience.objects.filter(status='pe')
+
+
+class RAHomeView(ListView):
+    template_name = 'exdb/ra_home.html'
+    context_object_name = 'experiences'
+
+    def get_queryset(self):
+        return Experience.objects.filter(author=self.request.user).order_by('status', 'created_datetime')
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(RAHomeView, self).get_context_data(*args, **kwargs)
+        context['ra'] = self.request.user
+        return context
