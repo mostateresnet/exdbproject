@@ -34,7 +34,12 @@ class Command(BaseCommand):
 
     def js_lint(self):
         files = self.find_files_by_ext('js', settings.JS_FILE_EXCLUDED_DIRS)
-        subprocess.call(['jslint'] + files)
+        subprocess.call([
+            'jslint',
+            '--predef', '$',        # assume that '$' will be defined
+            '--browser',            # assume that browser variables will exist
+        ] + files
+        )
 
     def js_cs(self):
         files = self.find_files_by_ext('js', settings.JS_FILE_EXCLUDED_DIRS)
