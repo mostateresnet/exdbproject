@@ -3,10 +3,9 @@ from django.views.generic.edit import CreateView
 from django.shortcuts import get_object_or_404
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
-from exdb.models import Experience, ExperienceComment
 from django.utils import timezone
 
-from exdb.models import Experience
+from exdb.models import Experience, ExperienceComment
 from .forms import ExperienceSubmitForm, ExperienceSaveForm, ApprovalForm
 
 
@@ -48,6 +47,7 @@ class PendingApprovalQueueView(ListView):
 
     def get_queryset(self):
         return Experience.objects.filter(status='pe')
+
 
 class ExperienceApprovalView(CreateView):
     template_name = 'exdb/experience_approval.html'
