@@ -9,7 +9,7 @@
     <form method="POST">
         {% csrf_token %}
         <h1>{% trans "Experience Approval" %}</h1>
-        <a href="{% url 'pending' %}"><p>Return to Pending Experiences</p></a>
+        <p><a href="{% url 'pending' %}">Return to Pending Experiences</a></p>
         <span class="form-errors">{{ form.non_field_errors }}</span>
         <hr/>
         <table>
@@ -81,9 +81,9 @@
         <table>
             <tr><th>{% trans "Comments" %}</th></tr>
             {% for comment in comments %}
-                <tr><td>{% trans comment.message %}</td></tr>
+                <tr><td>{{ comment.message }}</td></tr>
             {% empty %}
-            <tr><td>{% trans "No comments" %}</td></tr>
+                <tr><td>{% trans "No comments" %}</td></tr>
             {% endfor %}
         </table>
         <div>{% trans "Comments" %}:</div>

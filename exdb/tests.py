@@ -488,9 +488,18 @@ class ExperienceApprovalViewTest(StandardTestCase):
     def test_approves_experience_no_comment(self):
         e = self.create_experience('pe')
         client = Client()
+        client.login(username="test_user", password="a")
         client.post(reverse('approval', args=str(e.pk)), {'approve': 'approve', 'message': ""})
         e = Experience.objects.get(pk=e.pk)
         self.assertEqual(e.status, 'ad', "Approval should be allowed without a comment")
+
+    def test_approves_experience_with_comment(self):
+        e = self.create_experience('pe')
+        client = Client()
+        client.login(username="test_user", password="a")
+        client.post(reverse('approval', args=str(e.pk)), {'approve': 'approve', 'message': "Test Comment"})
+        e = Experience.objects.get(pk=e.pk)
+        self.assertEqual(e.status, 'ad', "Approval should be allowed with a comment")
 
     def test_creates_comment(self):
         e = self.create_experience('pe')
