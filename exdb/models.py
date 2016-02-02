@@ -41,9 +41,9 @@ class Keyword(models.Model):
 
 class Experience(models.Model):
     STATUS_TYPES = (
+        ('de', 'Denied'),
         ('dr', 'Draft'),
         ('pe', 'Pending Approval'),
-        ('de', 'Denied'),
         ('ad', 'Approved'),
         ('co', 'Completed'),
         ('ca', 'Cancelled')

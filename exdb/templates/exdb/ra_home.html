@@ -6,28 +6,27 @@
     <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/ra-home.css' %}"/>
 {% endblock %}
 {% block content %}
-{{ block.super }}
-
-<h2>{% trans 'Hello' %} {{ ra }}</h2>
-<hr /><hr />
-{% regroup experiences by get_status_display as ex_list %}
-
-{% for ex in ex_list %}
-    <h2>{{ ex.grouper }}</h2>
-    <table class="experience-list">
-        <tr>
-            <th>{% trans 'Name' %}</th>
-            <th>{% trans 'Description' %}</th>
-            <th>{% trans 'Created on' %}</th>
-        </tr>
-        {% for e in ex.list %}
-            <tr>
-                <td>{{ e.name }}</td>
-                <td>{% if e.description %}{{ e.description }}{% else %}---------{% endif %}</td>
-                <td>{{ e.created_datetime }}</td>
-            </tr>
-        {% endfor %}
-    </table>
-    <hr />
-{% endfor %}
+    {{ block.super }}
+    <h2>{% trans 'Hello' %} {{ ra }}</h2>
+    <hr /><hr />
+    {% for status, experiences in experience_dict.items %}
+        {% if experiences|length %}
+            <h1>{{ status }}</h1>
+            <table class="experience-list">
+                <tr>
+                    <th>{% trans 'Name' %}</th>
+                    <th>{% trans 'Description' %}</th>
+                    <th>{% trans 'Created on' %}</th>
+                </tr>
+                {% for ex in experiences %}
+                    <tr>
+                        <td>{{ex.name}}</td>
+                        <td>{{ex.description}}</td>
+                        <td>{{ex.created_datetime}}</td>
+                    </tr>
+                {% endfor %}
+            </table>
+            <hr />
+        {% endif %}
+    {% endfor %}
 {% endblock %}

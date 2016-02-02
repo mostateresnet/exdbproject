@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from django.views.generic import TemplateView, ListView
 from django.views.generic.edit import CreateView
 from django.core.urlresolvers import reverse
@@ -52,9 +53,17 @@ class RAHomeView(ListView):
     context_object_name = 'experiences'
 
     def get_queryset(self):
-        return Experience.objects.filter(author=self.request.user).order_by('status', 'created_datetime')
+        return Experience.objects.filter(author=self.request.user).order_by('created_datetime')
 
     def get_context_data(self, *args, **kwargs):
         context = super(RAHomeView, self).get_context_data(*args, **kwargs)
         context['ra'] = self.request.user
+
+        experience_dict = OrderedDict()
+        for status in Experience.STATUS_TYPES:
+            experience_dict[status[1]] = []
+        for experience in context[self.context_object_name]:
+            experience_dict[experience.get_status_display()].append(experience)
+        context['experience_dict'] = experience_dict
+
         return context

@@ -457,3 +457,14 @@ class ExperienceCreationViewTest(StandardTestCase):
         c.post(reverse('create-experience'), data)
         self.assertEqual('co', Experience.objects.get(name='test').status,
                          "Experience should have been saved with completed status")
+
+
+class RAHomeViewTest(StandardTestCase):
+
+    def test_coverage(self):
+        self.create_experience('pe')
+        self.create_experience('dr')
+        client = Client()
+        client.login(username="test_user", password="a")
+        response = client.get(reverse('ra-home'))
+        self.assertEqual(len(response.context["experiences"]), 2, "There should be 2 experiences displayed")
