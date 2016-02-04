@@ -1,3 +1,11 @@
+div.experience-display{
+    margin-left: 3%;
+}
+
+div.experience-display span{
+    font-weight: bold;
+}
+
 span.form-errors{
     color: red;
 }
