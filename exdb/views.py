@@ -156,3 +156,7 @@ class ViewExperienceView(TemplateView):
         context = super(ViewExperienceView, self).get_context_data()
         context['experience'] = get_object_or_404(Experience, pk=self.kwargs['pk'])
         return context
+
+
+class LoginView(TemplateView):
+    template_name = 'exdb/login.html'
