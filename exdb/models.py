@@ -74,6 +74,7 @@ class Experience(models.Model):
     status = models.CharField(max_length=2, choices=STATUS_TYPES, default=STATUS_TYPES[0][0])
     approved_timestamp = models.DateTimeField(blank=True, null=True)
     approver = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True, related_name="approver")
+    conclusion = models.TextField(blank=True)
 
     def __str__(self):
         return self.name
