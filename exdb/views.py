@@ -3,8 +3,8 @@ from django.views.generic import TemplateView, ListView
 from django.views.generic.edit import CreateView, UpdateView
 from django.shortcuts import get_object_or_404
 from django.core.urlresolvers import reverse
+from django.contrib import auth
 from django.http import HttpResponseRedirect
-from django.utils.timezone import now
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth import get_user_model
@@ -112,8 +112,10 @@ class ExperienceApprovalView(CreateView):
         form.instance.experience.status = 'ad' if self.request.POST.get('approve') else 'de'
         if form.instance.experience.status == 'ad':
             form.instance.experience.next_approver = None
-            ExperienceApproval.objects.create(experience=form.instance.experience,
-                                              approver=self.request.user)
+            ExperienceApproval.objects.create(
+                experience=form.instance.experience,
+                approver=self.request.user
+            )
         form.instance.experience.save()
         return super(ExperienceApprovalView, self).form_valid(form)
 
@@ -160,3 +162,10 @@ class ViewExperienceView(TemplateView):
 
 class LoginView(TemplateView):
     template_name = 'exdb/login.html'
+
+    def post(self, request):
+        user = auth.authenticate(username=request.POST['username'], password=request.POST['password'])
+        if user:
+            auth.login(request, user)
+            return HttpResponseRedirect(reverse('welcome'))
+        return HttpResponseRedirect(reverse('login'))

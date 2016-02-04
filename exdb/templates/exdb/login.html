@@ -8,9 +8,11 @@
 </head>
 <body>
     <h1>{% trans 'Login' %}</h1>
-    <form>
+    <form method='post'>
         Username: <input type='text' name='username'>
         Password: <input type='password' name='password'>
+        {% csrf_token %}
+        <input type="submit" value="Submit">
     </form>
 </body>
 </html>
