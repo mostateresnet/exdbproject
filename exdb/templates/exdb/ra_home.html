@@ -3,30 +3,47 @@
 {% load staticfiles %}
 {% block css %}
     {{ block.super }}
-    <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/ra-home.css' %}"/>
+    <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/ra_home.css' %}"/>
 {% endblock %}
 {% block content %}
     {{ block.super }}
     <h2>{% trans 'Hello' %} {{ ra }}</h2>
-    <hr /><hr />
-    {% for status, experiences in experience_dict.items %}
-        {% if experiences|length %}
-            <h1>{{ status }}</h1>
-            <table class="experience-list">
-                <tr>
-                    <th>{% trans 'Name' %}</th>
-                    <th>{% trans 'Description' %}</th>
-                    <th>{% trans 'Created on' %}</th>
-                </tr>
+    <hr class="break" />
+    <div class="experience-panel">
+        {% for status, experiences in experience_dict.items %}
+            {% if experiences|length %}
+                <h1 class="status">{{ status }}</h1>
                 {% for ex in experiences %}
-                    <tr>
-                        <td>{{ex.name}}</td>
-                        <td>{{ex.description}}</td>
-                        <td>{{ex.created_datetime}}</td>
-                    </tr>
+                    <div class="experience">
+                        <div class="experience-name">{{ ex.name }}</div>
+                        <div>
+                            <span class="experience-times">{% trans 'Start time' %}: {{ ex.start_datetime }}</span>
+                            <span class="experience-times">{% trans 'End time' %}: {{ ex.end_datetime }}</span>
+                        </div>
+                        <div class="description">
+                            <fieldset>
+                                <legend>{% trans 'Description' %}</legend>
+                                <div class="description-text">{{ ex.description }}</div>
+                            </fieldset>
+                        </div>
+                        <div class="experience-footer">
+                            {% trans 'Created on' %}: {{ ex.created_datetime }}
+                        </div>
+                    </div>
                 {% endfor %}
-            </table>
-            <hr />
+                <hr class="break" />
+            {% endif %}
+        {% endfor %}
+    </div>
+    <div class="week-ahead">
+        <h1 class="status">{% trans 'Week Ahead' %}</h1>
+        {% if week_ahead|length %}
+            {% for experience in week_ahead %}
+                <div class="experience">
+                    <p>{% trans 'Name' %}: {{ experience.name }}</p>
+                    <p>{% trans 'Start Time' %}: {{ experience.start_datetime }}</p>
+                </div>
+            {% endfor %}
         {% endif %}
-    {% endfor %}
+    </div>
 {% endblock %}

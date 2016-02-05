@@ -466,5 +466,5 @@ class RAHomeViewTest(StandardTestCase):
         self.create_experience('dr')
         client = Client()
         client.login(username="test_user", password="a")
-        response = client.get(reverse('ra-home'))
+        response = client.get(reverse('ra_home'))
         self.assertEqual(len(response.context["experiences"]), 2, "There should be 2 experiences displayed")

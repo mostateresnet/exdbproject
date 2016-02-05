@@ -60,10 +60,20 @@ class RAHomeView(ListView):
         context['ra'] = self.request.user
 
         experience_dict = OrderedDict()
+        experience_dict['Needs Evaluation'] = []
         for status in Experience.STATUS_TYPES:
             experience_dict[status[1]] = []
         for experience in context[self.context_object_name]:
-            experience_dict[experience.get_status_display()].append(experience)
+            if experience.status == 'ad' and experience.end_datetime < timezone.now():
+                experience_dict['Needs Evaluation'].append(experience)
+            else:
+                experience_dict[experience.get_status_display()].append(experience)
         context['experience_dict'] = experience_dict
 
+        one_week = timezone.now() + timezone.timedelta(days=7)
+        week_ahead = []
+        for experience in context['experience_dict']['Approved']:
+            if experience.start_datetime > timezone.now() and experience.start_datetime < one_week:
+                week_ahead.append(experience)
+        context['week_ahead'] = week_ahead
         return context
