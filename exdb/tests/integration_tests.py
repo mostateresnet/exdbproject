@@ -3,7 +3,7 @@ from django.utils.timezone import datetime, timedelta, now, make_aware, utc
 from django.core.urlresolvers import reverse
 from django.contrib.auth import get_user_model
 
-from exdb.models import Experience, Type, SubType, Organization, Keyword, ExperienceComment, Category
+from exdb.models import Experience, Type, SubType, Organization, Keyword, ExperienceComment
 from exdb.forms import ExperienceSubmitForm
 
 
@@ -28,9 +28,6 @@ class StandardTestCase(TestCase):
     def create_keyword(self, name="Test Keyword"):
         return Keyword.objects.get_or_create(name=name)[0]
 
-    def create_category(self, name="Test Category"):
-        return Category.objects.get_or_create(name=name)[0]
-
     def create_experience(self, exp_status, name="Test Experience"):
         """Creates and returns an experience object with status of your choice"""
         return Experience.objects.get_or_create(author=self.test_user, name=name, description="test description", start_datetime=self.test_date,
@@ -53,11 +50,6 @@ class ModelCoverageTest(StandardTestCase):
     def test_type_str_method(self):
         t = self.create_type()
         self.assertEqual(str(Type.objects.get(pk=t.pk)), t.name, "Type object should have been created.")
-
-    def test_category_str_method(self):
-        c = self.create_category()
-        self.assertEqual(str(Category.objects.get(pk=c.pk)), c.name,
-                         "Category object should have been created.")
 
     def test_organization_str_method(self):
         o = self.create_org()
