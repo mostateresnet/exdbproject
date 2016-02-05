@@ -198,7 +198,7 @@ class ExperienceCreationViewTest(StandardTestCase):
                 'end_datetime_month': end.month, 'end_datetime_day': end.day, 'end_datetime_year': end.year,
                 'type': self.test_type.pk, 'sub_type': self.test_sub_type.pk, 'audience': 'c',
                 'guest': '1', 'recognition': self.test_org.pk, 'keywords': self.test_keyword.pk, 'goal': 'a', 'submit': 'Submit'}
-        self.login_client.post(reverse('create-experience'), data)
+        self.login_client.post(reverse('create_experience'), data)
         self.assertEqual('pe', Experience.objects.get(name='test').status,
                          "Experience should have been saved with pending status")
 
@@ -210,7 +210,7 @@ class ExperienceCreationViewTest(StandardTestCase):
                 'end_datetime_month': end.month, 'end_datetime_day': end.day, 'end_datetime_year': end.year,
                 'type': self.test_type.pk, 'sub_type': self.test_sub_type.pk, 'audience': 'c',
                 'guest': '1', 'recognition': self.test_org.pk, 'keywords': self.test_keyword.pk, 'goal': 'a', 'save': 'Save'}
-        self.login_client.post(reverse('create-experience'), data)
+        self.login_client.post(reverse('create_experience'), data)
         self.assertEqual('dr', Experience.objects.get(name='test').status,
                          "Experience should have been saved with draft status")
 
@@ -222,7 +222,7 @@ class ExperienceCreationViewTest(StandardTestCase):
                 'end_datetime_month': end.month, 'end_datetime_day': end.day, 'end_datetime_year': end.year,
                 'type': self.test_past_type.pk, 'sub_type': self.test_sub_type.pk, 'audience': 'c', 'attendance': 1,
                 'guest': '1', 'recognition': self.test_org.pk, 'keywords': self.test_keyword.pk, 'goal': 'a', 'submit': 'Submit'}
-        self.login_client.post(reverse('create-experience'), data)
+        self.login_client.post(reverse('create_experience'), data)
         self.assertEqual('co', Experience.objects.get(name='test').status,
                          "Experience should have been saved with completed status")
 

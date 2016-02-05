@@ -18,6 +18,6 @@ from exdb import views
 
 urlpatterns = [
     url(r'^$', views.WelcomeView.as_view(), name='welcome'),
-    url(r'^create$', views.CreateExperienceView.as_view(), name='create-experience'),
+    url(r'^create$', views.CreateExperienceView.as_view(), name='create_experience'),
     url(r'^pending$', views.PendingApprovalQueueView.as_view(), name='pending'),
 ]
