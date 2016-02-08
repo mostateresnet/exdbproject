@@ -1,11 +1,15 @@
-table#pending-queue
+table#pending-queue,
+table#evaluation-queue
 {
     border-collapse: collapse;
 }
 
 table#pending-queue tr,
 table#pending-queue th,
-table#pending-queue td
+table#pending-queue td,
+table#evaluation-queue tr,
+table#evaluation-queue th,
+table#evaluation-queue td
 {
     border: solid black 1px;
 }

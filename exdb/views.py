@@ -39,9 +39,13 @@ class CreateExperienceView(CreateView):
             return ExperienceSaveForm
 
 
-class PendingApprovalQueueView(ListView):
-    template_name = 'exdb/pending.html'
-    context_object_name = "experiences"
+class HallStaffDashboardView(TemplateView):
+    template_name = 'exdb/hallstaff_dash.html'
 
-    def get_queryset(self):
-        return Experience.objects.filter(status='pe')
+    def get_context_data(self):
+        context = super(HallStaffDashboardView, self).get_context_data()
+        context['pending_experiences'] = Experience.objects.filter(status='pe')
+        context['experiences_needing_eval'] = [
+            e for e in Experience.objects.filter(
+                status='ad') if e.needs_evaluation()]
+        return context

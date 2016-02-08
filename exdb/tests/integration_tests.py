@@ -28,11 +28,12 @@ class StandardTestCase(TestCase):
     def create_keyword(self, name="Test Keyword"):
         return Keyword.objects.get_or_create(name=name)[0]
 
-    def create_experience(self, exp_status, name="Test Experience"):
-        """Creates and returns an experience object with status of your choice"""
-        return Experience.objects.get_or_create(author=self.test_user, name=name, description="test description", start_datetime=self.test_date,
+    def create_experience(self, exp_status, attendance=0):
+        """Creates and returns an experience object with status,
+        start_time, end_time and/or name of your choice"""
+        return Experience.objects.get_or_create(author=self.test_user, name="Test Experience", description="test description", start_datetime=self.test_date,
                                                 end_datetime=(self.test_date + timedelta(days=1)), type=self.create_type(), sub_type=self.create_sub_type(), goal="Test Goal", audience="b",
-                                                status=exp_status)[0]
+                                                status=exp_status, attendance=attendance)[0]
 
     def create_experience_comment(self, exp, message="Test message"):
         """Creates experience comment, must pass an experience"""
@@ -68,6 +69,10 @@ class ModelCoverageTest(StandardTestCase):
         ec = self.create_experience_comment(self.create_experience('de'))
         self.assertEqual(ExperienceComment.objects.get(pk=ec.pk).message, ec.message,
                          "ExperienceComment object should have been created.")
+
+    def test_experience_needs_evaluation(self):
+        e = self.create_experience('ad')
+        self.assertTrue(e.needs_evaluation(), "This experience should return true for needs evaluation.")
 
 
 class ExperienceCreationFormTest(StandardTestCase):
@@ -219,17 +224,22 @@ class ExperienceCreationViewTest(StandardTestCase):
                          "Experience should have been saved with completed status")
 
 
-class PendingApprovalQueueViewTest(StandardTestCase):
+class HallStaffDashboardViewTest(StandardTestCase):
 
     def test_get_pending_queues(self):
         self.create_experience('pe')
         self.create_experience('dr')
-        response = self.anon_client.get(reverse('pending'))
-        self.assertEqual(len(response.context["experiences"]), 1, "Only pending queues should be returned")
+        response = self.anon_client.get(reverse('hallstaff_dash'))
+        self.assertEqual(len(response.context["pending_experiences"]), 1, "Only pending queues should be returned")
 
     def test_does_not_get_spontaneous(self):
-        Experience.objects.create(author=self.test_user, name="E1", description="test description", start_datetime=(self.test_date - timedelta(days=2)),
-                                  end_datetime=(self.test_date - timedelta(days=1)), type=self.create_type(), sub_type=self.create_sub_type(), goal="Test Goal", audience="b",
-                                  status="co", attendance=3)
-        response = self.anon_client.get(reverse('pending'))
-        self.assertEqual(len(response.context["experiences"]), 0, "Spontaneous experiences should not be returned")
+        self.create_experience('co', 3)
+        response = self.anon_client.get(reverse('hallstaff_dash'))
+        self.assertEqual(len(response.context["pending_experiences"]), 0,
+                         "Spontaneous experiences should not be returned")
+
+    def test_gets_needs_evaluation(self):
+        self.create_experience('ad')
+        response = self.anon_client.get(reverse('hallstaff_dash'))
+        self.assertEqual(len(response.context["experiences_needing_eval"]), 1,
+                         "Only experiences needing evaluation should have been returned.")

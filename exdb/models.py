@@ -72,6 +72,9 @@ class Experience(models.Model):
     def __str__(self):
         return self.name
 
+    def needs_evaluation(self):
+        return self.status == 'ad' and self.end_datetime <= now()
+
 
 class ExperienceComment(models.Model):
     experience = models.ForeignKey(Experience, related_name='comment_set')
