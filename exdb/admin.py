@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import SubType, Type, Category, Organization, Keyword, Experience, ExperienceComment
+from .models import SubType, Type, Organization, Keyword, Experience, ExperienceComment
 
 
 class ExperienceAdmin(admin.ModelAdmin):
@@ -8,7 +8,6 @@ class ExperienceAdmin(admin.ModelAdmin):
 
 admin.site.register(SubType)
 admin.site.register(Type)
-admin.site.register(Category)
 admin.site.register(Organization)
 admin.site.register(Keyword)
 admin.site.register(Experience, ExperienceAdmin)
