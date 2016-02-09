@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/dev/ref/settings/
 """
 
 import os
+from django.core.exceptions import ImproperlyConfigured
 
 # register checks
 import exdbproject.checks
@@ -45,6 +46,8 @@ INSTALLED_APPS = [
     'exdb',
 ]
 
+_restricted_access_middleware = 'exdb.restricted_access_middleware.RestrictedAccess'
+
 MIDDLEWARE_CLASSES = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -55,6 +58,7 @@ MIDDLEWARE_CLASSES = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.locale.LocaleMiddleware',
+    _restricted_access_middleware,
 ]
 
 ROOT_URLCONF = 'exdbproject.urls'
@@ -134,8 +138,18 @@ TEST_RUNNER = 'exdb.tests.CustomRunner'
 JS_FILE_EXCLUDED_DIRS = ['coverage', 'instrumented_static', 'libraries', 'htmlcov']
 PY_FILE_EXCLUDED_DIRS = ['migrations']
 
+# restricted access middleware permissions
+PERMS_AND_LEVELS = {
+    'basic': lambda x: True,
+}
+
 # override settings with settings_local
 try:
     from exdbproject.settings_local import *  # pylint: disable=wildcard-import,unused-wildcard-import,wrong-import-position
 except ImportError:
     pass
+
+if _restricted_access_middleware not in MIDDLEWARE_CLASSES:
+    raise ImproperlyConfigured(
+        'Security is at risk without Restricted Access! Add "%s" to MIDDLEWARE_CLASSES.' %
+        _restricted_access_middleware)

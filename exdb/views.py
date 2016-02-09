@@ -14,10 +14,12 @@ from .forms import ExperienceSubmitForm, ExperienceSaveForm, ApprovalForm, Exper
 
 
 class WelcomeView(TemplateView):
+    access_level = 'basic'
     template_name = 'exdb/welcome.html'
 
 
 class CreateExperienceView(CreateView):
+    access_level = 'basic'
     model = Experience
     template_name = 'exdb/create_experience.html'
 
@@ -161,6 +163,7 @@ class ViewExperienceView(TemplateView):
 
 
 class LoginView(TemplateView):
+    access_level = 'basic'
     template_name = 'exdb/login.html'
 
     def post(self, request):
