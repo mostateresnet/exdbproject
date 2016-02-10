@@ -1,10 +1,13 @@
 from django.views.generic import TemplateView, ListView
 from django.views.generic.edit import CreateView
+from django.shortcuts import get_object_or_404
 from django.core.urlresolvers import reverse
+from django.http import HttpResponseRedirect
+from django.utils.timezone import now
 from django.utils import timezone
 
-from exdb.models import Experience
-from .forms import ExperienceSubmitForm, ExperienceSaveForm
+from exdb.models import Experience, ExperienceComment
+from .forms import ExperienceSubmitForm, ExperienceSaveForm, ApprovalForm
 
 
 class WelcomeView(TemplateView):
@@ -45,3 +48,41 @@ class PendingApprovalQueueView(ListView):
 
     def get_queryset(self):
         return Experience.objects.filter(status='pe')
+
+
+class ExperienceApprovalView(CreateView):
+    template_name = 'exdb/experience_approval.html'
+    form_class = ApprovalForm
+
+    def get_experience(self):
+        return get_object_or_404(Experience, pk=self.kwargs['pk'], status='pe')
+
+    def get_success_url(self):
+        return reverse('pending')
+
+    def get_context_data(self, **kwargs):
+        context = super(ExperienceApprovalView, self).get_context_data()
+        context['experience'] = self.get_experience()
+        context['comments'] = ExperienceComment.objects.filter(experience=context['experience'])
+        return context
+
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        form.instance.experience = self.get_experience()
+        form.instance.experience.status = 'ad' if self.request.POST.get('approve') else 'de'
+        if form.instance.experience.status == 'ad':
+            form.instance.experience.approver = self.request.user
+            form.instance.experience.approved_timestamp = now()
+        form.instance.experience.save()
+        return super(ExperienceApprovalView, self).form_valid(form)
+
+    def form_invalid(self, form):
+        if self.request.POST.get('approve'):
+            experience = self.get_experience()
+            experience.approver = self.request.user
+            experience.approved_timestamp = now()
+            experience.status = 'ad'
+            experience.save()
+            return HttpResponseRedirect(self.get_success_url())
+        else:
+            return super(ExperienceApprovalView, self).form_invalid(form)
