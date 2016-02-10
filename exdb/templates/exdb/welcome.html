@@ -13,7 +13,7 @@
     <!-- Current language: {{ CODE }} -->
     <h1>{% trans 'Welcome' %}</h1>
     <a href={% url 'create-experience' %}>Temp create</a>
-    <p><a href="pending">Temporary link to pending experiences queue</a></p>
     <p><a href={% url 'ra_home' %}>Tmp RA Home</a></p>
+    <p><a href="{% url 'pending' %}">Temporary link to pending experiences queue</a></p>
 </body>
 </html>
