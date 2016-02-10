@@ -10,14 +10,14 @@ from exdb.forms import ExperienceSubmitForm
 class StandardTestCase(TestCase):
 
     def setUp(self):
-        self.test_ra_user = get_user_model().objects.create_user('test_ra_user', 't@u.com', 'a')
-        self.test_hall_staff_user = get_user_model().objects.create_user('test_hall_staff_user', 't@u.com', 'a')
         self.test_date = make_aware(datetime(2015, 1, 1, 1, 30), timezone=utc)
-        self.anon_client = Client()
-        self.login_ra_client = Client()
-        self.login_hall_staff_client = Client()
-        self.login_ra_client.login(username='test_ra_user', password='a')
-        self.login_hall_staff_client.login(username='test_hall_staff_user', password='a')
+        users = ['ra', 'hs']
+        self.clients = {}
+        for user in users:
+            self.clients[user] = Client()
+            # avoid setting the password and force_login for speed
+            self.clients[user].user_object = get_user_model().objects.create(username=user)
+            self.clients[user].force_login(self.clients[user].user_object)
 
     def create_type(self, needs_verification=True, name="Test Type"):
         return Type.objects.get_or_create(name=name, needs_verification=needs_verification)[0]
@@ -34,14 +34,28 @@ class StandardTestCase(TestCase):
     def create_experience(self, exp_status, attendance=0):
         """Creates and returns an experience object with status,
         start_time, end_time and/or name of your choice"""
-        return Experience.objects.get_or_create(author=self.test_ra_user, name="Test Experience", description="test description", start_datetime=self.test_date,
-                                                end_datetime=(self.test_date + timedelta(days=1)), type=self.create_type(), sub_type=self.create_sub_type(), goal="Test Goal", audience="b",
-                                                status=exp_status, attendance=attendance, next_approver=self.test_hall_staff_user)[0]
+        return Experience.objects.get_or_create(
+            author=self.test_user,
+            name="Test Experience",
+            description="test description",
+            start_datetime=self.test_date,
+            end_datetime=(self.test_date + timedelta(days=1)),
+            type=self.create_type(),
+            sub_type=self.create_sub_type(),
+            goal="Test Goal",
+            audience="b",
+            status=exp_status,
+            attendance=attendance
+        )[0]
 
     def create_experience_comment(self, exp, message="Test message"):
         """Creates experience comment, must pass an experience"""
         return ExperienceComment.objects.get_or_create(
-            experience=exp, message=message, author=self.test_hall_staff_user, timestamp=self.test_date)[0]
+            experience=exp,
+            message=message,
+            author=self.clients['ra'].user_object,
+            timestamp=self.test_date
+        )[0]
 
 
 class ModelCoverageTest(StandardTestCase):
@@ -49,7 +63,7 @@ class ModelCoverageTest(StandardTestCase):
     def test_sub_type_str_method(self):
         st = self.create_sub_type()
         self.assertEqual(str(SubType.objects.get(pk=st.pk)), st.name,
-                         "SubType object should have been created.")
+                         u"SubType object should have been created.")
 
     def test_type_str_method(self):
         t = self.create_type()
@@ -214,7 +228,7 @@ class ExperienceCreationViewTest(StandardTestCase):
         start = now() + timedelta(days=1)
         end = now() + timedelta(days=2)
         data = self.get_post_data(start, end)
-        self.login_ra_client.post(reverse('create_experience'), data)
+        self.clients['ra'].post(reverse('create_experience'), data)
         self.assertEqual('pe', Experience.objects.get(name='test').status,
                          "Experience should have been saved with pending status")
 
@@ -222,7 +236,7 @@ class ExperienceCreationViewTest(StandardTestCase):
         start = now() + timedelta(days=1)
         end = now() + timedelta(days=2)
         data = self.get_post_data(start, end, action='save')
-        self.login_ra_client.post(reverse('create_experience'), data)
+        self.clients['ra'].post(reverse('create_experience'), data)
         self.assertEqual('dr', Experience.objects.get(name='test').status,
                          "Experience should have been saved with draft status")
 
@@ -232,7 +246,7 @@ class ExperienceCreationViewTest(StandardTestCase):
         data = self.get_post_data(start, end)
         data['attendance'] = 1
         data['type'] = self.test_past_type.pk
-        self.login_ra_client.post(reverse('create_experience'), data)
+        self.clients['ra'].post(reverse('create_experience'), data)
         self.assertEqual('co', Experience.objects.get(name='test').status,
                          "Experience should have been saved with completed status")
 

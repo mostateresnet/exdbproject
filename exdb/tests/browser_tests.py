@@ -190,6 +190,9 @@ class DefaultLiveServerTestCase(StaticLiveServerTestCase):
     def setUp(self):
         self.driver = CustomRunner.browser_driver()
 
+    def client_get(self, url):
+        self.driver.get(CustomRunner.live_server_url + url)
+
     def tearDown(self):
         try:
             self.running_total += self.driver.execute_script('return __coverage__')
@@ -200,11 +203,11 @@ class DefaultLiveServerTestCase(StaticLiveServerTestCase):
 class SeleniumJSCoverage(DefaultLiveServerTestCase):
 
     def test_load(self):
-        self.driver.get(CustomRunner.live_server_url)
+        self.client_get('/')
         self.assertEqual(self.driver.find_element(By.XPATH, '//h1').text, _('Welcome'))
 
     def test_something_else(self):
-        self.driver.get(CustomRunner.live_server_url)
+        self.client_get('/')
         self.assertEqual(self.driver.find_element(By.XPATH, '//h1').text, _('Welcome'))
         self.driver.execute_script('f()')
 
@@ -212,12 +215,13 @@ class SeleniumJSCoverage(DefaultLiveServerTestCase):
 class WelcomeViewTest(DefaultLiveServerTestCase):
 
     def test_load(self):
-        self.driver.get(CustomRunner.live_server_url)
+        self.client_get('/')
         self.assertEqual(self.driver.find_element(By.XPATH, '//h1').text, _('Welcome'))
 
 
 class HallStaffDashboardBrowserTest(DefaultLiveServerTestCase):
 
     def test_load(self):
-        self.driver.get(CustomRunner.live_server_url + reverse('hallstaff_dash'))
+        self.driver.get(CustomRunner.live_server_url + reverse())
+        self.client_get(reverse('hallstaff_dash'))
         self.assertEqual(self.driver.find_element(By.XPATH, '//h1').text, _('Experiences Pending Approval'))

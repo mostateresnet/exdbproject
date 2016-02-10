@@ -46,7 +46,7 @@ INSTALLED_APPS = [
     'exdb',
 ]
 
-_restricted_access_middleware = 'exdb.restricted_access_middleware.RestrictedAccess'
+RESTRICTED_ACCESS_MIDDLEWARE = 'exdb.restricted_access_middleware.RestrictedAccess'
 
 MIDDLEWARE_CLASSES = [
     'django.middleware.security.SecurityMiddleware',
@@ -58,7 +58,7 @@ MIDDLEWARE_CLASSES = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.locale.LocaleMiddleware',
-    _restricted_access_middleware,
+    RESTRICTED_ACCESS_MIDDLEWARE,
 ]
 
 ROOT_URLCONF = 'exdbproject.urls'
@@ -148,8 +148,3 @@ try:
     from exdbproject.settings_local import *  # pylint: disable=wildcard-import,unused-wildcard-import,wrong-import-position
 except ImportError:
     pass
-
-if _restricted_access_middleware not in MIDDLEWARE_CLASSES:
-    raise ImproperlyConfigured(
-        'Security is at risk without Restricted Access! Add "%s" to MIDDLEWARE_CLASSES.' %
-        _restricted_access_middleware)
