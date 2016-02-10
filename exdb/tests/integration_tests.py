@@ -227,6 +227,67 @@ class ExperienceCreationViewTest(StandardTestCase):
                          "Experience should have been saved with completed status")
 
 
+class ExperienceApprovalViewTest(StandardTestCase):
+
+    def test_gets_correct_experience(self):
+        e = self.create_experience('pe')
+        self.create_experience('pe')
+        client = Client()
+        response = client.get(reverse('approval', args=str(e.pk)))
+        self.assertEqual(response.context['experience'].pk, e.pk, "The correct experience was not retrieved.")
+
+    def test_404_when_experience_not_pending(self):
+        e = self.create_experience('dr')
+        client = Client()
+        response = client.get(reverse('approval', args=str(e.pk)))
+        self.assertEqual(
+            response.status_code,
+            404,
+            "Attempting to retrieve a non-pending experience did not generate a 404.")
+
+    def test_does_not_allow_deny_without_comment(self):
+        e = self.create_experience('pe')
+        client = Client()
+        client.post(reverse('approval', args=str(e.pk)), {'deny': 'deny', 'message': ""})
+        e = Experience.objects.get(pk=e.pk)
+        self.assertEqual(e.status, 'pe', "An experience cannot be denied without a comment.")
+
+    def test_approves_experience_no_comment(self):
+        e = self.create_experience('pe')
+        client = Client()
+        client.login(username="test_user", password="a")
+        client.post(reverse('approval', args=str(e.pk)), {'approve': 'approve', 'message': ""})
+        e = Experience.objects.get(pk=e.pk)
+        self.assertEqual(e.status, 'ad', "Approval should be allowed without a comment")
+
+    def test_approves_experience_with_comment(self):
+        e = self.create_experience('pe')
+        client = Client()
+        client.login(username="test_user", password="a")
+        client.post(reverse('approval', args=str(e.pk)), {'approve': 'approve', 'message': "Test Comment"})
+        e = Experience.objects.get(pk=e.pk)
+        self.assertEqual(e.status, 'ad', "Approval should be allowed with a comment")
+
+    def test_creates_comment(self):
+        e = self.create_experience('pe')
+        client = Client()
+        client.login(username="test_user", password="a")
+        client.post(reverse('approval', args=str(e.pk)), {'deny': 'deny', 'message': "Test Comment"})
+        comments = ExperienceComment.objects.filter(experience=e)
+        self.assertEqual(len(comments), 1, "A comment should have been created.")
+
+    def test_does_not_create_comment(self):
+        e = self.create_experience('pe')
+        client = Client()
+        client.login(username="test_user", password="a")
+        client.post(reverse('approval', args=str(e.pk)), {'deny': 'deny', 'message': ""})
+        comments = ExperienceComment.objects.filter(experience=e)
+        self.assertEqual(
+            len(comments),
+            0,
+            "If message is an empty string, no ExperienceComment object should be created.")
+
+
 class PendingApprovalQueueViewTest(StandardTestCase):
 
     def test_get_pending_queues(self):
