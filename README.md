@@ -21,8 +21,12 @@
   ```shell
   pip install -U pip -r requirements/development.txt
   ```
-5. Install the required Node.js packages (this will take several minutes to compile)
+5. Install the required Node.js packages using one of the following commands
 
+  ```shell
+  nodeenv -p --prebuilt --requirements=requirements/node_packages.txt
+  ```
+  OR
   ```shell
   nodeenv -p --requirements=requirements/node_packages.txt --jobs=4
   ```

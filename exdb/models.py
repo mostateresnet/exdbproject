@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils.timezone import now
 from django.conf import settings
+from django.utils.translation import ugettext_lazy as _
 
 
 class SubType(models.Model):
@@ -34,12 +35,12 @@ class Keyword(models.Model):
 
 class Experience(models.Model):
     STATUS_TYPES = (
-        ('dr', 'Draft'),
-        ('pe', 'Pending Approval'),
-        ('de', 'Denied'),
-        ('ad', 'Approved'),
-        ('co', 'Completed'),
-        ('ca', 'Cancelled')
+        ('de', _('Denied')),
+        ('dr', _('Draft')),
+        ('pe', _('Pending Approval')),
+        ('ad', _('Approved')),
+        ('co', _('Completed')),
+        ('ca', _('Cancelled'))
     )
 
     AUDIENCE_TYPES = (
@@ -64,7 +65,7 @@ class Experience(models.Model):
     attendance = models.IntegerField(null=True, blank=True)
     created_datetime = models.DateTimeField(default=now, blank=True)
     recognition = models.ManyToManyField(Organization, blank=True)
-    status = models.CharField(max_length=2, choices=STATUS_TYPES, default=STATUS_TYPES[0][0])
+    status = models.CharField(max_length=2, choices=STATUS_TYPES, default=STATUS_TYPES[1][0])
     approved_timestamp = models.DateTimeField(blank=True, null=True)
     approver = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True, related_name="approver")
     conclusion = models.TextField(blank=True)

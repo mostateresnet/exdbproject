@@ -65,7 +65,11 @@
         <tbody>
             {% for exp in experiences_needing_eval %}
                 <tr>
-                    <td>{{ exp.name }}</td>
+                    <td>
+                        <a href="{% url 'approval' exp.pk %}">
+                            {{ exp.name }}
+                        </a>
+                    </td>
                     <td>{{ exp.author }}</td>
                     <td>{{ exp.start_datetime }}</td>
                     <td>{{ exp.end_datetime }}</td>

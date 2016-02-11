@@ -1,8 +1,8 @@
 from django import forms
 from django.core.exceptions import ValidationError
-from django.forms import ModelForm
 from django.utils.timezone import now
-from exdb.models import Experience
+from django.forms import ModelForm
+from exdb.models import Experience, ExperienceComment
 
 
 class ExperienceSaveForm(ModelForm):
@@ -72,3 +72,11 @@ class ExperienceSubmitForm(ExperienceSaveForm):
             raise ValidationError(ex_type.name + " events cannot have an attendance")
 
         return self.cleaned_data
+
+
+class ApprovalForm(ModelForm):
+    message = forms.CharField(widget=forms.Textarea(attrs={'cols': 40, 'rows': 4}))
+
+    class Meta:
+        model = ExperienceComment
+        exclude = ['experience', 'author', 'timestamp']
