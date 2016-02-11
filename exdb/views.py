@@ -119,3 +119,12 @@ class ExperienceApprovalView(CreateView):
             return HttpResponseRedirect(self.get_success_url())
         else:
             return super(ExperienceApprovalView, self).form_invalid(form)
+
+
+class ViewExperienceView(TemplateView):
+    template_name = 'exdb/experience_view.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(ViewExperienceView, self).get_context_data()
+        context['experience'] = get_object_or_404(Experience, pk=self.kwargs['pk'])
+        return context
