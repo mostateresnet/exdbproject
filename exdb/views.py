@@ -9,7 +9,7 @@ from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 
 from exdb.models import Experience, ExperienceComment
-from .forms import ExperienceSubmitForm, ExperienceSaveForm, ApprovalForm
+from .forms import ExperienceSubmitForm, ExperienceSaveForm, ApprovalForm, ExperienceConclusionForm
 
 
 class WelcomeView(TemplateView):
@@ -119,3 +119,13 @@ class ExperienceApprovalView(CreateView):
             return HttpResponseRedirect(self.get_success_url())
         else:
             return super(ExperienceApprovalView, self).form_invalid(form)
+
+
+class ExperienceConclusionView(CreateView):
+    template_name = 'exdb/conclusion.html'
+    form_class = ExperienceConclusionForm
+
+    def get_context_data(self):
+        context = super(ExperienceConclusionView, super).get_context_data()
+        context['experience'] = get_object_or_404(Experience, pk=self.kwargs['pk'])
+        return context
