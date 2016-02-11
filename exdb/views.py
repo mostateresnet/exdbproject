@@ -1,6 +1,6 @@
 from collections import OrderedDict
 from django.views.generic import TemplateView, ListView
-from django.views.generic.edit import CreateView
+from django.views.generic.edit import CreateView, UpdateView
 from django.shortcuts import get_object_or_404
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
@@ -121,13 +121,22 @@ class ExperienceApprovalView(CreateView):
             return super(ExperienceApprovalView, self).form_invalid(form)
 
 
-class ExperienceConclusionView(CreateView):
+class ExperienceConclusionView(UpdateView):
     template_name = 'exdb/conclusion.html'
     form_class = ExperienceConclusionForm
+    model = Experience
 
-    def get_context_data(self):
-        context = super(ExperienceConclusionView, super).get_context_data()
+    def get_success_url(self):
+        return reverse('ra_home')
 
+    def get_queryset(self, **kwargs):
+        return Experience.objects.filter(pk=self.kwargs['pk'])
+
+    def form_valid(self, form):
+        experience = get_object_or_404(Experience, pk=self.kwargs['pk'])
+        experience.status = 'co'
+        experience.save()
+        return super(ExperienceConclusionView, self).form_valid(form)
 
 class ViewExperienceView(TemplateView):
     template_name = 'exdb/experience_view.html'
