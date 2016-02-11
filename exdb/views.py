@@ -6,6 +6,7 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 from django.utils.timezone import now
 from django.utils import timezone
+from django.utils.translation import ugettext_lazy as _
 
 from exdb.models import Experience, ExperienceComment
 from .forms import ExperienceSubmitForm, ExperienceSaveForm, ApprovalForm
@@ -71,7 +72,7 @@ class RAHomeView(ListView):
 
         one_week = timezone.now() + timezone.timedelta(days=7)
         week_ahead = []
-        for experience in context['experience_dict']['Approved']:
+        for experience in context['experience_dict'][_('Approved')]:
             if experience.start_datetime > timezone.now() and experience.start_datetime < one_week:
                 week_ahead.append(experience)
         context['week_ahead'] = week_ahead
