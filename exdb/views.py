@@ -127,5 +127,12 @@ class ExperienceConclusionView(CreateView):
 
     def get_context_data(self):
         context = super(ExperienceConclusionView, super).get_context_data()
+
+
+class ViewExperienceView(TemplateView):
+    template_name = 'exdb/experience_view.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(ViewExperienceView, self).get_context_data()
         context['experience'] = get_object_or_404(Experience, pk=self.kwargs['pk'])
         return context
