@@ -237,6 +237,16 @@ class RAHomeViewTest(StandardTestCase):
         response = client.get(reverse('ra_home'))
         self.assertEqual(len(response.context["experiences"]), 2, "There should be 2 experiences displayed")
 
+    def test_week_ahead(self):
+        self.create_experience('ad')
+        Experience.objects.get_or_create(author=self.test_user, name="E1", description="test description", start_datetime=(now() + timedelta(days=2)),
+                                         end_datetime=(now() + timedelta(days=3)), type=self.create_type(), sub_type=self.create_sub_type(), goal="Test Goal", audience="b",
+                                         status="ad", attendance=3)
+        client = Client()
+        client.login(username="test_user", password="a")
+        response = client.get(reverse('ra_home'))
+        self.assertEqual(len(response.context["week_ahead"]), 1, "There should be 1 experience in the next week")
+
 
 class ExperienceApprovalViewTest(StandardTestCase):
 
