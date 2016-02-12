@@ -137,10 +137,12 @@ class ExperienceConclusionView(UpdateView):
         return Experience.objects.filter(pk=self.kwargs['pk'])
 
     def form_valid(self, form):
+        valid_form = super(ExperienceConclusionView, self).form_valid(form)
         experience = get_object_or_404(Experience, pk=self.kwargs['pk'])
         experience.status = 'co'
         experience.save()
-        return super(ExperienceConclusionView, self).form_valid(form)
+        return valid_form
+
 
 class ViewExperienceView(TemplateView):
     template_name = 'exdb/experience_view.html'

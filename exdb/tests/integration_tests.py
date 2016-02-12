@@ -224,6 +224,42 @@ class ExperienceCreationViewTest(StandardTestCase):
                          "Experience should have been saved with completed status")
 
 
+class ViewExperienceViewTest(StandardTestCase):
+
+    def test_gets_experience(self):
+        e = self.create_experience('pe')
+        response = self.login_client.get(reverse('view_experience', kwargs={'pk': str(e.pk)}))
+        self.assertEqual(response.context['experience'].pk, e.pk, "The correct experience was not retrieved.")
+
+
+class ExperienceConclusionViewTest(StandardTestCase):
+
+    def post_data(self, attendance=1, conclusion="Test Conclusion"):
+        """posts data with optional attendance and conclusion args,
+        returns experience for query/comparison purposes"""
+        e = self.create_experience('ad')
+        self.login_client.post(reverse('conclusion', kwargs={'pk': str(e.pk)}),
+                               {'attendance': attendance, 'conclusion': conclusion})
+        e = Experience.objects.get(pk=e.pk)
+        return e
+
+    def test_conclusion_success(self):
+        e = self.post_data()
+        self.assertEqual(e.status, 'co', "The experience status should be changed to completed ('co')")
+
+    def test_no_attendance(self):
+        e = self.post_data(attendance=0)
+        self.assertEqual(e.status, 'ad', "The experience should not be complete without an attendance.")
+
+    def test_negative_attendance(self):
+        e = self.post_data(attendance=-1)
+        self.assertEqual(e.status, 'ad', "The experience should not accept a negative attendance.")
+
+    def test_no_conclusion(self):
+        e = self.post_data(conclusion="")
+        self.assertEqual(e.status, 'ad', "The experience should not be complete without a conclusion.")
+
+
 class RAHomeViewTest(StandardTestCase):
 
     def test_coverage(self):

@@ -80,8 +80,8 @@ class ExperienceConclusionForm(ModelForm):
         model = Experience
         fields = ['attendance', 'conclusion']
         widgets = {
-                'conclusion': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
-                }
+            'conclusion': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
+        }
 
     def clean(self):
         if not self.cleaned_data.get('attendance'):
