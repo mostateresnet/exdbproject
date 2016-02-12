@@ -21,4 +21,5 @@ urlpatterns = [
     url(r'^create$', views.CreateExperienceView.as_view(), name='create_experience'),
     url(r'^pending$', views.PendingApprovalQueueView.as_view(), name='pending'),
     url(r'^pending/approval/(?P<pk>\d+)$', views.ExperienceApprovalView.as_view(), name='approval'),
+    url(r'^home$', views.RAHomeView.as_view(), name='ra_home'),
 ]

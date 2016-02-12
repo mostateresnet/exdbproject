@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from django.views.generic import TemplateView, ListView
 from django.views.generic.edit import CreateView
 from django.shortcuts import get_object_or_404
@@ -5,6 +6,7 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 from django.utils.timezone import now
 from django.utils import timezone
+from django.utils.translation import ugettext_lazy as _
 
 from exdb.models import Experience, ExperienceComment
 from .forms import ExperienceSubmitForm, ExperienceSaveForm, ApprovalForm
@@ -48,6 +50,33 @@ class PendingApprovalQueueView(ListView):
 
     def get_queryset(self):
         return Experience.objects.filter(status='pe')
+
+
+class RAHomeView(ListView):
+    template_name = 'exdb/ra_home.html'
+    context_object_name = 'experiences'
+
+    def get_queryset(self):
+        return Experience.objects.filter(author=self.request.user).order_by('created_datetime')
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(RAHomeView, self).get_context_data(*args, **kwargs)
+        context['ra'] = self.request.user
+
+        experience_dict = OrderedDict()
+        for status in Experience.STATUS_TYPES:
+            experience_dict[status[1]] = []
+        for experience in context[self.context_object_name]:
+            experience_dict[experience.get_status_display()].append(experience)
+        context['experience_dict'] = experience_dict
+
+        one_week = timezone.now() + timezone.timedelta(days=7)
+        week_ahead = []
+        for experience in context['experience_dict'][_('Approved')]:
+            if experience.start_datetime > timezone.now() and experience.start_datetime < one_week:
+                week_ahead.append(experience)
+        context['week_ahead'] = week_ahead
+        return context
 
 
 class ExperienceApprovalView(CreateView):
