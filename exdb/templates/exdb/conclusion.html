@@ -68,10 +68,11 @@
         <hr/>
         <div>
             {% for field in form %}
-            <p>{{ field.errors }}</p>
-            <div>
-            {{ field.label }}
-            {{ field }}
+                <p>{{ field.errors }}</p>
+                <div>
+                    {{ field.label }}
+                    {{ field }}
+                </div>
             {% endfor %}
         </div>
         <input type="submit" name="submit" />
