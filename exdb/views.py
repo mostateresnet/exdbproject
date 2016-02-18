@@ -1,6 +1,6 @@
 from collections import OrderedDict
 from django.views.generic import TemplateView, ListView
-from django.views.generic.edit import CreateView
+from django.views.generic.edit import CreateView, UpdateView
 from django.shortcuts import get_object_or_404
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
@@ -9,7 +9,7 @@ from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 
 from exdb.models import Experience, ExperienceComment
-from .forms import ExperienceSubmitForm, ExperienceSaveForm, ApprovalForm
+from .forms import ExperienceSubmitForm, ExperienceSaveForm, ApprovalForm, ExperienceConclusionForm
 
 
 class WelcomeView(TemplateView):
@@ -44,12 +44,16 @@ class CreateExperienceView(CreateView):
             return ExperienceSaveForm
 
 
-class PendingApprovalQueueView(ListView):
-    template_name = 'exdb/pending.html'
-    context_object_name = "experiences"
+class HallStaffDashboardView(TemplateView):
+    template_name = 'exdb/hallstaff_dash.html'
 
-    def get_queryset(self):
-        return Experience.objects.filter(status='pe')
+    def get_context_data(self):
+        context = super(HallStaffDashboardView, self).get_context_data()
+        context['pending_experiences'] = Experience.objects.filter(status='pe')
+        context['experiences_needing_eval'] = [
+            e for e in Experience.objects.filter(
+                status='ad') if e.needs_evaluation()]
+        return context
 
 
 class RAHomeView(ListView):
@@ -64,10 +68,14 @@ class RAHomeView(ListView):
         context['ra'] = self.request.user
 
         experience_dict = OrderedDict()
+        experience_dict[_('Needs Evaluation')] = []
         for status in Experience.STATUS_TYPES:
             experience_dict[status[1]] = []
         for experience in context[self.context_object_name]:
-            experience_dict[experience.get_status_display()].append(experience)
+            if experience.needs_evaluation():
+                experience_dict[_('Needs Evaluation')].append(experience)
+            else:
+                experience_dict[experience.get_status_display()].append(experience)
         context['experience_dict'] = experience_dict
 
         one_week = timezone.now() + timezone.timedelta(days=7)
@@ -87,7 +95,7 @@ class ExperienceApprovalView(CreateView):
         return get_object_or_404(Experience, pk=self.kwargs['pk'], status='pe')
 
     def get_success_url(self):
-        return reverse('pending')
+        return reverse('hallstaff_dash')
 
     def get_context_data(self, **kwargs):
         context = super(ExperienceApprovalView, self).get_context_data()
@@ -115,3 +123,31 @@ class ExperienceApprovalView(CreateView):
             return HttpResponseRedirect(self.get_success_url())
         else:
             return super(ExperienceApprovalView, self).form_invalid(form)
+
+
+class ExperienceConclusionView(UpdateView):
+    template_name = 'exdb/conclusion.html'
+    form_class = ExperienceConclusionForm
+    model = Experience
+
+    def get_success_url(self):
+        return reverse('ra_home')
+
+    def get_queryset(self, **kwargs):
+        return Experience.objects.filter(pk=self.kwargs['pk'])
+
+    def form_valid(self, form):
+        valid_form = super(ExperienceConclusionView, self).form_valid(form)
+        experience = get_object_or_404(Experience, pk=self.kwargs['pk'])
+        experience.status = 'co'
+        experience.save()
+        return valid_form
+
+
+class ViewExperienceView(TemplateView):
+    template_name = 'exdb/experience_view.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(ViewExperienceView, self).get_context_data()
+        context['experience'] = get_object_or_404(Experience, pk=self.kwargs['pk'])
+        return context

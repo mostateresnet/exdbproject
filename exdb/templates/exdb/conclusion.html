@@ -1,22 +1,15 @@
 {% extends "exdb/base.html" %}
 {% load i18n %}
 {% load staticfiles %}
-{% block css %}
-    {{ block.super }}
-    <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/experience_approval.css' %}" />
-{% endblock %}
 {% block content %}
     <form method="POST">
         {% csrf_token %}
-        <h1>{% trans "Experience Approval" %}</h1>
-        <p><a href="{% url 'hallstaff_dash' %}">Return to Hall Staff Dashboard</a></p>
+        <h1>Evaluation</h1>
+        <h2>Experience: {{ experience.name }}</h2>
+        <p><a href="{% url 'ra_home' %}">Back to Home</a></p>
         <span class="form-errors">{{ form.non_field_errors }}</span>
         <hr/>
         <div class="experience-display">
-            <p>
-                <span>{% trans "Experience" %}:</span>
-                {{ experience.name }}
-            </p>
             <p>
                 <span>{% trans "Author" %}:</span>
                 {{ experience.author }}
@@ -73,18 +66,14 @@
             {% endif %}
         </div>
         <hr/>
-        <table>
-            <tr><th>{% trans "Comments" %}</th></tr>
-            {% for comment in comments %}
-                <tr><td>{{ comment.message }}</td></tr>
-            {% empty %}
-                <tr><td>{% trans "No comments" %}</td></tr>
+        <div>
+            {% for field in form %}
+                <p>{{ field.errors }}</p>
+                <div>
+                    {{ field.label }}
+                    {{ field }}
+                </div>
             {% endfor %}
-        </table>
-        <div>{% trans "Add Comment" %}:</div>
-        <span class="form-errors">{{ form.message.errors }}</span>
-        <div>{{ form.message }}</div>
-        <input type="submit" value="deny" name="deny" />
-        <input type="submit" value="approve" name="approve" />
-    </form>
+        </div>
+        <input type="submit" name="submit" />
 {% endblock %}

@@ -19,13 +19,6 @@ class Type(models.Model):
         return self.name
 
 
-class Category(models.Model):
-    name = models.CharField(max_length=300)
-
-    def __str__(self):
-        return self.name
-
-
 class Organization(models.Model):
     name = models.CharField(max_length=300)
 
@@ -75,9 +68,13 @@ class Experience(models.Model):
     status = models.CharField(max_length=2, choices=STATUS_TYPES, default=STATUS_TYPES[1][0])
     approved_timestamp = models.DateTimeField(blank=True, null=True)
     approver = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True, related_name="approver")
+    conclusion = models.TextField(blank=True)
 
     def __str__(self):
         return self.name
+
+    def needs_evaluation(self):
+        return self.status == 'ad' and self.end_datetime <= now()
 
 
 class ExperienceComment(models.Model):
