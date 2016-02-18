@@ -15,21 +15,21 @@
             {% if experiences|length %}
                 <h1 class="status">{{ status }}</h1>
                 {% for ex in experiences %}
-                    <div class="experience">
-                        <div class="experience-name">{{ ex.name }}</div>
-                        <div>
-                            <span class="experience-times">{% trans 'Start time' %}: {{ ex.start_datetime }}</span>
-                            <span class="experience-times">{% trans 'End time' %}: {{ ex.end_datetime }}</span>
-                        </div>
-                        <div class="description">
-                            <fieldset>
-                                <legend>{% trans 'Description' %}</legend>
-                                <div class="description-text">{{ ex.description }}</div>
-                            </fieldset>
-                        </div>
-                        <div class="experience-footer">
-                            {% trans 'Created on' %}: {{ ex.created_datetime }}
-                        </div>
+                    <div class="experience"><a href={% if ex.needs_evaluation %}{% url 'conclusion' pk=ex.pk %}{% else %}{% url 'view_experience' pk=ex.pk %}{% endif %}>
+                    <div class="experience-name">{{ ex.name }}</div>
+                    <div>
+                        <span class="experience-times">{% trans 'Start time' %}: {{ ex.start_datetime }}</span>
+                        <span class="experience-times">{% trans 'End time' %}: {{ ex.end_datetime }}</span>
+                    </div>
+                    <div class="description">
+                        <fieldset>
+                            <legend>{% trans 'Description' %}</legend>
+                            <div class="description-text">{{ ex.description }}</div>
+                        </fieldset>
+                    </div>
+                    <div class="experience-footer">
+                        {% trans 'Created on' %}: {{ ex.created_datetime }}
+                    </div></a>
                     </div>
                 {% endfor %}
                 <hr class="break" />
@@ -40,10 +40,10 @@
         <h1 class="status">{% trans 'Week Ahead' %}</h1>
         {% if week_ahead|length %}
             {% for experience in week_ahead %}
-                <div class="experience">
+                <div class="experience"><a href={% url 'view_experience' pk=experience.pk %}>
                     <p>{% trans 'Name' %}: {{ experience.name }}</p>
                     <p>{% trans 'Start Time' %}: {{ experience.start_datetime }}</p>
-                </div>
+                </a></div>
             {% endfor %}
         {% endif %}
     </div>

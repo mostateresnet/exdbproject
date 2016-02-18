@@ -3,7 +3,7 @@ from django.utils.timezone import datetime, timedelta, now, make_aware, utc
 from django.core.urlresolvers import reverse
 from django.contrib.auth import get_user_model
 
-from exdb.models import Experience, Type, SubType, Organization, Keyword, ExperienceComment, Category
+from exdb.models import Experience, Type, SubType, Organization, Keyword, ExperienceComment
 from exdb.forms import ExperienceSubmitForm
 
 
@@ -28,14 +28,12 @@ class StandardTestCase(TestCase):
     def create_keyword(self, name="Test Keyword"):
         return Keyword.objects.get_or_create(name=name)[0]
 
-    def create_category(self, name="Test Category"):
-        return Category.objects.get_or_create(name=name)[0]
-
-    def create_experience(self, exp_status, name="Test Experience"):
-        """Creates and returns an experience object with status of your choice"""
-        return Experience.objects.get_or_create(author=self.test_user, name=name, description="test description", start_datetime=self.test_date,
+    def create_experience(self, exp_status, attendance=0):
+        """Creates and returns an experience object with status,
+        start_time, end_time and/or name of your choice"""
+        return Experience.objects.get_or_create(author=self.test_user, name="Test Experience", description="test description", start_datetime=self.test_date,
                                                 end_datetime=(self.test_date + timedelta(days=1)), type=self.create_type(), sub_type=self.create_sub_type(), goal="Test Goal", audience="b",
-                                                status=exp_status)[0]
+                                                status=exp_status, attendance=attendance)[0]
 
     def create_experience_comment(self, exp, message="Test message"):
         """Creates experience comment, must pass an experience"""
@@ -53,11 +51,6 @@ class ModelCoverageTest(StandardTestCase):
     def test_type_str_method(self):
         t = self.create_type()
         self.assertEqual(str(Type.objects.get(pk=t.pk)), t.name, "Type object should have been created.")
-
-    def test_category_str_method(self):
-        c = self.create_category()
-        self.assertEqual(str(Category.objects.get(pk=c.pk)), c.name,
-                         "Category object should have been created.")
 
     def test_organization_str_method(self):
         o = self.create_org()
@@ -77,6 +70,10 @@ class ModelCoverageTest(StandardTestCase):
         self.assertEqual(ExperienceComment.objects.get(pk=ec.pk).message, ec.message,
                          "ExperienceComment object should have been created.")
 
+    def test_experience_needs_evaluation(self):
+        e = self.create_experience('ad')
+        self.assertTrue(e.needs_evaluation(), "This experience should return true for needs evaluation.")
+
 
 class ExperienceCreationFormTest(StandardTestCase):
 
@@ -90,14 +87,10 @@ class ExperienceCreationFormTest(StandardTestCase):
 
     def get_post_data(self, start, end, name='test', description='test', ex_type=None, sub_type=None, audience='c',
                       guest='1', recognition=None, keywords=None, goal='a'):
-        if not ex_type:
-            ex_type = self.test_type
-        if not sub_type:
-            sub_type = self.test_sub_type
-        if not recognition:
-            recognition = [self.test_org.pk]
-        if not keywords:
-            keywords = [self.test_keyword.pk]
+        ex_type = ex_type or self.test_type
+        sub_type = sub_type or self.test_sub_type
+        recognition = recognition or [self.test_org.pk]
+        keywords = keywords or [self.test_keyword.pk]
         return {'start_datetime': start,
                 'end_datetime': end,
                 'name': name,
@@ -203,14 +196,11 @@ class ExperienceCreationViewTest(StandardTestCase):
 
     def get_post_data(self, start, end, name='test', description='test', ex_type=None, sub_type=None,
                       guest='1', recognition=None, keywords=None, goal='a', action='submit'):
-        if not ex_type:
-            ex_type = self.test_type.pk
-        if not sub_type:
-            sub_type = self.test_sub_type.pk
-        if not recognition:
-            recognition = [self.test_org.pk]
-        if not keywords:
-            keywords = [self.test_keyword.pk]
+
+        ex_type = ex_type or self.test_type.pk
+        sub_type = sub_type or self.test_sub_type.pk
+        recognition = recognition or [self.test_org.pk]
+        keywords = keywords or [self.test_keyword.pk]
 
         return {'name': name,
                 'description': description,
@@ -253,6 +243,42 @@ class ExperienceCreationViewTest(StandardTestCase):
         self.login_client.post(reverse('create_experience'), data)
         self.assertEqual('co', Experience.objects.get(name='test').status,
                          "Experience should have been saved with completed status")
+
+
+class ViewExperienceViewTest(StandardTestCase):
+
+    def test_gets_experience(self):
+        e = self.create_experience('pe')
+        response = self.login_client.get(reverse('view_experience', kwargs={'pk': str(e.pk)}))
+        self.assertEqual(response.context['experience'].pk, e.pk, "The correct experience was not retrieved.")
+
+
+class ExperienceConclusionViewTest(StandardTestCase):
+
+    def post_data(self, attendance=1, conclusion="Test Conclusion"):
+        """posts data with optional attendance and conclusion args,
+        returns experience for query/comparison purposes"""
+        e = self.create_experience('ad')
+        self.login_client.post(reverse('conclusion', kwargs={'pk': str(e.pk)}),
+                               {'attendance': attendance, 'conclusion': conclusion})
+        e = Experience.objects.get(pk=e.pk)
+        return e
+
+    def test_conclusion_success(self):
+        e = self.post_data()
+        self.assertEqual(e.status, 'co', "The experience status should be changed to completed ('co')")
+
+    def test_no_attendance(self):
+        e = self.post_data(attendance=0)
+        self.assertEqual(e.status, 'ad', "The experience should not be complete without an attendance.")
+
+    def test_negative_attendance(self):
+        e = self.post_data(attendance=-1)
+        self.assertEqual(e.status, 'ad', "The experience should not accept a negative attendance.")
+
+    def test_no_conclusion(self):
+        e = self.post_data(conclusion="")
+        self.assertEqual(e.status, 'ad', "The experience should not be complete without a conclusion.")
 
 
 class RAHomeViewTest(StandardTestCase):
@@ -329,17 +355,22 @@ class ExperienceApprovalViewTest(StandardTestCase):
             "If message is an empty string, no ExperienceComment object should be created.")
 
 
-class PendingApprovalQueueViewTest(StandardTestCase):
+class HallStaffDashboardViewTest(StandardTestCase):
 
     def test_get_pending_queues(self):
         self.create_experience('pe')
         self.create_experience('dr')
-        response = self.anon_client.get(reverse('pending'))
-        self.assertEqual(len(response.context["experiences"]), 1, "Only pending queues should be returned")
+        response = self.anon_client.get(reverse('hallstaff_dash'))
+        self.assertEqual(len(response.context["pending_experiences"]), 1, "Only pending queues should be returned")
 
     def test_does_not_get_spontaneous(self):
-        Experience.objects.create(author=self.test_user, name="E1", description="test description", start_datetime=(self.test_date - timedelta(days=2)),
-                                  end_datetime=(self.test_date - timedelta(days=1)), type=self.create_type(), sub_type=self.create_sub_type(), goal="Test Goal", audience="b",
-                                  status="co", attendance=3)
-        response = self.anon_client.get(reverse('pending'))
-        self.assertEqual(len(response.context["experiences"]), 0, "Spontaneous experiences should not be returned")
+        self.create_experience('co', 3)
+        response = self.anon_client.get(reverse('hallstaff_dash'))
+        self.assertEqual(len(response.context["pending_experiences"]), 0,
+                         "Spontaneous experiences should not be returned")
+
+    def test_gets_needs_evaluation(self):
+        self.create_experience('ad')
+        response = self.anon_client.get(reverse('hallstaff_dash'))
+        self.assertEqual(len(response.context["experiences_needing_eval"]), 1,
+                         "Only experiences needing evaluation should have been returned.")

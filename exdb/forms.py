@@ -74,6 +74,26 @@ class ExperienceSubmitForm(ExperienceSaveForm):
         return self.cleaned_data
 
 
+class ExperienceConclusionForm(ModelForm):
+
+    class Meta:
+        model = Experience
+        fields = ['attendance', 'conclusion']
+        widgets = {
+            'conclusion': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
+        }
+
+    def clean(self):
+        if not self.cleaned_data.get('attendance'):
+            raise ValidationError("There must be an attendance")
+
+        if self.cleaned_data.get('attendance') < 0:
+            raise ValidationError("There cannot be a negative attendance")
+
+        if not self.cleaned_data.get('conclusion'):
+            raise ValidationError("Please enter a conclusion")
+
+
 class ApprovalForm(ModelForm):
     message = forms.CharField(widget=forms.Textarea(attrs={'cols': 40, 'rows': 4}))
 
