@@ -8,7 +8,7 @@ from django.utils.timezone import now
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 
-from exdb.models import Experience, ExperienceComment
+from exdb.models import Experience, ExperienceComment, ExperienceApproval
 from .forms import ExperienceSubmitForm, ExperienceSaveForm, ApprovalForm, ExperienceConclusionForm
 
 
@@ -31,8 +31,6 @@ class CreateExperienceView(CreateView):
                 form.instance.status = 'pe'
             else:
                 form.instance.status = 'co'
-                form.instance.approver = self.request.user
-                form.instance.approved_timestamp = timezone.now()
         elif 'save' in self.request.POST:
             form.instance.status = 'dr'
         return super(CreateExperienceView, self).form_valid(form)
@@ -108,18 +106,22 @@ class ExperienceApprovalView(CreateView):
         form.instance.experience = self.get_experience()
         form.instance.experience.status = 'ad' if self.request.POST.get('approve') else 'de'
         if form.instance.experience.status == 'ad':
-            form.instance.experience.approver = self.request.user
-            form.instance.experience.approved_timestamp = now()
+            form.instance.experience.current_approver = self.request.user
+            ExperienceApproval.objects.create(experience=form.instance.experience,
+                                              approver=self.request.user,
+                                              timestamp=now())
         form.instance.experience.save()
         return super(ExperienceApprovalView, self).form_valid(form)
 
     def form_invalid(self, form):
         if self.request.POST.get('approve'):
             experience = self.get_experience()
-            experience.approver = self.request.user
-            experience.approved_timestamp = now()
+            experience.current_approver = self.request.user
             experience.status = 'ad'
             experience.save()
+            ExperienceApproval.objects.create(experience=experience,
+                                              approver=self.request.user,
+                                              timestamp=now())
             return HttpResponseRedirect(self.get_success_url())
         else:
             return super(ExperienceApprovalView, self).form_invalid(form)

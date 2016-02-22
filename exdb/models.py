@@ -66,8 +66,7 @@ class Experience(models.Model):
     created_datetime = models.DateTimeField(default=now, blank=True)
     recognition = models.ManyToManyField(Organization, blank=True)
     status = models.CharField(max_length=2, choices=STATUS_TYPES, default=STATUS_TYPES[1][0])
-    approved_timestamp = models.DateTimeField(blank=True, null=True)
-    approver = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True, related_name="approver")
+    current_approver = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True, related_name='approver')
     conclusion = models.TextField(blank=True)
 
     def __str__(self):
@@ -75,6 +74,15 @@ class Experience(models.Model):
 
     def needs_evaluation(self):
         return self.status == 'ad' and self.end_datetime <= now()
+
+
+class ExperienceApproval(models.Model):
+    experience = models.ForeignKey(Experience, related_name='approval_queue')
+    approver = models.ForeignKey(settings.AUTH_USER_MODEL)
+    timestamp = models.DateTimeField(default=now)
+
+    class Meta:
+        ordering = ['timestamp']
 
 
 class ExperienceComment(models.Model):
