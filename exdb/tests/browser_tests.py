@@ -5,20 +5,34 @@ import subprocess
 import tempfile
 import copy
 import json
+from unittest import SkipTest
 
 import selenium
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 
+from django.test import Client
 from django.test.runner import DiscoverRunner
 from django.utils.translation import ugettext as _
+from django.contrib.auth import get_user_model
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.conf import settings
 from django.core.urlresolvers import reverse
 
 
-class CustomRunner(DiscoverRunner):
+class CustomRunnerMetaClass(DiscoverRunner.__class__):
+
+    @property
+    def perma_driver(cls):
+        # lazily intiate browser driver
+        if not hasattr(cls, '_perma_driver'):
+            cls._perma_driver = CustomRunner.browser_driver()
+        return cls._perma_driver
+
+
+class CustomRunner(DiscoverRunner, metaclass=CustomRunnerMetaClass):
     _do_coverage = False
+    skip_browser_tests = False
 
     def __init__(self, *args, **kwargs):
         # running DiscoverRunner constructor for default behavior
@@ -26,7 +40,11 @@ class CustomRunner(DiscoverRunner):
 
         # deciding which driver to use
         drivers = self.get_drivers()
+
         browser_arg = kwargs.get('browser')
+        if browser_arg == 'none':
+            CustomRunner.skip_browser_tests = True
+
         if browser_arg:  # pragma: no cover
             driver_obj = drivers.get(browser_arg)
             if not driver_obj:
@@ -72,6 +90,9 @@ class CustomRunner(DiscoverRunner):
         ie = lambda: 'ie'
         ie.driver = webdriver.Ie
 
+        none_obj = lambda: 'none'
+        none_obj.driver = 'none'
+
         phantomjs = lambda: 'phantomjs'
         phantomjs.driver = webdriver.PhantomJS
 
@@ -90,6 +111,7 @@ class CustomRunner(DiscoverRunner):
             'edge': edge,
             'firefox': firefox,
             'ie': ie,
+            'none': none_obj,
             'phantomjs': phantomjs,
             'remote': remote,
         }
@@ -187,11 +209,47 @@ class IstanbulCoverage(object):
 class DefaultLiveServerTestCase(StaticLiveServerTestCase):
     running_total = IstanbulCoverage()
 
-    def setUp(self):
-        self.driver = CustomRunner.browser_driver()
+    @classmethod
+    def setUpClass(cls):
+        if CustomRunner.skip_browser_tests:
+            raise SkipTest('Skipped due to argument')
+        super(DefaultLiveServerTestCase, cls).setUpClass()
 
-    def client_get(self, url):
-        self.driver.get(CustomRunner.live_server_url + url)
+    class selenium_client:
+
+        def __init__(self, driver):
+            self.driver = driver
+
+        def get(self, url):
+            self.driver.get(CustomRunner.live_server_url + url)
+
+        def force_login(self):
+            'Login a browser without visiting the login page'
+            c = Client()
+            # avoid setting the password and force_login for speed
+            user_object = get_user_model().objects.create(username='user')
+            c.force_login(user_object)
+            if CustomRunner.live_server_url not in self.driver.current_url:
+                # if we would be trying to set a cross domain cookie change the domain
+                self.get(reverse('login'))
+
+            cookie = {'name': 'sessionid', 'value': c.session.session_key}
+            try:
+                self.driver.add_cookie(cookie)
+            except selenium.common.exceptions.WebDriverException:
+                # phantomjs has a bug claiming it cannot set the cookie
+                # it actually does set the cookie
+                # check that it is there and continue if it is
+                for c in self.driver.get_cookies():
+                    if c['value'] == cookie['value']:
+                        break
+                else:
+                    raise Exception('Cookie could not be set')
+
+    def setUp(self):
+        self.driver = CustomRunner.perma_driver
+        self.client = self.selenium_client(self.driver)
+        self.client.force_login()
 
     def tearDown(self):
         try:
@@ -203,11 +261,11 @@ class DefaultLiveServerTestCase(StaticLiveServerTestCase):
 class SeleniumJSCoverage(DefaultLiveServerTestCase):
 
     def test_load(self):
-        self.client_get('/')
+        self.client.get('/')
         self.assertEqual(self.driver.find_element(By.XPATH, '//h1').text, _('Welcome'))
 
     def test_something_else(self):
-        self.client_get('/')
+        self.client.get('/')
         self.assertEqual(self.driver.find_element(By.XPATH, '//h1').text, _('Welcome'))
         self.driver.execute_script('f()')
 
@@ -215,13 +273,12 @@ class SeleniumJSCoverage(DefaultLiveServerTestCase):
 class WelcomeViewTest(DefaultLiveServerTestCase):
 
     def test_load(self):
-        self.client_get('/')
+        self.client.get('/')
         self.assertEqual(self.driver.find_element(By.XPATH, '//h1').text, _('Welcome'))
 
 
 class HallStaffDashboardBrowserTest(DefaultLiveServerTestCase):
 
     def test_load(self):
-        self.driver.get(CustomRunner.live_server_url + reverse())
-        self.client_get(reverse('hallstaff_dash'))
+        self.client.get(reverse('hallstaff_dash'))
         self.assertEqual(self.driver.find_element(By.XPATH, '//h1').text, _('Experiences Pending Approval'))

@@ -27,13 +27,13 @@ class RestrictedAccess(object):
                 return None
             raise Http404('View not in exdb.views and not superuser')
 
+        # if the access_level is not set on the class
+        if not access_level:
+            raise ConfigError('Access level not set on %s.' % view_class)
+
         # if the access_level that has been set on the class doesn't exist
         if access_level not in settings.PERMS_AND_LEVELS:
             raise ConfigError('Access level "%s" does not exist.' % access_level)
-
-        # if the access_level is not set on the class
-        if not access_level:
-            raise ConfigError('Access level not set')
 
         # if user does not have permission
         if not settings.PERMS_AND_LEVELS[access_level](request.user):

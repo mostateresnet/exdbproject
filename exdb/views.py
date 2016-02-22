@@ -46,6 +46,7 @@ class CreateExperienceView(CreateView):
 
 
 class HallStaffDashboardView(TemplateView):
+    access_level = 'basic'
     template_name = 'exdb/hallstaff_dash.html'
 
     def get_context_data(self):
@@ -62,6 +63,7 @@ class HallStaffDashboardView(TemplateView):
 
 
 class RAHomeView(ListView):
+    access_level = 'basic'
     template_name = 'exdb/ra_home.html'
     context_object_name = 'experiences'
 
@@ -93,6 +95,7 @@ class RAHomeView(ListView):
 
 
 class ExperienceApprovalView(CreateView):
+    access_level = 'basic'
     template_name = 'exdb/experience_approval.html'
     form_class = ApprovalForm
 
@@ -135,6 +138,7 @@ class ExperienceApprovalView(CreateView):
 
 
 class ExperienceConclusionView(UpdateView):
+    access_level = 'basic'
     template_name = 'exdb/conclusion.html'
     form_class = ExperienceConclusionForm
     model = Experience
@@ -154,6 +158,7 @@ class ExperienceConclusionView(UpdateView):
 
 
 class ViewExperienceView(TemplateView):
+    access_level = 'basic'
     template_name = 'exdb/experience_view.html'
 
     def get_context_data(self, **kwargs):

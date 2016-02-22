@@ -35,7 +35,7 @@ class StandardTestCase(TestCase):
         """Creates and returns an experience object with status,
         start_time, end_time and/or name of your choice"""
         return Experience.objects.get_or_create(
-            author=self.test_user,
+            author=self.clients['ra'].user_object,
             name="Test Experience",
             description="test description",
             start_datetime=self.test_date,
@@ -45,7 +45,8 @@ class StandardTestCase(TestCase):
             goal="Test Goal",
             audience="b",
             status=exp_status,
-            attendance=attendance
+            attendance=attendance,
+            next_approver=self.clients['ra'].user_object,
         )[0]
 
     def create_experience_comment(self, exp, message="Test message"):
@@ -255,7 +256,7 @@ class ViewExperienceViewTest(StandardTestCase):
 
     def test_gets_experience(self):
         e = self.create_experience('pe')
-        response = self.login_ra_client.get(reverse('view_experience', kwargs={'pk': str(e.pk)}))
+        response = self.clients['ra'].get(reverse('view_experience', kwargs={'pk': str(e.pk)}))
         self.assertEqual(response.context['experience'].pk, e.pk, "The correct experience was not retrieved.")
 
 
@@ -265,8 +266,8 @@ class ExperienceConclusionViewTest(StandardTestCase):
         """posts data with optional attendance and conclusion args,
         returns experience for query/comparison purposes"""
         e = self.create_experience('ad')
-        self.login_ra_client.post(reverse('conclusion', kwargs={'pk': str(e.pk)}),
-                                  {'attendance': attendance, 'conclusion': conclusion})
+        self.clients['ra'].post(reverse('conclusion', kwargs={'pk': str(e.pk)}),
+                                {'attendance': attendance, 'conclusion': conclusion})
         e = Experience.objects.get(pk=e.pk)
         return e
 
@@ -292,12 +293,12 @@ class RAHomeViewTest(StandardTestCase):
     def test_coverage(self):
         self.create_experience('pe')
         self.create_experience('dr')
-        response = self.login_ra_client.get(reverse('ra_home'))
+        response = self.clients['ra'].get(reverse('ra_home'))
         self.assertEqual(len(response.context["experiences"]), 2, "There should be 2 experiences displayed")
 
     def test_week_ahead(self):
         self.create_experience('ad')
-        Experience.objects.get_or_create(author=self.test_ra_user,
+        Experience.objects.get_or_create(author=self.clients['ra'].user_object,
                                          name="E1", description="test description",
                                          start_datetime=(now() + timedelta(days=2)),
                                          end_datetime=(now() + timedelta(days=3)),
@@ -307,7 +308,7 @@ class RAHomeViewTest(StandardTestCase):
                                          audience="b",
                                          status="ad",
                                          attendance=3)
-        response = self.login_ra_client.get(reverse('ra_home'))
+        response = self.clients['ra'].get(reverse('ra_home'))
         self.assertEqual(len(response.context["week_ahead"]), 1, "There should be 1 experience in the next week")
 
 
@@ -316,12 +317,12 @@ class ExperienceApprovalViewTest(StandardTestCase):
     def test_gets_correct_experience(self):
         e = self.create_experience('pe')
         self.create_experience('pe')
-        response = self.login_hall_staff_client.get(reverse('approval', args=str(e.pk)))
+        response = self.clients['ra'].get(reverse('approval', args=[e.pk]))
         self.assertEqual(response.context['experience'].pk, e.pk, "The correct experience was not retrieved.")
 
     def test_404_when_experience_not_pending(self):
         e = self.create_experience('dr')
-        response = self.login_hall_staff_client.get(reverse('approval', args=str(e.pk)))
+        response = self.clients['ra'].get(reverse('approval', args=[e.pk]))
         self.assertEqual(
             response.status_code,
             404,
@@ -329,33 +330,31 @@ class ExperienceApprovalViewTest(StandardTestCase):
 
     def test_does_not_allow_deny_without_comment(self):
         e = self.create_experience('pe')
-        self.login_hall_staff_client.post(reverse('approval', args=str(e.pk)), {'deny': 'deny', 'message': ""})
+        self.clients['ra'].post(reverse('approval', args=[e.pk]), {'deny': 'deny', 'message': ""})
         e = Experience.objects.get(pk=e.pk)
         self.assertEqual(e.status, 'pe', "An experience cannot be denied without a comment.")
 
     def test_approves_experience_no_comment(self):
         e = self.create_experience('pe')
-        self.login_hall_staff_client.post(reverse('approval', args=str(e.pk)), {'approve': 'approve', 'message': ""})
+        self.clients['ra'].post(reverse('approval', args=[e.pk]), {'approve': 'approve', 'message': ""})
         e = Experience.objects.get(pk=e.pk)
         self.assertEqual(e.status, 'ad', "Approval should be allowed without a comment")
 
     def test_approves_experience_with_comment(self):
         e = self.create_experience('pe')
-        self.login_hall_staff_client.post(reverse('approval', args=str(e.pk)), {
-                                          'approve': 'approve', 'message': "Test Comment"})
+        self.clients['ra'].post(reverse('approval', args=[e.pk]), {'approve': 'approve', 'message': "Test Comment"})
         e = Experience.objects.get(pk=e.pk)
         self.assertEqual(e.status, 'ad', "Approval should be allowed with a comment")
 
     def test_creates_comment(self):
         e = self.create_experience('pe')
-        self.login_hall_staff_client.post(reverse('approval', args=str(e.pk)), {
-                                          'deny': 'deny', 'message': "Test Comment"})
+        self.clients['ra'].post(reverse('approval', args=[e.pk]), {'deny': 'deny', 'message': "Test Comment"})
         comments = ExperienceComment.objects.filter(experience=e)
         self.assertEqual(len(comments), 1, "A comment should have been created.")
 
     def test_does_not_create_comment(self):
         e = self.create_experience('pe')
-        self.login_hall_staff_client.post(reverse('approval', args=str(e.pk)), {'deny': 'deny', 'message': ""})
+        self.clients['ra'].post(reverse('approval', args=[e.pk]), {'deny': 'deny', 'message': ""})
         comments = ExperienceComment.objects.filter(experience=e)
         self.assertEqual(
             len(comments),
@@ -368,8 +367,9 @@ class HallStaffDashboardViewTest(StandardTestCase):
     def test_get_user(self):
         self.create_experience('pe')
         self.create_experience('dr')
-        response = self.login_hall_staff_client.get(reverse('hallstaff_dash'))
+        response = self.clients['ra'].get(reverse('hallstaff_dash'))
         self.assertEqual(
             response.context["user"].pk,
-            self.test_hall_staff_user.pk,
-            "The correct user was not retrieved!")
+            self.clients['ra'].user_object.pk,
+            "The correct user was not retrieved!"
+        )
