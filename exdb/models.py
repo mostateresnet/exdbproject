@@ -66,7 +66,7 @@ class Experience(models.Model):
     created_datetime = models.DateTimeField(default=now, blank=True)
     recognition = models.ManyToManyField(Organization, blank=True)
     status = models.CharField(max_length=2, choices=STATUS_TYPES, default=STATUS_TYPES[1][0])
-    current_approver = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True, related_name='approver')
+    next_approver = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True, related_name='approval_queue')
     conclusion = models.TextField(blank=True)
 
     def __str__(self):
@@ -77,9 +77,9 @@ class Experience(models.Model):
 
 
 class ExperienceApproval(models.Model):
-    experience = models.ForeignKey(Experience, related_name='approval_queue')
-    approver = models.ForeignKey(settings.AUTH_USER_MODEL)
-    timestamp = models.DateTimeField(default=now)
+    experience = models.ForeignKey(Experience, related_name='approval_set')
+    approver = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='approval_set')
+    timestamp = models.DateTimeField(default=now, blank=True)
 
     class Meta:
         ordering = ['timestamp']

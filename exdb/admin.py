@@ -6,7 +6,7 @@ class ExperienceAdmin(admin.ModelAdmin):
     list_display = ('name', 'description', 'created_datetime', 'author')
 
 
-class ExperienceApprovalAdim(admin.ModelAdmin):
+class ExperienceApprovalAdmin(admin.ModelAdmin):
     list_display = ('experience', 'approver', 'timestamp')
 
 admin.site.register(SubType)
@@ -15,4 +15,4 @@ admin.site.register(Organization)
 admin.site.register(Keyword)
 admin.site.register(Experience, ExperienceAdmin)
 admin.site.register(ExperienceComment)
-admin.site.register(ExperienceApproval, ExperienceApprovalAdim)
+admin.site.register(ExperienceApproval, ExperienceApprovalAdmin)
