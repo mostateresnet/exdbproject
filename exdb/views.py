@@ -175,5 +175,6 @@ class LoginView(TemplateView):
         user = auth.authenticate(username=request.POST['username'], password=request.POST['password'])
         if user:
             auth.login(request, user)
-            return HttpResponseRedirect(reverse('welcome'))
+            next_location = request.GET.get('next') or reverse('welcome')
+            return HttpResponseRedirect(next_location)
         return HttpResponseRedirect(reverse('login'))

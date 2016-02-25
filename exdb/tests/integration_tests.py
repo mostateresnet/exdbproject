@@ -373,3 +373,26 @@ class HallStaffDashboardViewTest(StandardTestCase):
             self.clients['ra'].user_object.pk,
             "The correct user was not retrieved!"
         )
+
+
+class LoginViewTest(StandardTestCase):
+    credentials = ('username', 'a@a.com', 'password')
+
+    @classmethod
+    def setUpClass(cls):
+        super(LoginViewTest, cls).setUpClass()
+        get_user_model().objects.create_user(*cls.credentials)
+
+    def test_login_success(self):
+        username, _, password = self.credentials
+        response = Client().post(reverse('login'), {'username': username, 'password': password})
+        self.assertRedirects(response, reverse('welcome'))
+
+    def test_login_failure(self):
+        username, _, password = self.credentials
+        response = Client().post(reverse('login'), {'username': username, 'password': password + 'wrong'})
+        self.assertRedirects(response, reverse('login'))
+
+    def test_unauthorized_access_redirects_login(self):
+        response = Client().get(reverse('welcome'))
+        self.assertEqual(response.url.split('?')[0], reverse('login'))

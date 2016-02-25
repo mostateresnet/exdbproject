@@ -43,7 +43,7 @@ class CustomRunner(DiscoverRunner, metaclass=CustomRunnerMetaClass):
 
         browser_arg = kwargs.get('browser')
         if browser_arg == 'none':
-            CustomRunner.skip_browser_tests = True
+            CustomRunner.skip_browser_tests = True  # pragma: no cover
 
         if browser_arg:  # pragma: no cover
             driver_obj = drivers.get(browser_arg)
@@ -212,7 +212,7 @@ class DefaultLiveServerTestCase(StaticLiveServerTestCase):
     @classmethod
     def setUpClass(cls):
         if CustomRunner.skip_browser_tests:
-            raise SkipTest('Skipped due to argument')
+            raise SkipTest('Skipped due to argument')  # pragma: no cover
         super(DefaultLiveServerTestCase, cls).setUpClass()
 
     class selenium_client:
@@ -244,7 +244,7 @@ class DefaultLiveServerTestCase(StaticLiveServerTestCase):
                     if c['value'] == cookie['value']:
                         break
                 else:
-                    raise Exception('Cookie could not be set')
+                    raise Exception('Cookie could not be set')  # pragma: no cover
 
     def setUp(self):
         self.driver = CustomRunner.perma_driver
