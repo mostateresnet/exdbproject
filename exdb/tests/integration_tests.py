@@ -85,27 +85,18 @@ class ExperienceCreationFormTest(StandardTestCase):
         self.test_org = self.create_org()
         self.test_keyword = self.create_keyword()
 
-    def get_post_data(self, start, end, name='test', description='test', ex_type=None, sub_type=None, audience='c',
-                      guest='1', recognition=None, keywords=None, goal='a'):
-        if not ex_type:
-            ex_type = self.test_type
-        if not sub_type:
-            sub_type = self.test_sub_type
-        if not recognition:
-            recognition = [self.test_org.pk]
-        if not keywords:
-            keywords = [self.test_keyword.pk]
+    def get_post_data(self, start, end):
         return {'start_datetime': start,
                 'end_datetime': end,
-                'name': name,
-                'description': description,
-                'type': ex_type.pk,
-                'sub_type': sub_type.pk,
-                'audience': audience,
-                'guest': guest,
-                'recognition': recognition,
-                'keywords': keywords,
-                'goal': goal}
+                'name': 'test',
+                'description': 'test',
+                'type': self.test_type.pk,
+                'sub_type': self.test_sub_type.pk,
+                'audience': 'c',
+                'guest': 'test',
+                'recognition': [self.test_org.pk],
+                'keywords': [self.test_keyword.pk],
+                'goal': 'test'}
 
     def test_valid_experience_creation_form(self):
         data = self.get_post_data((self.test_date + timedelta(days=1)), (self.test_date + timedelta(days=2)))
@@ -113,24 +104,24 @@ class ExperienceCreationFormTest(StandardTestCase):
         self.assertTrue(form.is_valid(), "Form should have been valid")
 
     def test_valid_past_experience_creation(self):
-        data = self.get_post_data((self.test_date - timedelta(days=2)),
-                                  (self.test_date - timedelta(days=1)), ex_type=self.test_past_type)
+        data = self.get_post_data((self.test_date - timedelta(days=2)), (self.test_date - timedelta(days=1)))
         data['attendance'] = 1
+        data['type'] = self.test_past_type.pk
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertTrue(form.is_valid(), "Form should have been valid")
 
     def test_past_experience_without_audience(self):
-        data = self.get_post_data((self.test_date - timedelta(days=2)),
-                                  (self.test_date - timedelta(days=1)), ex_type=self.test_past_type)
+        data = self.get_post_data((self.test_date - timedelta(days=2)), (self.test_date - timedelta(days=1)))
         data.pop('audience', None)
         data['attendance'] = 1
+        data['type'] = self.test_past_type.pk
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
 
     def test_past_experience_type_with_future_dates(self):
-        data = self.get_post_data((self.test_date + timedelta(days=1)),
-                                  (self.test_date + timedelta(days=2)), ex_type=self.test_past_type)
+        data = self.get_post_data((self.test_date + timedelta(days=1)), (self.test_date + timedelta(days=2)))
         data['attendance'] = 1
+        data['type'] = self.test_past_type.pk
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
 
@@ -145,8 +136,8 @@ class ExperienceCreationFormTest(StandardTestCase):
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
 
     def test_past_experience_creation_no_attendance(self):
-        data = self.get_post_data((self.test_date - timedelta(days=2)),
-                                  (self.test_date - timedelta(days=1)), ex_type=self.test_past_type)
+        data = self.get_post_data((self.test_date - timedelta(days=2)), (self.test_date - timedelta(days=1)))
+        data['type'] = self.test_past_type.pk
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
 
@@ -157,9 +148,9 @@ class ExperienceCreationFormTest(StandardTestCase):
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
 
     def test_past_experience_creation_negative_attendance(self):
-        data = self.get_post_data((self.test_date - timedelta(days=2)),
-                                  (self.test_date - timedelta(days=1)), ex_type=self.test_past_type)
+        data = self.get_post_data((self.test_date - timedelta(days=2)), (self.test_date - timedelta(days=1)))
         data['attendance'] = -1
+        data['type'] = self.test_past_type.pk
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
 
@@ -198,33 +189,22 @@ class ExperienceCreationViewTest(StandardTestCase):
         self.test_org = self.create_org()
         self.test_keyword = self.create_keyword()
 
-    def get_post_data(self, start, end, name='test', description='test', ex_type=None, sub_type=None,
-                      guest='1', recognition=None, keywords=None, goal='a', action='submit'):
-
-        if not ex_type:
-            ex_type = self.test_type
-        if not sub_type:
-            sub_type = self.test_sub_type
-        if not recognition:
-            recognition = [self.test_org.pk]
-        if not keywords:
-            keywords = [self.test_keyword.pk]
-
-        return {'name': name,
-                'description': description,
-                'start_datetime_month': start.month,
+    def get_post_data(self, start, end, action='submit'):
+        return {'start_datetime_month': start.month,
                 'start_datetime_day': start.day,
                 'start_datetime_year': start.year,
                 'end_datetime_month': end.month,
                 'end_datetime_day': end.day,
                 'end_datetime_year': end.year,
-                'type': ex_type.pk,
-                'sub_type': sub_type.pk,
+                'name': 'test',
+                'description': 'test',
+                'type': self.test_type.pk,
+                'sub_type': self.test_sub_type.pk,
                 'audience': 'c',
-                'guest': guest,
-                'recognition': recognition,
-                'keywords': keywords,
-                'goal': goal,
+                'guest': 'test',
+                'recognition': [self.test_org.pk],
+                'keywords': [self.test_keyword.pk],
+                'goal': 'test',
                 action: action}
 
     def test_valid_future_experience_creation_view_submit(self):
@@ -246,8 +226,9 @@ class ExperienceCreationViewTest(StandardTestCase):
     def test_valid_past_experience_creation_view_submit(self):
         start = now() - timedelta(days=2)
         end = now() - timedelta(days=1)
-        data = self.get_post_data(start, end, ex_type=self.test_past_type)
+        data = self.get_post_data(start, end)
         data['attendance'] = 1
+        data['type'] = self.test_past_type.pk
         self.login_client.post(reverse('create_experience'), data)
         self.assertEqual('co', Experience.objects.get(name='test').status,
                          "Experience should have been saved with completed status")
