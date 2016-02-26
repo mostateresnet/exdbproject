@@ -29,6 +29,11 @@ class CustomRunnerMetaClass(DiscoverRunner.__class__):
             cls._perma_driver = CustomRunner.browser_driver()
         return cls._perma_driver
 
+    def exit_perma_driver(cls):
+        # exit driver if it has been started
+        if hasattr(cls, '_perma_driver'):
+            cls._perma_driver.quit()
+
 
 class CustomRunner(DiscoverRunner, metaclass=CustomRunnerMetaClass):
     _do_coverage = False
@@ -76,6 +81,7 @@ class CustomRunner(DiscoverRunner, metaclass=CustomRunnerMetaClass):
         if self._do_coverage:
             IstanbulCoverage.output_coverage(DefaultLiveServerTestCase.running_total.coverage_files)
         super(self.__class__, self).teardown_test_environment(**kwargs)
+        self.__class__.exit_perma_driver()
 
     def get_drivers(self):
         chrome = lambda: 'chrome'
