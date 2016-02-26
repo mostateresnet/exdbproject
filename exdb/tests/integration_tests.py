@@ -87,10 +87,14 @@ class ExperienceCreationFormTest(StandardTestCase):
 
     def get_post_data(self, start, end, name='test', description='test', ex_type=None, sub_type=None, audience='c',
                       guest='1', recognition=None, keywords=None, goal='a'):
-        ex_type = ex_type or self.test_type
-        sub_type = sub_type or self.test_sub_type
-        recognition = recognition or [self.test_org.pk]
-        keywords = keywords or [self.test_keyword.pk]
+        if not ex_type:
+            ex_type = self.test_type
+        if not sub_type:
+            sub_type = self.test_sub_type
+        if not recognition:
+            recognition = [self.test_org.pk]
+        if not keywords:
+            keywords = [self.test_keyword.pk]
         return {'start_datetime': start,
                 'end_datetime': end,
                 'name': name,
@@ -197,10 +201,14 @@ class ExperienceCreationViewTest(StandardTestCase):
     def get_post_data(self, start, end, name='test', description='test', ex_type=None, sub_type=None,
                       guest='1', recognition=None, keywords=None, goal='a', action='submit'):
 
-        ex_type = ex_type or self.test_type.pk
-        sub_type = sub_type or self.test_sub_type.pk
-        recognition = recognition or [self.test_org.pk]
-        keywords = keywords or [self.test_keyword.pk]
+        if not ex_type:
+            ex_type = self.test_type
+        if not sub_type:
+            sub_type = self.test_sub_type
+        if not recognition:
+            recognition = [self.test_org.pk]
+        if not keywords:
+            keywords = [self.test_keyword.pk]
 
         return {'name': name,
                 'description': description,
@@ -210,8 +218,8 @@ class ExperienceCreationViewTest(StandardTestCase):
                 'end_datetime_month': end.month,
                 'end_datetime_day': end.day,
                 'end_datetime_year': end.year,
-                'type': ex_type,
-                'sub_type': sub_type,
+                'type': ex_type.pk,
+                'sub_type': sub_type.pk,
                 'audience': 'c',
                 'guest': guest,
                 'recognition': recognition,
@@ -238,7 +246,7 @@ class ExperienceCreationViewTest(StandardTestCase):
     def test_valid_past_experience_creation_view_submit(self):
         start = now() - timedelta(days=2)
         end = now() - timedelta(days=1)
-        data = self.get_post_data(start, end, ex_type=self.test_past_type.pk)
+        data = self.get_post_data(start, end, ex_type=self.test_past_type)
         data['attendance'] = 1
         self.login_client.post(reverse('create_experience'), data)
         self.assertEqual('co', Experience.objects.get(name='test').status,
