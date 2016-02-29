@@ -1,0 +1,11 @@
+.form-errors {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: red;
+}
+
+.field-error {
+    font-weight: bold;
+    color: red;
+}
+
