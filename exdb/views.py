@@ -19,7 +19,7 @@ class WelcomeView(TemplateView):
 
 class CreateExperienceView(CreateView):
     model = Experience
-    template_name = 'exdb/create-experience.html'
+    template_name = 'exdb/create_experience.html'
 
     def get_success_url(self):
         return reverse('welcome')

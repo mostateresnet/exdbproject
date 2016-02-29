@@ -1,0 +1,27 @@
+{% extends "exdb/base.html" %}
+{% load i18n %}
+{% load staticfiles %}
+{% block css %}
+    {{ block.super }}
+    <link href="{% static 'exdb/css/create_experience.css' %}" rel="stylesheet">
+{% endblock %}
+{% block content %}
+    {{ block.super }}
+    <div>
+        <h1>{% trans 'Add Experience' %}</h1>
+        <form action="{% url "create_experience" %}" method="POST">
+            {% csrf_token %}
+            <span class="form-errors">{{ form.non_field_errors }}</span>
+                {% for field in form %}
+                    <div>
+                        {% if field.field.required %}*{% endif %}
+                        {{ field.label_tag }}
+                        <div class="field-error">{{ field.errors }}</div>
+                        {{ field }}
+                    </div>
+                {% endfor %}
+            <input id="save_experience" type="submit" value="{% trans 'Save as draft' %}" name="save" />
+            <input id="submit_experience" type="submit" value="{% trans 'Submit' %}" name="submit" />
+        </form>
+    </div>
+{% endblock %}
