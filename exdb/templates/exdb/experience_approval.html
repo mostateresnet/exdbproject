@@ -11,66 +11,16 @@
         <h1>{% trans "Experience Approval" %}</h1>
         <p><a href="{% url 'hallstaff_dash' %}">Return to Hall Staff Dashboard</a></p>
         <span class="form-errors">{{ form.non_field_errors }}</span>
+        <span class="form-errors">{{ comment_form.non_field_errors }}</span>
         <hr/>
         <div class="experience-display">
-            <p>
-                <span>{% trans "Experience" %}:</span>
-                {{ experience.name }}
-            </p>
-            <p>
-                <span>{% trans "Author" %}:</span>
-                {{ experience.author }}
-            </p>
-            <p>
-                <span>{% trans "Planners" %}:</span>
-                {% for p in experience.planners.all %}
-                    {{ p }}{% if not forloop.last %}, {% endif %}
-                {% endfor %}
-            </p>
-            <p>
-                <span>{% trans "Credited" %}:</span>
-                {% for org in experience.recognition.all %}
-                    {{ org }}{% if not forloop.last %}, {% endif %}
-                {% endfor %}
-            </p>
-            <p>
-                <span>{% trans "Created" %}:</span>
-                {{ experience.created_datetime }}
-            </p>
-            <p>
-                <span>{% trans "Type/Sub-Type" %}:</span>
-                {{ experience.type }}/{{ experience.sub_type }}
-            </p>
-            <p>
-                <span>{% trans "Start/End" %}:</span>
-                {{ experience.start_datetime }}/{{ experience.end_datetime }}
-            </p>
-            <p>
-                <span>{% trans "Description" %}:</span>
-                {{ experience.description }}
-            </p>
-            <p>
-                <span>{% trans "Goals" %}:</span>
-                {{ experience.goal }}
-            </p>
-            <p>
-                <span>{% trans "Keywords" %}:</span>
-                {% for kwd in experience.keywords.all %}
-                    {{ kwd }}{% if not forloop.last %}, {% endif %}
-                {% empty %}
-                    None
-                {% endfor %}
-            </p>
-            {% if experience.guest %}
-                <p>
-                    <span>{% trans "Guest" %}:</span>
-                    {{ experience.guest }}
-                </p>
-                <p>
-                    <span>{% trans "Guest Office" %}:</span>
-                    {{ experience.guest_office }}
-                </p>
-            {% endif %}
+            {% for field in form %}
+                <p>{{ field.errors }}</p>
+                <div>
+                    {{ field.label }}
+                    {{ field }}
+                </div>
+            {% endfor %}
         </div>
         <hr/>
         <table>
@@ -82,8 +32,8 @@
             {% endfor %}
         </table>
         <div>{% trans "Add Comment" %}:</div>
-        <span class="form-errors">{{ form.message.errors }}</span>
-        <div>{{ form.message }}</div>
+        <span class="form-errors">{{ comment_form.message.errors }}</span>
+        <div><span>{{ comment_form.message.label }}{{ comment_form.message }}</span></div>
         <input type="submit" value="deny" name="deny" />
         <input type="submit" value="approve" name="approve" />
     </form>

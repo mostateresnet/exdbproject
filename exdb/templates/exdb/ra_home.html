@@ -15,21 +15,25 @@
             {% if experiences|length %}
                 <h1 class="status">{{ status }}</h1>
                 {% for ex in experiences %}
-                    <div class="experience"><a href={% if ex.needs_evaluation %}{% url 'conclusion' pk=ex.pk %}{% else %}{% url 'view_experience' pk=ex.pk %}{% endif %}>
-                    <div class="experience-name">{{ ex.name }}</div>
-                    <div>
-                        <span class="experience-times">{% trans 'Start time' %}: {{ ex.start_datetime }}</span>
-                        <span class="experience-times">{% trans 'End time' %}: {{ ex.end_datetime }}</span>
-                    </div>
-                    <div class="description">
-                        <fieldset>
-                            <legend>{% trans 'Description' %}</legend>
-                            <div class="description-text">{{ ex.description }}</div>
-                        </fieldset>
-                    </div>
-                    <div class="experience-footer">
-                        {% trans 'Created on' %}: {{ ex.created_datetime }}
-                    </div></a>
+                    <div class="experience">
+                        <a href={% if ex.needs_evaluation %}{% url 'conclusion' pk=ex.pk %}
+                            {% elif ex.status == 'co' %}{% url 'view_experience' pk=ex.pk %}
+                            {% else %}{% url 'edit' pk=ex.pk %}{% endif %}>
+                            <div class="experience-name">{{ ex.name }}</div>
+                            <div>
+                                <span class="experience-times">{% trans 'Start time' %}: {{ ex.start_datetime }}</span>
+                                <span class="experience-times">{% trans 'End time' %}: {{ ex.end_datetime }}</span>
+                            </div>
+                            <div class="description">
+                                <fieldset>
+                                    <legend>{% trans 'Description' %}</legend>
+                                    <div class="description-text">{{ ex.description }}</div>
+                                </fieldset>
+                            </div>
+                            <div class="experience-footer">
+                                {% trans 'Created on' %}: {{ ex.created_datetime }}
+                            </div>
+                        </a>
                     </div>
                 {% endfor %}
                 <hr class="break" />

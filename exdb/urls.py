@@ -24,4 +24,5 @@ urlpatterns = [
     url(r'^home$', views.RAHomeView.as_view(), name='ra_home'),
     url(r'^conclusion/(?P<pk>\d+)$', views.ExperienceConclusionView.as_view(), name='conclusion'),
     url(r'^view/experience/(?P<pk>\d+)$', views.ViewExperienceView.as_view(), name='view_experience'),
+    url(r'^view/edit/(?P<pk>\d+)$', views.EditExperienceView.as_view(), name='edit'),
 ]

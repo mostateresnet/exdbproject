@@ -50,6 +50,9 @@ class ExperienceSubmitForm(ExperienceSaveForm):
 
     def clean(self):
 
+        if not self.cleaned_data.get('description'):
+            raise ValidationError("A description is required")
+
         if not self.cleaned_data.get('end_datetime'):
             raise ValidationError("An end time is required")
 
@@ -63,6 +66,9 @@ class ExperienceSubmitForm(ExperienceSaveForm):
             raise ValidationError("The type field is required")
 
         ex_type = self.cleaned_data.get('type')
+
+        if not self.cleaned_data.get('next_approver') and ex_type.needs_verification:
+            raise ValidationError("Please select the supervisor to review this experience!")
 
         if self.cleaned_data.get('start_datetime') >= self.cleaned_data.get('end_datetime'):
             raise ValidationError("Start time must be before end time")
@@ -115,3 +121,8 @@ class ApprovalForm(ModelForm):
     class Meta:
         model = ExperienceComment
         exclude = ['experience', 'author', 'timestamp']
+
+    def clean(self):
+        if not self.cleaned_data.get('message'):
+            raise ValidationError("There must be a comment if the Experience is denied.")
+        return self.cleaned_data
