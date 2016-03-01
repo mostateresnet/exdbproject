@@ -217,11 +217,7 @@ class WelcomeViewTest(DefaultLiveServerTestCase):
 
 
 class HallStaffDashboardBrowserTest(DefaultLiveServerTestCase):
-    """
-    TODO: Once we have a login page put this back in...
-    Currently fails becuase the user needs to be loged in
+
     def test_load(self):
         self.driver.get(CustomRunner.live_server_url + reverse('hallstaff_dash'))
         self.assertEqual(self.driver.find_element(By.XPATH, '//h1').text, _('Experiences Pending Approval'))
-    """
-    pass

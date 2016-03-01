@@ -48,12 +48,14 @@ class HallStaffDashboardView(TemplateView):
 
     def get_context_data(self):
         context = super(HallStaffDashboardView, self).get_context_data()
-        context['user'] = get_user_model().objects.prefetch_related('approval_queue__author',
-                                                                    'approval_queue__keywords',
-                                                                    'approval_queue__recognition',
-                                                                    'approval_set__experience__author',
-                                                                    'approval_set__experience__keywords',
-                                                                    'approval_set__experience__recognition').get(pk=self.request.user.pk)
+        context['user'] = get_user_model().objects.prefetch_related(
+            'approval_queue__author',
+            'approval_queue__keywords',
+            'approval_queue__recognition',
+            'approval_set__experience__author',
+            'approval_set__experience__keywords',
+            'approval_set__experience__recognition'
+        ).get(pk=self.request.user.pk)
         return context
 
 

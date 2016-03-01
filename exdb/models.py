@@ -44,9 +44,9 @@ class Experience(models.Model):
     )
 
     AUDIENCE_TYPES = (
-        ('b', 'Building'),
-        ('c', 'Campus'),
-        ('f', 'Floor'),
+        ('b', _('Building')),
+        ('c', _('Campus')),
+        ('f', _('Floor')),
     )
 
     author = models.ForeignKey(settings.AUTH_USER_MODEL)

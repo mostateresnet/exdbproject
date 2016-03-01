@@ -9,9 +9,23 @@ class ExperienceSaveForm(ModelForm):
 
     class Meta:
         model = Experience
-        fields = ['name', 'description', 'planners', 'start_datetime', 'end_datetime', 'type',
-                  'sub_type', 'recognition', 'audience', 'attendance', 'keywords', 'next_approver', 'goal', 'guest',
-                  'guest_office']
+        fields = [
+            'name',
+            'description',
+            'planners',
+            'start_datetime',
+            'end_datetime',
+            'type',
+            'sub_type',
+            'recognition',
+            'audience',
+            'attendance',
+            'keywords',
+            'next_approver',
+            'goal',
+            'guest',
+            'guest_office',
+        ]
 
         widgets = {
             'description': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
@@ -23,7 +37,7 @@ class ExperienceSaveForm(ModelForm):
         labels = {
             'start_datetime': 'Start Time',
             'end_datetime': 'End Time',
-            'next_approver': 'Suprivisor',
+            'next_approver': 'Supervisor',
         }
 
     def __init__(self, *args, **kwargs):
