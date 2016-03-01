@@ -7,8 +7,9 @@ from django.http import HttpResponseRedirect
 from django.utils.timezone import now
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
+from django.contrib.auth import get_user_model
 
-from exdb.models import Experience, ExperienceComment
+from exdb.models import Experience, ExperienceComment, ExperienceApproval
 from .forms import ExperienceSubmitForm, ExperienceSaveForm, ApprovalForm, ExperienceConclusionForm
 
 
@@ -31,8 +32,6 @@ class CreateExperienceView(CreateView):
                 form.instance.status = 'pe'
             else:
                 form.instance.status = 'co'
-                form.instance.approver = self.request.user
-                form.instance.approved_timestamp = timezone.now()
         elif 'save' in self.request.POST:
             form.instance.status = 'dr'
         return super(CreateExperienceView, self).form_valid(form)
@@ -49,10 +48,14 @@ class HallStaffDashboardView(TemplateView):
 
     def get_context_data(self):
         context = super(HallStaffDashboardView, self).get_context_data()
-        context['pending_experiences'] = Experience.objects.filter(status='pe')
-        context['experiences_needing_eval'] = [
-            e for e in Experience.objects.filter(
-                status='ad') if e.needs_evaluation()]
+        context['user'] = get_user_model().objects.prefetch_related(
+            'approval_queue__author',
+            'approval_queue__keywords',
+            'approval_queue__recognition',
+            'approval_set__experience__author',
+            'approval_set__experience__keywords',
+            'approval_set__experience__recognition'
+        ).get(pk=self.request.user.pk)
         return context
 
 
@@ -92,7 +95,7 @@ class ExperienceApprovalView(CreateView):
     form_class = ApprovalForm
 
     def get_experience(self):
-        return get_object_or_404(Experience, pk=self.kwargs['pk'], status='pe')
+        return get_object_or_404(Experience, pk=self.kwargs['pk'], status='pe', next_approver=self.request.user)
 
     def get_success_url(self):
         return reverse('hallstaff_dash')
@@ -108,18 +111,20 @@ class ExperienceApprovalView(CreateView):
         form.instance.experience = self.get_experience()
         form.instance.experience.status = 'ad' if self.request.POST.get('approve') else 'de'
         if form.instance.experience.status == 'ad':
-            form.instance.experience.approver = self.request.user
-            form.instance.experience.approved_timestamp = now()
+            form.instance.experience.next_approver = None
+            ExperienceApproval.objects.create(experience=form.instance.experience,
+                                              approver=self.request.user)
         form.instance.experience.save()
         return super(ExperienceApprovalView, self).form_valid(form)
 
     def form_invalid(self, form):
         if self.request.POST.get('approve'):
             experience = self.get_experience()
-            experience.approver = self.request.user
-            experience.approved_timestamp = now()
+            experience.next_approver = None
             experience.status = 'ad'
             experience.save()
+            ExperienceApproval.objects.create(experience=experience,
+                                              approver=self.request.user)
             return HttpResponseRedirect(self.get_success_url())
         else:
             return super(ExperienceApprovalView, self).form_invalid(form)
