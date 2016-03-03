@@ -320,12 +320,14 @@ class RAHomeViewTest(StandardTestCase):
 
 class ExperienceApprovalViewTest(StandardTestCase):
 
-    def post_data(self, message="", approve=False, invalid=False):
+    def post_data(self, message="", approve=False, invalid=False, llc_approval=False):
         """Posts approval/denial data and returns updated experience for comparisons
         default value is no comment and deny"""
         e = self.create_experience('pe', start=(now() + timedelta(days=1)), end=(now() + timedelta(days=2)))
         status = 'approve' if approve else 'deny'
         description = "" if invalid else e.description
+        next_approver = get_user_model().objects.create_user(
+            'test_llc_user', 'llc@u.com', 'a').pk if llc_approval else e.next_approver.pk
         self.login_hall_staff_client.post(reverse('approval', args=[e.pk]), {
             'name': e.name,
             'description': description,
@@ -389,6 +391,10 @@ class ExperienceApprovalViewTest(StandardTestCase):
             len(comments),
             0,
             "If message is an empty string, no ExperienceComment object should be created.")
+
+    def test_does_not_change_status_if_sent_to_llc_approver(self):
+        e = self.post_data(llc_approval=True)
+        self.assertEqual(e.status, 'pe', "If sent to LLC approver, status should still be pending")
 
 
 class HallStaffDashboardViewTest(StandardTestCase):

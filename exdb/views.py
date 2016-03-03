@@ -123,11 +123,14 @@ class ExperienceApprovalView(UpdateView):
     def form_valid(self, experience_form, comment_form):
         comment_form.instance.author = self.request.user
         experience_form.instance.author = self.get_object().author
-        experience_form.instance.status = 'ad' if self.request.POST.get('approve') else 'de'
-        if experience_form.instance.status == 'ad':
-            experience_form.instance.next_approver = None
+        if self.request.POST.get('approve'):
+            if experience_form.instance.next_approver == self.request.user:
+                experience_form.instance.next_approver = None
+                experience_form.instance.status = 'ad'
             ExperienceApproval.objects.create(experience=experience_form.instance,
                                               approver=self.request.user)
+        else:
+            experience_form.instance.status = 'de'
         experience_form.save()
         comment_form.instance.experience = experience_form.instance
         comment_form.save()
@@ -135,8 +138,9 @@ class ExperienceApprovalView(UpdateView):
 
     def form_invalid(self, experience_form, comment_form, **kwargs):
         if experience_form.is_valid() and self.request.POST.get('approve'):
-            experience_form.instance.next_approver = None
-            experience_form.instance.status = 'ad'
+            if experience_form.instance.next_approver == self.request.user:
+                experience_form.instance.next_approver = None
+                experience_form.instance.status = 'ad'
             experience_form.save()
             ExperienceApproval.objects.create(experience=experience_form.instance,
                                               approver=self.request.user)
