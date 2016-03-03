@@ -15,6 +15,7 @@ from django.test import Client
 from django.test.runner import DiscoverRunner
 from django.utils.translation import ugettext as _
 from django.contrib.auth import get_user_model
+from django.contrib.sessions.models import Session
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.conf import settings
 from django.core.urlresolvers import reverse
@@ -221,7 +222,7 @@ class DefaultLiveServerTestCase(StaticLiveServerTestCase):
             raise SkipTest('Skipped due to argument')  # pragma: no cover
         super(DefaultLiveServerTestCase, cls).setUpClass()
 
-    class selenium_client:
+    class SeleniumClient:
 
         def __init__(self, driver):
             self.driver = driver
@@ -252,9 +253,12 @@ class DefaultLiveServerTestCase(StaticLiveServerTestCase):
                 else:
                     raise Exception('Cookie could not be set')  # pragma: no cover
 
-    def setUp(self):
+    def get_client_and_driver(self):
         self.driver = CustomRunner.perma_driver
-        self.client = self.selenium_client(self.driver)
+        self.client = self.SeleniumClient(self.driver)
+
+    def setUp(self):
+        self.get_client_and_driver()
         self.client.force_login()
 
     def tearDown(self):
@@ -262,6 +266,7 @@ class DefaultLiveServerTestCase(StaticLiveServerTestCase):
             self.running_total += self.driver.execute_script('return __coverage__')
         except selenium.common.exceptions.WebDriverException:  # pragma: no cover
             pass  # if __coverage__ doesn't exist ignore it and move on
+        self.driver.delete_all_cookies()
 
 
 class SeleniumJSCoverage(DefaultLiveServerTestCase):
@@ -274,6 +279,37 @@ class SeleniumJSCoverage(DefaultLiveServerTestCase):
         self.client.get('/')
         self.assertEqual(self.driver.find_element(By.XPATH, '//h1').text, _('Welcome'))
         self.driver.execute_script('f()')
+
+
+class LiveLoginViewTest(DefaultLiveServerTestCase):
+
+    def setUp(self):
+        # the super class setup logs us in without the page
+        self.get_client_and_driver()
+
+    def test_login(self):
+        username = 'test'
+        password = 'test'
+
+        # create user object
+        user_object = get_user_model().objects.create(username=username)
+        user_object.set_password(password)
+        user_object.save()
+        self.client.get(reverse('login'))
+
+        # actually login
+        driver = self.client.driver
+        driver.find_element_by_css_selector('[type=text]').send_keys(username)
+        driver.find_element_by_css_selector('[type=password]').send_keys(password)
+        driver.find_element_by_css_selector('[type=submit]').click()
+
+        # check if we are logged in
+        is_logged_in = False
+        for c in driver.get_cookies():
+            if c['name'] == 'sessionid':
+                is_logged_in = bool(Session.objects.filter(session_key=c['value']))
+
+        self.assertTrue(is_logged_in)
 
 
 class WelcomeViewTest(DefaultLiveServerTestCase):
