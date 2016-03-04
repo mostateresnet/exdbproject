@@ -1,18 +1,12 @@
+{% extends 'exdb/base.html' %}
 {% load staticfiles %}
 {% load i18n %}
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset=utf-8>
-    <title>Experience Database</title>
-</head>
-<body>
+{% block content %}
     <h1>{% trans 'Login' %}</h1>
     <form method='post'>
-        Username: <input type='text' name='username'>
-        Password: <input type='password' name='password'>
+        {% trans 'Username:' %} <input type='text' name='username'>
+        {% trans 'Password:' %} <input type='password' name='password'>
         {% csrf_token %}
-        <input type="submit" value="Submit">
+        <input type='submit' value={% trans 'Submit' %}>
     </form>
-</body>
-</html>
+{% endblock %}

@@ -35,11 +35,11 @@ class RestrictedAccess(object):
         if access_level not in settings.PERMS_AND_LEVELS:
             raise ConfigError('Access level "%s" does not exist.' % access_level)
 
-        # if user does not have permission
-        if not settings.PERMS_AND_LEVELS[access_level](request.user):
-            raise Http404('Insufficient permissions')
+        # if user has permission, allow
+        if settings.PERMS_AND_LEVELS[access_level](request.user):
+            return None
 
-        # since there is no reason to deny, allow by implicitly returning None
+        raise Http404('Insufficient permissions')
 
     def process_request(self, request):
         if request.user.is_authenticated():
