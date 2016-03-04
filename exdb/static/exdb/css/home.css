@@ -1,7 +1,10 @@
 .experience {
     border: solid black 1px;
-    width: 90%;
+    width: 40%;
     margin-bottom: .5em;
+    overflow: hidden;
+    float: left;
+    margin-left: .5em;
 }
 
 .experience-name {
@@ -84,4 +87,8 @@
 a {
     text-decoration: none;
     color: black;
+}
+
+.experience-div>.experience:nth-of-type(4n-3), .experience-div>.experience:nth-of-type(4n-2){
+    background-color: lightgrey;
 }

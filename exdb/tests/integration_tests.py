@@ -278,7 +278,7 @@ class RAHomeViewTest(StandardTestCase):
     def test_coverage(self):
         self.create_experience('pe')
         self.create_experience('dr')
-        response = self.login_ra_client.get(reverse('ra_home'))
+        response = self.login_ra_client.get(reverse('home'))
         self.assertEqual(len(response.context["experiences"]), 2, "There should be 2 experiences displayed")
 
     def test_week_ahead(self):
@@ -293,8 +293,8 @@ class RAHomeViewTest(StandardTestCase):
                                          audience="b",
                                          status="ad",
                                          attendance=3)
-        response = self.login_ra_client.get(reverse('ra_home'))
-        self.assertEqual(len(response.context["week_ahead"]), 1, "There should be 1 experience in the next week")
+        response = self.login_ra_client.get(reverse('home'))
+        self.assertEqual(len(response.context["upcoming"]), 1, "There should be 1 experience in the next week")
 
 
 class ExperienceApprovalViewTest(StandardTestCase):
@@ -354,7 +354,7 @@ class HallStaffDashboardViewTest(StandardTestCase):
     def test_get_user(self):
         self.create_experience('pe')
         self.create_experience('dr')
-        response = self.login_hall_staff_client.get(reverse('hallstaff_dash'))
+        response = self.login_hall_staff_client.get(reverse('home'))
         self.assertEqual(
             response.context["user"].pk,
             self.test_hall_staff_user.pk,

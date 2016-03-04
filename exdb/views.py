@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from itertools import chain
 from django.views.generic import TemplateView, ListView
 from django.views.generic.edit import CreateView, UpdateView
 from django.shortcuts import get_object_or_404
@@ -22,7 +23,7 @@ class CreateExperienceView(CreateView):
     template_name = 'exdb/create_experience.html'
 
     def get_success_url(self):
-        return reverse('welcome')
+        return reverse('home')
 
     def form_valid(self, form):
         form.instance.author = self.request.user
@@ -43,24 +44,39 @@ class CreateExperienceView(CreateView):
             return ExperienceSaveForm
 
 
-class HallStaffDashboardView(TemplateView):
-    template_name = 'exdb/hallstaff_dash.html'
+class HallStaffDashboardView(ListView):
+    template_name = 'exdb/home.html'
+    context_object_name = 'experiences'
+
+    def get_queryset(self):
+        approvals = list(chain([e.experience for e in ExperienceApproval.objects.filter(
+            approver=self.request.user)], Experience.objects.filter(next_approver=self.request.user).select_related('next_approver')))
+        return approvals
 
     def get_context_data(self):
         context = super(HallStaffDashboardView, self).get_context_data()
-        context['user'] = get_user_model().objects.prefetch_related(
-            'approval_queue__author',
-            'approval_queue__keywords',
-            'approval_queue__recognition',
-            'approval_set__experience__author',
-            'approval_set__experience__keywords',
-            'approval_set__experience__recognition'
-        ).get(pk=self.request.user.pk)
+        context['user'] = self.request.user
+
+        experience_dict = {'Pending Approval': [], 'Approved': [], 'Needs Evaluation': []}
+        for experience in context[self.context_object_name]:
+            if experience.needs_evaluation():
+                experience_dict['Needs Evaluation'].append(experience)
+            else:
+                if experience.get_status_display() in experience_dict:
+                    experience_dict[experience.get_status_display()].append(experience)
+        context['experience_dict'] = experience_dict
+
+        one_month = timezone.now() + timezone.timedelta(days=31)
+        upcoming = []
+        for experience in context['experience_dict']['Approved']:
+            if experience.start_datetime > timezone.now() and experience.start_datetime < one_month:
+                upcoming.append(experience)
+        context['upcoming'] = upcoming
         return context
 
 
 class RAHomeView(ListView):
-    template_name = 'exdb/ra_home.html'
+    template_name = 'exdb/home.html'
     context_object_name = 'experiences'
 
     def get_queryset(self):
@@ -68,7 +84,7 @@ class RAHomeView(ListView):
 
     def get_context_data(self, *args, **kwargs):
         context = super(RAHomeView, self).get_context_data(*args, **kwargs)
-        context['ra'] = self.request.user
+        context['user'] = self.request.user
 
         experience_dict = OrderedDict()
         experience_dict[_('Needs Evaluation')] = []
@@ -82,12 +98,23 @@ class RAHomeView(ListView):
         context['experience_dict'] = experience_dict
 
         one_week = timezone.now() + timezone.timedelta(days=7)
-        week_ahead = []
+        upcoming = []
         for experience in context['experience_dict'][_('Approved')]:
             if experience.start_datetime > timezone.now() and experience.start_datetime < one_week:
-                week_ahead.append(experience)
-        context['week_ahead'] = week_ahead
+                upcoming.append(experience)
+        context['upcoming'] = upcoming
         return context
+
+
+class HomeView(ListView):
+    hall_staff_view = staticmethod(HallStaffDashboardView.as_view())
+    ra_view = staticmethod(RAHomeView.as_view())
+
+    def dispatch(self, request, *args, **kwargs):
+        if self.request.user.is_superuser:
+            return self.hall_staff_view(request, *args, **kwargs)
+        else:
+            return self.ra_view(request, *args, **kwargs)
 
 
 class ExperienceApprovalView(CreateView):
@@ -98,7 +125,7 @@ class ExperienceApprovalView(CreateView):
         return get_object_or_404(Experience, pk=self.kwargs['pk'], status='pe', next_approver=self.request.user)
 
     def get_success_url(self):
-        return reverse('hallstaff_dash')
+        return reverse('home')
 
     def get_context_data(self, **kwargs):
         context = super(ExperienceApprovalView, self).get_context_data()
@@ -136,7 +163,7 @@ class ExperienceConclusionView(UpdateView):
     model = Experience
 
     def get_success_url(self):
-        return reverse('ra_home')
+        return reverse('home')
 
     def get_queryset(self, **kwargs):
         return Experience.objects.filter(pk=self.kwargs['pk'])

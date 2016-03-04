@@ -219,5 +219,5 @@ class WelcomeViewTest(DefaultLiveServerTestCase):
 class HallStaffDashboardBrowserTest(DefaultLiveServerTestCase):
 
     def test_load(self):
-        self.driver.get(CustomRunner.live_server_url + reverse('hallstaff_dash'))
+        self.driver.get(CustomRunner.live_server_url + reverse('home'))
         self.assertEqual(self.driver.find_element(By.XPATH, '//h1').text, _('Experiences Pending Approval'))
