@@ -6,3 +6,4 @@ pylint
 coverage
 autopep8
 colorama
+python-auto-mock>=0.1.1

@@ -3,8 +3,8 @@ from django.views.generic import TemplateView, ListView
 from django.views.generic.edit import CreateView, UpdateView
 from django.shortcuts import get_object_or_404
 from django.core.urlresolvers import reverse
+from django.contrib import auth
 from django.http import HttpResponseRedirect
-from django.utils.timezone import now
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth import get_user_model
@@ -14,10 +14,12 @@ from .forms import ExperienceSubmitForm, ExperienceSaveForm, ApprovalForm, Exper
 
 
 class WelcomeView(TemplateView):
+    access_level = 'basic'
     template_name = 'exdb/welcome.html'
 
 
 class CreateExperienceView(CreateView):
+    access_level = 'basic'
     model = Experience
     template_name = 'exdb/create_experience.html'
 
@@ -44,6 +46,7 @@ class CreateExperienceView(CreateView):
 
 
 class HallStaffDashboardView(TemplateView):
+    access_level = 'basic'
     template_name = 'exdb/hallstaff_dash.html'
 
     def get_context_data(self):
@@ -60,6 +63,7 @@ class HallStaffDashboardView(TemplateView):
 
 
 class RAHomeView(ListView):
+    access_level = 'basic'
     template_name = 'exdb/ra_home.html'
     context_object_name = 'experiences'
 
@@ -91,6 +95,7 @@ class RAHomeView(ListView):
 
 
 class ExperienceApprovalView(UpdateView):
+    access_level = 'basic'
     template_name = 'exdb/experience_approval.html'
     form_class = ExperienceSubmitForm
     second_form_class = ApprovalForm
@@ -153,6 +158,7 @@ class ExperienceApprovalView(UpdateView):
 
 
 class ExperienceConclusionView(UpdateView):
+    access_level = 'basic'
     template_name = 'exdb/conclusion.html'
     form_class = ExperienceConclusionForm
     model = Experience
@@ -172,6 +178,7 @@ class ExperienceConclusionView(UpdateView):
 
 
 class ViewExperienceView(TemplateView):
+    access_level = 'basic'
     template_name = 'exdb/experience_view.html'
 
     def get_context_data(self, **kwargs):
@@ -181,6 +188,7 @@ class ViewExperienceView(TemplateView):
 
 
 class EditExperienceView(UpdateView):
+    access_level = 'basic'
     template_name = 'exdb/edit_experience.html'
     form_class = ExperienceSubmitForm
     model = Experience

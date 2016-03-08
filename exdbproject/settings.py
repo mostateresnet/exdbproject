@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/dev/ref/settings/
 """
 
 import os
+from django.core.exceptions import ImproperlyConfigured
 
 # register checks
 import exdbproject.checks
@@ -45,6 +46,8 @@ INSTALLED_APPS = [
     'exdb',
 ]
 
+RESTRICTED_ACCESS_MIDDLEWARE = 'exdb.restricted_access_middleware.RestrictedAccess'
+
 MIDDLEWARE_CLASSES = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -55,6 +58,7 @@ MIDDLEWARE_CLASSES = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.locale.LocaleMiddleware',
+    RESTRICTED_ACCESS_MIDDLEWARE,
 ]
 
 ROOT_URLCONF = 'exdbproject.urls'
@@ -133,6 +137,18 @@ TEST_RUNNER = 'exdb.tests.CustomRunner'
 # excludes directories with these names from being included in linting
 JS_FILE_EXCLUDED_DIRS = ['coverage', 'instrumented_static', 'libraries', 'htmlcov']
 PY_FILE_EXCLUDED_DIRS = ['migrations']
+
+# restricted access middleware permissions
+# a dictionary of functions which determine whether a user has access
+# the functions return True if the user has permission
+# the functions will be passed a request object
+PERMS_AND_LEVELS = {
+    'basic': lambda x: True,
+}
+
+LOGIN_REDIRECT_URL = 'welcome'
+
+LOGIN_URL = 'login'
 
 # override settings with settings_local
 try:

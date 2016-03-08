@@ -1,0 +1,11 @@
+{% extends 'exdb/base.html' %}
+{% load staticfiles %}
+{% load i18n %}
+{% block content %}
+    <h1>{% trans 'Login' %}</h1>
+    <form method='post'>
+        {{ form }}
+        {% csrf_token %}
+        <input type='submit' value={% trans 'Submit' %}>
+    </form>
+{% endblock %}

@@ -68,7 +68,7 @@ class ExperienceSubmitForm(ExperienceSaveForm):
         ex_type = self.cleaned_data.get('type')
 
         if not self.cleaned_data.get('next_approver') and ex_type.needs_verification:
-            raise ValidationError("Please select the supervisor to review this experience!")
+            raise ValidationError("Please select the supervisor to review this experience")
 
         if self.cleaned_data.get('start_datetime') >= self.cleaned_data.get('end_datetime'):
             raise ValidationError("Start time must be before end time")
@@ -79,15 +79,12 @@ class ExperienceSubmitForm(ExperienceSaveForm):
         if ex_type.needs_verification and self.cleaned_data.get('start_datetime') < self.when:
             raise ValidationError(ex_type.name + " events cannot happen in the past")
 
-        if not ex_type.needs_verification and not self.cleaned_data.get('attendance'):
+        if not ex_type.needs_verification and (not self.cleaned_data.get(
+                'attendance') or self.cleaned_data.get('attendance') < 1):
             raise ValidationError(ex_type.name + " events must have an attendance")
 
         if not ex_type.needs_verification and not self.cleaned_data.get('audience'):
             raise ValidationError(ex_type.name + " events must have an audience")
-
-        if not ex_type.needs_verification and self.cleaned_data.get(
-                'attendance') and self.cleaned_data.get('attendance') < 1:
-            raise ValidationError(ex_type.name + " events must have an attendance greater than 0")
 
         if ex_type.needs_verification and self.cleaned_data.get('attendance'):
             raise ValidationError(ex_type.name + " events cannot have an attendance")
