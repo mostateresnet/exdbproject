@@ -165,16 +165,3 @@ class ViewExperienceView(TemplateView):
         context = super(ViewExperienceView, self).get_context_data()
         context['experience'] = get_object_or_404(Experience, pk=self.kwargs['pk'])
         return context
-
-
-class LoginView(TemplateView):
-    access_level = 'basic'
-    template_name = 'exdb/login.html'
-
-    def post(self, request):
-        user = auth.authenticate(username=request.POST['username'], password=request.POST['password'])
-        if user:
-            auth.login(request, user)
-            next_location = request.GET.get('next') or reverse('welcome')
-            return HttpResponseRedirect(next_location)
-        return HttpResponseRedirect(reverse('login'))

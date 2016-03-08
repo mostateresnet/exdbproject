@@ -390,8 +390,9 @@ class LoginViewTest(StandardTestCase):
 
     def test_login_failure(self):
         username, _, password = self.credentials
-        response = Client().post(reverse('login'), {'username': username, 'password': password + 'wrong'})
-        self.assertRedirects(response, reverse('login'))
+        c = Client()
+        c.post(reverse('login'), {'username': username, 'password': password + 'wrong'})
+        self.assertNotIn('_auth_user_id', c.session)
 
     def test_unauthorized_access_redirects_login(self):
         response = Client().get(reverse('welcome'))

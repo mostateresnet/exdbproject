@@ -1,8 +1,9 @@
 import urllib
 import sys
 from django.core.urlresolvers import resolve, reverse
-from django.http import Http404, HttpResponseRedirect
+from django.http import Http404
 from django.conf import settings
+from django.contrib.auth.views import redirect_to_login
 
 
 class ConfigError(Exception):
@@ -44,8 +45,7 @@ class RestrictedAccess(object):
     def process_request(self, request):
         if request.user.is_authenticated():
             return self._check_authenticated_user(request)
-        elif request.path == reverse('login'):
+        elif request.path_info == reverse('login'):
             return None
         else:
-            new_path = reverse('login') + '?next=' + urllib.parse.quote(request.get_full_path())
-            return HttpResponseRedirect(new_path)
+            return redirect_to_login(request.path_info)

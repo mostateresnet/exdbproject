@@ -139,9 +139,16 @@ JS_FILE_EXCLUDED_DIRS = ['coverage', 'instrumented_static', 'libraries', 'htmlco
 PY_FILE_EXCLUDED_DIRS = ['migrations']
 
 # restricted access middleware permissions
+# a dictionary of functions which determine whether a user has access
+# the functions return True if the user has permission
+# the functions will be passed a request object
 PERMS_AND_LEVELS = {
     'basic': lambda x: True,
 }
+
+LOGIN_REDIRECT_URL = 'welcome'
+
+LOGIN_URL = 'login'
 
 # override settings with settings_local
 try:
