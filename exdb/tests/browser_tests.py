@@ -21,7 +21,7 @@ from django.conf import settings
 from django.core.urlresolvers import reverse
 
 
-class CustomRunnerMetaClass(DiscoverRunner.__class__):
+class CustomRunnerMetaClass(type):
 
     @property
     def perma_driver(cls):
