@@ -225,6 +225,10 @@ class ExperienceCreationViewTest(StandardTestCase):
                 'goal': 'test',
                 action: action}
 
+    def test_gets_create(self):
+        response = self.clients['ra'].get(reverse('create_experience'))
+        self.assertEqual(response.status_code, 200, "The create experience page should have loaded")
+
     def test_valid_future_experience_creation_view_submit(self):
         start = now() + timedelta(days=1)
         end = now() + timedelta(days=2)
@@ -248,8 +252,8 @@ class ExperienceCreationViewTest(StandardTestCase):
         data['attendance'] = 1
         data['type'] = self.test_past_type.pk
         self.clients['ra'].post(reverse('create_experience'), data)
-        self.assertEqual('co', Experience.objects.get(name='test').status,
-                         "Experience should have been saved with completed status")
+        self.assertEqual('ad', Experience.objects.get(name='test').status,
+                         "Experience should have been saved with approved status")
 
 
 class ViewExperienceViewTest(StandardTestCase):

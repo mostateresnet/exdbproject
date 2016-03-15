@@ -19,6 +19,7 @@ from django.contrib.sessions.models import Session
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.conf import settings
 from django.core.urlresolvers import reverse
+from exdb.models import Type
 
 
 class CustomRunnerMetaClass(type):
@@ -150,7 +151,7 @@ class IstanbulCoverage(object):
             if isinstance(value, int):
                 result[key] = y[key] + value
             elif isinstance(value, list):
-                result[key] = [value[i] + y[key][i] for i in range(len(x))]
+                result[key] = [value[i] + y[key][i] for i in range(len(value))]
 
         return result
 
@@ -324,3 +325,34 @@ class HallStaffDashboardBrowserTest(DefaultLiveServerTestCase):
     def test_load(self):
         self.client.get(reverse('hallstaff_dash'))
         self.assertEqual(self.driver.find_element(By.XPATH, '//h1').text, _('Experiences Pending Approval'))
+
+
+class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
+
+    def create_spontaneous_type(self):
+        return Type.objects.create(name="Spontaneous", needs_verification=False)
+
+    def test_attendance_hidden(self):
+        self.client.get('/create')
+        attnd_element = self.driver.find_element(By.ID, 'id_attendance')
+        self.assertFalse(attnd_element.find_element(By.XPATH, '..').is_displayed(),
+                         'Attendance field should be hidden on load.')
+
+    def test_shows_attendance_field(self):
+        self.create_spontaneous_type()
+        self.client.get('/create')
+        type_element = self.driver.find_element(By.ID, 'id_type')
+        type_element.find_element_by_class_name('no-verification').click()
+        attnd_element = self.driver.find_element(By.ID, 'id_attendance')
+        self.assertTrue(attnd_element.find_element(By.XPATH, '..').is_displayed(),
+                        'Attendance field should not be hidden when spontaneous is selected.')
+
+    def test_rehides_attendance_field(self):
+        self.create_spontaneous_type()
+        self.client.get('/create')
+        type_element = self.driver.find_element(By.ID, 'id_type')
+        type_element.find_element_by_class_name('no-verification').click()
+        type_element.find_elements_by_tag_name('option')[0].click()
+        attnd_element = self.driver.find_element(By.ID, 'id_attendance')
+        self.assertFalse(attnd_element.find_element(By.XPATH, '..').is_displayed(),
+                         'Attendance field should be hidden when spontaneous is not selected.')

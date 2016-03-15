@@ -5,6 +5,10 @@
     {{ block.super }}
     <link href="{% static 'exdb/css/create_experience.css' %}" rel="stylesheet">
 {% endblock %}
+{% block javascript %}
+    {{ block.super }}
+    <script type="text/javascript" src="{% static 'exdb/js/create_experience.js' %}"></script>
+{% endblock %}
 {% block content %}
     {{ block.super }}
     <div>

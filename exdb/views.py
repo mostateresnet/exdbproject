@@ -33,7 +33,7 @@ class CreateExperienceView(CreateView):
             if form.instance.type.needs_verification:
                 form.instance.status = 'pe'
             else:
-                form.instance.status = 'co'
+                form.instance.status = 'ad'
         elif 'save' in self.request.POST:
             form.instance.status = 'dr'
         return super(CreateExperienceView, self).form_valid(form)
