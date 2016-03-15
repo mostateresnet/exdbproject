@@ -325,25 +325,25 @@ class RAHomeViewTest(StandardTestCase):
 
 class ExperienceApprovalViewTest(StandardTestCase):
 
-    def post_data(self, message="", approve=False, invalid=False, llc_approval=False):
+    def post_data(self, message="", approve=False, invalid_description=False, llc_approval=False):
         """Posts approval/denial data and returns updated experience for comparisons
         default value is no comment and deny"""
         e = self.create_experience('pe', start=(now() + timedelta(days=1)), end=(now() + timedelta(days=2)))
         status = 'approve' if approve else 'deny'
-        description = "" if invalid else e.description
+        description = "" if invalid_description else e.description
         next_approver = get_user_model().objects.create_user(
             'test_llc_user', 'llc@u.com', 'a').pk if llc_approval else e.next_approver.pk
         self.clients['ra'].post(reverse('approval', args=[e.pk]), {
             'name': e.name,
             'description': description,
-            'start_datetime_month': str(e.start_datetime.month),
-            'start_datetime_day': str(e.start_datetime.day),
-            'start_datetime_year': str(e.start_datetime.year),
-            'end_datetime_year': str(e.end_datetime.year),
-            'end_datetime_day': str(e.end_datetime.day),
-            'end_datetime_month': str(e.end_datetime.month),
-            'type': str(e.type.pk),
-            'sub_type': str(e.sub_type.pk),
+            'start_datetime_month': e.start_datetime.month,
+            'start_datetime_day': e.start_datetime.day,
+            'start_datetime_year': e.start_datetime.year,
+            'end_datetime_year': e.end_datetime.year,
+            'end_datetime_day': e.end_datetime.day,
+            'end_datetime_month': e.end_datetime.month,
+            'type': e.type.pk,
+            'sub_type': e.sub_type.pk,
             'audience': e.audience,
             'attendance': 0,
             'goal': e.goal,
@@ -381,7 +381,7 @@ class ExperienceApprovalViewTest(StandardTestCase):
         self.assertEqual(e.status, 'ad', "Approval should be allowed with a comment")
 
     def test_does_not_allow_invalid_experience_edit(self):
-        e = self.post_data(approve=True, invalid=True)
+        e = self.post_data(approve=True, invalid_description=True)
         self.assertEqual(e.status, 'pe', "Approve/Deny should not be allowed if there is an invalid edit.")
 
     def test_creates_comment(self):
@@ -417,24 +417,24 @@ class HallStaffDashboardViewTest(StandardTestCase):
 
 class EditViewTest(StandardTestCase):
 
-    def post_data(self, status='pe', invalid=False, save=False):
+    def post_data(self, status='pe', invalid_description=False, save=False):
         e = self.create_experience(status, start=(now() + timedelta(days=1)), end=(now() + timedelta(days=2)))
         if status == 'ad' or (status in ('dr', 'de') and not save):
             submit = 'submit'
         else:
             submit = 'save'
-        description = "" if invalid else e.description
+        description = "" if invalid_description else e.description
         self.clients['ra'].post(reverse('edit', args=[e.pk]), {
             'name': e.name,
             'description': description,
-            'start_datetime_month': str(e.start_datetime.month),
-            'start_datetime_day': str(e.start_datetime.day),
-            'start_datetime_year': str(e.start_datetime.year),
-            'end_datetime_year': str(e.end_datetime.year),
-            'end_datetime_day': str(e.end_datetime.day),
-            'end_datetime_month': str(e.end_datetime.month),
-            'type': str(e.type.pk),
-            'sub_type': str(e.sub_type.pk),
+            'start_datetime_month': e.start_datetime.month,
+            'start_datetime_day': e.start_datetime.day,
+            'start_datetime_year': e.start_datetime.year,
+            'end_datetime_year': e.end_datetime.year,
+            'end_datetime_day': e.end_datetime.day,
+            'end_datetime_month': e.end_datetime.month,
+            'type': e.type.pk,
+            'sub_type': e.sub_type.pk,
             'audience': e.audience,
             'attendance': 0,
             'goal': e.goal,
@@ -469,7 +469,7 @@ class EditViewTest(StandardTestCase):
         self.assertEqual(e.status, 'de', "A saved denied experience should have no status change.")
 
     def test_does_not_submit_invalid(self):
-        e = self.post_data('ad', invalid=True)
+        e = self.post_data('ad', invalid_description=True)
         self.assertEqual(e.status, 'ad', "An invalid experience should not be submitted.")
 
 
