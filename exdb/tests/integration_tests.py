@@ -398,8 +398,15 @@ class ExperienceApprovalViewTest(StandardTestCase):
             "If message is an empty string, no ExperienceComment object should be created.")
 
     def test_does_not_change_status_if_sent_to_llc_approver(self):
-        e = self.post_data(llc_approval=True)
+        e = self.post_data(llc_approval=True, approve=True)
         self.assertEqual(e.status, 'pe', "If sent to LLC approver, status should still be pending")
+
+    def test_sets_next_approver_to_user_if_denied(self):
+        e = self.post_data(llc_approval=True)
+        self.assertEqual(
+            e.next_approver.pk,
+            self.clients['ra'].user_object.pk,
+            "If denied, next approver should be denying user.")
 
 
 class HallStaffDashboardViewTest(StandardTestCase):
