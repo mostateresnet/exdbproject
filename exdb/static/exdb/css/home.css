@@ -65,7 +65,7 @@
     width: 35%;
 }
 
-@media only screen and (max-width: 1200px) {
+@media only screen and (max-width: 1760px) {
     .week-ahead {
         display: none;
     }
@@ -77,7 +77,7 @@
         width: 95%;
     }
     .experience {
-        width: 95%;
+        width: 48%;
     }
     .experience-panel {
         width: 95%;

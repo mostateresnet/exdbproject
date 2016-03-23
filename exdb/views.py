@@ -1,5 +1,4 @@
 from collections import OrderedDict
-from itertools import chain
 from django.views.generic import TemplateView, ListView
 from django.views.generic.edit import CreateView, UpdateView
 from django.shortcuts import get_object_or_404
@@ -9,6 +8,7 @@ from django.utils.timezone import now
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth import get_user_model
+from django.db.models import Q
 
 from exdb.models import Experience, ExperienceComment, ExperienceApproval
 from .forms import ExperienceSubmitForm, ExperienceSaveForm, ApprovalForm, ExperienceConclusionForm
@@ -49,18 +49,22 @@ class HallStaffDashboardView(ListView):
     context_object_name = 'experiences'
 
     def get_queryset(self):
-        approvals = list(chain([e.experience for e in ExperienceApproval.objects.filter(
-            approver=self.request.user)], Experience.objects.filter(next_approver=self.request.user).select_related('next_approver')))
-        return approvals
+        experience_approvals = ExperienceApproval.objects.filter(
+            approver=self.request.user, experience__status='ad')
+        experiences = Experience.objects.filter(Q(next_approver=self.request.user)|Q(pk__in=experience_approvals.values('experience')))
+        return experiences
 
     def get_context_data(self):
         context = super(HallStaffDashboardView, self).get_context_data()
         context['user'] = self.request.user
 
-        experience_dict = {'Pending Approval': [], 'Approved': [], 'Needs Evaluation': []}
+        status_to_display = [_('Pending Approval'), _('Needs Evaluation'), _('Approved')]
+        experience_dict = OrderedDict()
+        for status in status_to_display:
+            experience_dict[status] = []
         for experience in context[self.context_object_name]:
             if experience.needs_evaluation():
-                experience_dict['Needs Evaluation'].append(experience)
+                experience_dict[_('Needs Evaluation')].append(experience)
             else:
                 if experience.get_status_display() in experience_dict:
                     experience_dict[experience.get_status_display()].append(experience)
@@ -68,7 +72,7 @@ class HallStaffDashboardView(ListView):
 
         one_month = timezone.now() + timezone.timedelta(days=31)
         upcoming = []
-        for experience in context['experience_dict']['Approved']:
+        for experience in context['experience_dict'][_('Approved')]:
             if experience.start_datetime > timezone.now() and experience.start_datetime < one_month:
                 upcoming.append(experience)
         context['upcoming'] = upcoming
@@ -111,7 +115,7 @@ class HomeView(ListView):
     ra_view = staticmethod(RAHomeView.as_view())
 
     def dispatch(self, request, *args, **kwargs):
-        if self.request.user.is_superuser:
+        if self.request.user.groups.filter(name='hall_staff'):
             return self.hall_staff_view(request, *args, **kwargs)
         else:
             return self.ra_view(request, *args, **kwargs)
