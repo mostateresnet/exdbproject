@@ -3,8 +3,8 @@ from django.views.generic import TemplateView, ListView
 from django.views.generic.edit import CreateView, UpdateView
 from django.shortcuts import get_object_or_404
 from django.core.urlresolvers import reverse
+from django.contrib import auth
 from django.http import HttpResponseRedirect
-from django.utils.timezone import now
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth import get_user_model
@@ -15,10 +15,12 @@ from .forms import ExperienceSubmitForm, ExperienceSaveForm, ApprovalForm, Exper
 
 
 class WelcomeView(TemplateView):
+    access_level = 'basic'
     template_name = 'exdb/welcome.html'
 
 
 class CreateExperienceView(CreateView):
+    access_level = 'basic'
     model = Experience
     template_name = 'exdb/create_experience.html'
 
@@ -45,13 +47,15 @@ class CreateExperienceView(CreateView):
 
 
 class HallStaffDashboardView(ListView):
+    acess_leve = 'basic'
     template_name = 'exdb/home.html'
     context_object_name = 'experiences'
 
     def get_queryset(self):
         experience_approvals = ExperienceApproval.objects.filter(
             approver=self.request.user, experience__status='ad')
-        experiences = Experience.objects.filter(Q(next_approver=self.request.user)|Q(pk__in=experience_approvals.values('experience')))
+        experiences = Experience.objects.filter(Q(next_approver=self.request.user) | Q(
+            pk__in=experience_approvals.values('experience')))
         return experiences
 
     def get_context_data(self):
@@ -81,6 +85,7 @@ class HallStaffDashboardView(ListView):
 
 class RAHomeView(ListView):
     template_name = 'exdb/home.html'
+    access_level = 'basic'
     context_object_name = 'experiences'
 
     def get_queryset(self):
@@ -111,17 +116,19 @@ class RAHomeView(ListView):
 
 
 class HomeView(ListView):
+    access_level = 'basic'
     hall_staff_view = staticmethod(HallStaffDashboardView.as_view())
     ra_view = staticmethod(RAHomeView.as_view())
 
     def dispatch(self, request, *args, **kwargs):
-        if self.request.user.groups.filter(name='hall_staff'):
+        if self.request.user.groups.filter(name='hs'):
             return self.hall_staff_view(request, *args, **kwargs)
         else:
             return self.ra_view(request, *args, **kwargs)
 
 
 class ExperienceApprovalView(CreateView):
+    access_level = 'basic'
     template_name = 'exdb/experience_approval.html'
     form_class = ApprovalForm
 
@@ -143,8 +150,10 @@ class ExperienceApprovalView(CreateView):
         form.instance.experience.status = 'ad' if self.request.POST.get('approve') else 'de'
         if form.instance.experience.status == 'ad':
             form.instance.experience.next_approver = None
-            ExperienceApproval.objects.create(experience=form.instance.experience,
-                                              approver=self.request.user)
+            ExperienceApproval.objects.create(
+                experience=form.instance.experience,
+                approver=self.request.user
+            )
         form.instance.experience.save()
         return super(ExperienceApprovalView, self).form_valid(form)
 
@@ -162,6 +171,7 @@ class ExperienceApprovalView(CreateView):
 
 
 class ExperienceConclusionView(UpdateView):
+    access_level = 'basic'
     template_name = 'exdb/conclusion.html'
     form_class = ExperienceConclusionForm
     model = Experience
@@ -181,6 +191,7 @@ class ExperienceConclusionView(UpdateView):
 
 
 class ViewExperienceView(TemplateView):
+    access_level = 'basic'
     template_name = 'exdb/experience_view.html'
 
     def get_context_data(self, **kwargs):

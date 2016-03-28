@@ -5,20 +5,40 @@ import subprocess
 import tempfile
 import copy
 import json
+from unittest import SkipTest
 
 import selenium
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 
+from django.test import Client
 from django.test.runner import DiscoverRunner
 from django.utils.translation import ugettext as _
+from django.contrib.auth import get_user_model
+from django.contrib.sessions.models import Session
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.conf import settings
 from django.core.urlresolvers import reverse
 
 
-class CustomRunner(DiscoverRunner):
+class CustomRunnerMetaClass(type):
+
+    @property
+    def perma_driver(cls):
+        # lazily intiate browser driver
+        if not hasattr(cls, '_perma_driver'):
+            cls._perma_driver = CustomRunner.browser_driver()
+        return cls._perma_driver
+
+    def exit_perma_driver(cls):
+        # exit driver if it has been started
+        if hasattr(cls, '_perma_driver'):
+            cls._perma_driver.quit()
+
+
+class CustomRunner(DiscoverRunner, metaclass=CustomRunnerMetaClass):
     _do_coverage = False
+    skip_browser_tests = False
 
     def __init__(self, *args, **kwargs):
         # running DiscoverRunner constructor for default behavior
@@ -26,7 +46,11 @@ class CustomRunner(DiscoverRunner):
 
         # deciding which driver to use
         drivers = self.get_drivers()
+
         browser_arg = kwargs.get('browser')
+        if browser_arg == 'none':
+            CustomRunner.skip_browser_tests = True  # pragma: no cover
+
         if browser_arg:  # pragma: no cover
             driver_obj = drivers.get(browser_arg)
             if not driver_obj:
@@ -58,6 +82,7 @@ class CustomRunner(DiscoverRunner):
         if self._do_coverage:
             IstanbulCoverage.output_coverage(DefaultLiveServerTestCase.running_total.coverage_files)
         super(self.__class__, self).teardown_test_environment(**kwargs)
+        self.__class__.exit_perma_driver()
 
     def get_drivers(self):
         chrome = lambda: 'chrome'
@@ -71,6 +96,9 @@ class CustomRunner(DiscoverRunner):
 
         ie = lambda: 'ie'
         ie.driver = webdriver.Ie
+
+        none_obj = lambda: 'none'
+        none_obj.driver = 'none'
 
         phantomjs = lambda: 'phantomjs'
         phantomjs.driver = webdriver.PhantomJS
@@ -90,6 +118,7 @@ class CustomRunner(DiscoverRunner):
             'edge': edge,
             'firefox': firefox,
             'ie': ie,
+            'none': none_obj,
             'phantomjs': phantomjs,
             'remote': remote,
         }
@@ -187,37 +216,111 @@ class IstanbulCoverage(object):
 class DefaultLiveServerTestCase(StaticLiveServerTestCase):
     running_total = IstanbulCoverage()
 
+    @classmethod
+    def setUpClass(cls):
+        if CustomRunner.skip_browser_tests:
+            raise SkipTest('Skipped due to argument')  # pragma: no cover
+        super(DefaultLiveServerTestCase, cls).setUpClass()
+
+    class SeleniumClient:
+
+        def __init__(self, driver):
+            self.driver = driver
+
+        def get(self, url):
+            self.driver.get(CustomRunner.live_server_url + url)
+
+        def force_login(self):
+            'Login a browser without visiting the login page'
+            c = Client()
+            # avoid setting the password and force_login for speed
+            user_object = get_user_model().objects.create(username='user')
+            c.force_login(user_object)
+            if CustomRunner.live_server_url not in self.driver.current_url:
+                # if we would be trying to set a cross domain cookie change the domain
+                self.get(reverse('login'))
+
+            cookie = {'name': 'sessionid', 'value': c.session.session_key}
+            try:
+                self.driver.add_cookie(cookie)
+            except selenium.common.exceptions.WebDriverException:
+                # phantomjs has a bug claiming it cannot set the cookie
+                # it actually does set the cookie
+                # check that it is there and continue if it is
+                for c in self.driver.get_cookies():
+                    if c['value'] == cookie['value']:
+                        break
+                else:
+                    raise Exception('Cookie could not be set')  # pragma: no cover
+
+    def get_client_and_driver(self):
+        self.driver = CustomRunner.perma_driver
+        self.client = self.SeleniumClient(self.driver)
+
     def setUp(self):
-        self.driver = CustomRunner.browser_driver()
+        self.get_client_and_driver()
+        self.client.force_login()
 
     def tearDown(self):
         try:
             self.running_total += self.driver.execute_script('return __coverage__')
         except selenium.common.exceptions.WebDriverException:  # pragma: no cover
             pass  # if __coverage__ doesn't exist ignore it and move on
+        self.driver.delete_all_cookies()
 
 
 class SeleniumJSCoverage(DefaultLiveServerTestCase):
 
     def test_load(self):
-        self.driver.get(CustomRunner.live_server_url)
+        self.client.get('/')
         self.assertEqual(self.driver.find_element(By.XPATH, '//h1').text, _('Welcome'))
 
     def test_something_else(self):
-        self.driver.get(CustomRunner.live_server_url)
+        self.client.get('/')
         self.assertEqual(self.driver.find_element(By.XPATH, '//h1').text, _('Welcome'))
         self.driver.execute_script('f()')
+
+
+class LiveLoginViewTest(DefaultLiveServerTestCase):
+
+    def setUp(self):
+        # the super class setup logs us in without the page
+        self.get_client_and_driver()
+
+    def test_login(self):
+        username = 'test'
+        password = 'test'
+
+        # create user object
+        user_object = get_user_model().objects.create(username=username)
+        user_object.set_password(password)
+        user_object.save()
+        self.client.get(reverse('login'))
+
+        # actually login
+        driver = self.client.driver
+        driver.find_element_by_css_selector('[type=text]').send_keys(username)
+        driver.find_element_by_css_selector('[type=password]').send_keys(password)
+        driver.find_element_by_css_selector('[type=submit]').click()
+
+        # check if we are logged in
+        is_logged_in = False
+        for c in driver.get_cookies():
+            if c['name'] == 'sessionid':
+                is_logged_in = bool(Session.objects.filter(session_key=c['value']))
+
+        self.assertTrue(is_logged_in)
 
 
 class WelcomeViewTest(DefaultLiveServerTestCase):
 
     def test_load(self):
-        self.driver.get(CustomRunner.live_server_url)
-        self.assertEqual(self.driver.find_element(By.XPATH, '//h1').text, _('Welcome'))
+        self.client.get(reverse('home'))
+        self.assertEqual(self.driver.find_element(By.XPATH, '//h2').text, _('Hello user'))
 
 
 class HallStaffDashboardBrowserTest(DefaultLiveServerTestCase):
 
     def test_load(self):
-        self.driver.get(CustomRunner.live_server_url + reverse('home'))
-        self.assertEqual(self.driver.find_element(By.XPATH, '//h1').text, _('Experiences Pending Approval'))
+        self.client.get(reverse('home'))
+        self.assertEqual(self.driver.find_element(By.XPATH, '//h2').text, _('Hello user'))

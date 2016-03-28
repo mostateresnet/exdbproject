@@ -2,6 +2,7 @@ from django.test import TestCase, Client
 from django.utils.timezone import datetime, timedelta, now, make_aware, utc
 from django.core.urlresolvers import reverse
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 
 from exdb.models import Experience, Type, SubType, Organization, Keyword, ExperienceComment
 from exdb.forms import ExperienceSubmitForm
@@ -10,14 +11,17 @@ from exdb.forms import ExperienceSubmitForm
 class StandardTestCase(TestCase):
 
     def setUp(self):
-        self.test_ra_user = get_user_model().objects.create_user('test_ra_user', 't@u.com', 'a')
-        self.test_hall_staff_user = get_user_model().objects.create_user('test_hall_staff_user', 't@u.com', 'a')
         self.test_date = make_aware(datetime(2015, 1, 1, 1, 30), timezone=utc)
-        self.anon_client = Client()
-        self.login_ra_client = Client()
-        self.login_hall_staff_client = Client()
-        self.login_ra_client.login(username='test_ra_user', password='a')
-        self.login_hall_staff_client.login(username='test_hall_staff_user', password='a')
+        users = ['ra', 'hs']
+        self.groups = {}
+        self.clients = {}
+        for user in users:
+            self.groups[user] = Group.objects.get_or_create(name=user)
+            self.clients[user] = Client()
+            # avoid setting the password and force_login for speed
+            self.clients[user].user_object = get_user_model().objects.create(username=user)
+            self.clients[user].user_object.groups.add(Group.objects.get(name=user))
+            self.clients[user].force_login(self.clients[user].user_object)
 
     def create_type(self, needs_verification=True, name="Test Type"):
         return Type.objects.get_or_create(name=name, needs_verification=needs_verification)[0]
@@ -34,14 +38,29 @@ class StandardTestCase(TestCase):
     def create_experience(self, exp_status, attendance=0):
         """Creates and returns an experience object with status,
         start_time, end_time and/or name of your choice"""
-        return Experience.objects.get_or_create(author=self.test_ra_user, name="Test Experience", description="test description", start_datetime=self.test_date,
-                                                end_datetime=(self.test_date + timedelta(days=1)), type=self.create_type(), sub_type=self.create_sub_type(), goal="Test Goal", audience="b",
-                                                status=exp_status, attendance=attendance, next_approver=self.test_hall_staff_user)[0]
+        return Experience.objects.get_or_create(
+            author=self.clients['ra'].user_object,
+            name="Test Experience",
+            description="test description",
+            start_datetime=self.test_date,
+            end_datetime=(self.test_date + timedelta(days=1)),
+            type=self.create_type(),
+            sub_type=self.create_sub_type(),
+            goal="Test Goal",
+            audience="b",
+            status=exp_status,
+            attendance=attendance,
+            next_approver=self.clients['hs'].user_object,
+        )[0]
 
     def create_experience_comment(self, exp, message="Test message"):
         """Creates experience comment, must pass an experience"""
         return ExperienceComment.objects.get_or_create(
-            experience=exp, message=message, author=self.test_hall_staff_user, timestamp=self.test_date)[0]
+            experience=exp,
+            message=message,
+            author=self.clients['ra'].user_object,
+            timestamp=self.test_date
+        )[0]
 
 
 class ModelCoverageTest(StandardTestCase):
@@ -49,7 +68,7 @@ class ModelCoverageTest(StandardTestCase):
     def test_sub_type_str_method(self):
         st = self.create_sub_type()
         self.assertEqual(str(SubType.objects.get(pk=st.pk)), st.name,
-                         "SubType object should have been created.")
+                         u"SubType object should have been created.")
 
     def test_type_str_method(self):
         t = self.create_type()
@@ -214,7 +233,7 @@ class ExperienceCreationViewTest(StandardTestCase):
         start = now() + timedelta(days=1)
         end = now() + timedelta(days=2)
         data = self.get_post_data(start, end)
-        self.login_ra_client.post(reverse('create_experience'), data)
+        self.clients['ra'].post(reverse('create_experience'), data)
         self.assertEqual('pe', Experience.objects.get(name='test').status,
                          "Experience should have been saved with pending status")
 
@@ -222,7 +241,7 @@ class ExperienceCreationViewTest(StandardTestCase):
         start = now() + timedelta(days=1)
         end = now() + timedelta(days=2)
         data = self.get_post_data(start, end, action='save')
-        self.login_ra_client.post(reverse('create_experience'), data)
+        self.clients['ra'].post(reverse('create_experience'), data)
         self.assertEqual('dr', Experience.objects.get(name='test').status,
                          "Experience should have been saved with draft status")
 
@@ -232,7 +251,7 @@ class ExperienceCreationViewTest(StandardTestCase):
         data = self.get_post_data(start, end)
         data['attendance'] = 1
         data['type'] = self.test_past_type.pk
-        self.login_ra_client.post(reverse('create_experience'), data)
+        self.clients['ra'].post(reverse('create_experience'), data)
         self.assertEqual('co', Experience.objects.get(name='test').status,
                          "Experience should have been saved with completed status")
 
@@ -241,7 +260,7 @@ class ViewExperienceViewTest(StandardTestCase):
 
     def test_gets_experience(self):
         e = self.create_experience('pe')
-        response = self.login_ra_client.get(reverse('view_experience', kwargs={'pk': str(e.pk)}))
+        response = self.clients['ra'].get(reverse('view_experience', kwargs={'pk': str(e.pk)}))
         self.assertEqual(response.context['experience'].pk, e.pk, "The correct experience was not retrieved.")
 
 
@@ -251,8 +270,8 @@ class ExperienceConclusionViewTest(StandardTestCase):
         """posts data with optional attendance and conclusion args,
         returns experience for query/comparison purposes"""
         e = self.create_experience('ad')
-        self.login_ra_client.post(reverse('conclusion', kwargs={'pk': str(e.pk)}),
-                                  {'attendance': attendance, 'conclusion': conclusion})
+        self.clients['ra'].post(reverse('conclusion', kwargs={'pk': str(e.pk)}),
+                                {'attendance': attendance, 'conclusion': conclusion})
         e = Experience.objects.get(pk=e.pk)
         return e
 
@@ -278,12 +297,13 @@ class RAHomeViewTest(StandardTestCase):
     def test_coverage(self):
         self.create_experience('pe')
         self.create_experience('dr')
-        response = self.login_ra_client.get(reverse('home'))
+        response = self.clients['ra'].get(reverse('home'))
+
         self.assertEqual(len(response.context["experiences"]), 2, "There should be 2 experiences displayed")
 
     def test_week_ahead(self):
         self.create_experience('ad')
-        Experience.objects.get_or_create(author=self.test_ra_user,
+        Experience.objects.get_or_create(author=self.clients['ra'].user_object,
                                          name="E1", description="test description",
                                          start_datetime=(now() + timedelta(days=2)),
                                          end_datetime=(now() + timedelta(days=3)),
@@ -293,8 +313,8 @@ class RAHomeViewTest(StandardTestCase):
                                          audience="b",
                                          status="ad",
                                          attendance=3)
-        response = self.login_ra_client.get(reverse('home'))
-        self.assertEqual(len(response.context["upcoming"]), 1, "There should be 1 experience in the next week")
+        response = self.clients['ra'].get(reverse('home'))
+        self.assertEqual(len(response.context["upcoming"]), 1, "There should be 1 experience in the next month")
 
 
 class ExperienceApprovalViewTest(StandardTestCase):
@@ -302,12 +322,12 @@ class ExperienceApprovalViewTest(StandardTestCase):
     def test_gets_correct_experience(self):
         e = self.create_experience('pe')
         self.create_experience('pe')
-        response = self.login_hall_staff_client.get(reverse('approval', args=str(e.pk)))
+        response = self.clients['hs'].get(reverse('approval', args=[e.pk]))
         self.assertEqual(response.context['experience'].pk, e.pk, "The correct experience was not retrieved.")
 
     def test_404_when_experience_not_pending(self):
         e = self.create_experience('dr')
-        response = self.login_hall_staff_client.get(reverse('approval', args=str(e.pk)))
+        response = self.clients['hs'].get(reverse('approval', args=[e.pk]))
         self.assertEqual(
             response.status_code,
             404,
@@ -315,33 +335,31 @@ class ExperienceApprovalViewTest(StandardTestCase):
 
     def test_does_not_allow_deny_without_comment(self):
         e = self.create_experience('pe')
-        self.login_hall_staff_client.post(reverse('approval', args=str(e.pk)), {'deny': 'deny', 'message': ""})
+        self.clients['hs'].post(reverse('approval', args=[e.pk]), {'deny': 'deny', 'message': ""})
         e = Experience.objects.get(pk=e.pk)
         self.assertEqual(e.status, 'pe', "An experience cannot be denied without a comment.")
 
     def test_approves_experience_no_comment(self):
         e = self.create_experience('pe')
-        self.login_hall_staff_client.post(reverse('approval', args=str(e.pk)), {'approve': 'approve', 'message': ""})
+        self.clients['hs'].post(reverse('approval', args=[e.pk]), {'approve': 'approve', 'message': ""})
         e = Experience.objects.get(pk=e.pk)
         self.assertEqual(e.status, 'ad', "Approval should be allowed without a comment")
 
     def test_approves_experience_with_comment(self):
         e = self.create_experience('pe')
-        self.login_hall_staff_client.post(reverse('approval', args=str(e.pk)), {
-                                          'approve': 'approve', 'message': "Test Comment"})
+        self.clients['hs'].post(reverse('approval', args=[e.pk]), {'approve': 'approve', 'message': "Test Comment"})
         e = Experience.objects.get(pk=e.pk)
         self.assertEqual(e.status, 'ad', "Approval should be allowed with a comment")
 
     def test_creates_comment(self):
         e = self.create_experience('pe')
-        self.login_hall_staff_client.post(reverse('approval', args=str(e.pk)), {
-                                          'deny': 'deny', 'message': "Test Comment"})
+        self.clients['hs'].post(reverse('approval', args=[e.pk]), {'deny': 'deny', 'message': "Test Comment"})
         comments = ExperienceComment.objects.filter(experience=e)
         self.assertEqual(len(comments), 1, "A comment should have been created.")
 
     def test_does_not_create_comment(self):
         e = self.create_experience('pe')
-        self.login_hall_staff_client.post(reverse('approval', args=str(e.pk)), {'deny': 'deny', 'message': ""})
+        self.clients['hs'].post(reverse('approval', args=[e.pk]), {'deny': 'deny', 'message': ""})
         comments = ExperienceComment.objects.filter(experience=e)
         self.assertEqual(
             len(comments),
@@ -354,8 +372,57 @@ class HallStaffDashboardViewTest(StandardTestCase):
     def test_get_user(self):
         self.create_experience('pe')
         self.create_experience('dr')
-        response = self.login_hall_staff_client.get(reverse('home'))
+        response = self.clients['hs'].get(reverse('home'))
+
         self.assertEqual(
             response.context["user"].pk,
-            self.test_hall_staff_user.pk,
-            "The correct user was not retrieved!")
+            self.clients['hs'].user_object.pk,
+            "The correct user was not retrieved!"
+        )
+
+    def test_coverage(self):
+        self.create_experience('pe')
+        self.create_experience('dr')
+        response = self.clients['hs'].get(reverse('home'))
+
+        self.assertEqual(len(response.context["experiences"]), 2, "There should be 2 experiences displayed")
+
+    def test_week_ahead(self):
+        self.create_experience('ad')
+        Experience.objects.get_or_create(author=self.clients['ra'].user_object,
+                                         name="E1", description="test description",
+                                         start_datetime=(now() + timedelta(days=2)),
+                                         end_datetime=(now() + timedelta(days=3)),
+                                         type=self.create_type(),
+                                         sub_type=self.create_sub_type(),
+                                         goal="Test Goal",
+                                         audience="b",
+                                         status="ad",
+                                         attendance=3,
+                                         next_approver=self.clients['hs'].user_object)
+        response = self.clients['hs'].get(reverse('home'))
+        self.assertEqual(len(response.context["upcoming"]), 1, "There should be 1 experience in the next week")
+
+
+class LoginViewTest(StandardTestCase):
+    credentials = ('username', 'a@a.com', 'password')
+
+    @classmethod
+    def setUpClass(cls):
+        super(LoginViewTest, cls).setUpClass()
+        get_user_model().objects.create_user(*cls.credentials)
+
+    def test_login_success(self):
+        username, _, password = self.credentials
+        response = Client().post(reverse('login'), {'username': username, 'password': password})
+        self.assertRedirects(response, reverse('home'))
+
+    def test_login_failure(self):
+        username, _, password = self.credentials
+        c = Client()
+        c.post(reverse('login'), {'username': username, 'password': password + 'wrong'})
+        self.assertNotIn('_auth_user_id', c.session)
+
+    def test_unauthorized_access_redirects_login(self):
+        response = Client().get(reverse('welcome'))
+        self.assertEqual(response.url.split('?')[0], reverse('login'))
