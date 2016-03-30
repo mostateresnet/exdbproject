@@ -8,7 +8,7 @@
 {% block content %}
     {{ block.super }}
     <h1>{% trans "Edit Experience" %}</h1>
-    <p><a href="{% url 'ra_home' %}">Back to Home</a></p>
+    <p><a href="{% url 'ra_home' %}">{% trans "Back to Home" %}</a></p>
     {% if object.status == 'ad' %}
         <p class="warning">{% trans "Warning! Editing an approved experience will resubmit it for approval." %}</p>
     {% endif %}

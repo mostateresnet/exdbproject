@@ -111,6 +111,9 @@ class ExperienceApprovalView(UpdateView):
     def get_context_data(self, **kwargs):
         context = super(ExperienceApprovalView, self).get_context_data()
         if kwargs.get('invalid_comment'):
+            # If the post returned form invalid and the comment form was invalid
+            # this adds the comment_form with the validation errors and previous
+            # input to the context data.
             context['comment_form'] = kwargs.get('invalid_comment')
         else:
             context['comment_form'] = self.second_form_class()
