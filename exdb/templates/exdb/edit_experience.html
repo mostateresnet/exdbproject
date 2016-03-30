@@ -8,9 +8,9 @@
 {% block content %}
     {{ block.super }}
     <h1>{% trans "Edit Experience" %}</h1>
-    <p><a href="{% url 'ra_home' %}">Back to Home</a></p>
+    <p><a href="{% url 'ra_home' %}">{% trans "Back to Home" %}</a></p>
     {% if status == 'ad' %}
-        <p class="warning">Warning! Editing an approved experience will resubmit it for approval.</p>
+        <p class="warning">{% trans "Warning! Editing an approved experience will resubmit it for approval." %}</p>
     {% endif %}
     <span class="errors">{{ form.non_field_errors }}</span>
     <span class="errors">{{ new_comment_form.non_field_errors }}</span>
@@ -28,13 +28,22 @@
         {% for comment in experience_comments %}
             <p>{{ comment.message }}</p>
         {% empty %}
-            <p>No Comments</p>
+            <p>{% trans "No Comments" %}</p>
         {% endfor %}
         {% if status != 'ad' %}
-            <input type="submit" value="Save Changes" name="save" />
+            <input type="submit" value="{% trans "Save Changes" %}" name="save" />
         {% endif %}
         {% if status != 'pe' %}
-            <input type="submit" value={% if status != 'dr' %}"Re-Submit"{% else %}"Submit"{% endif %} name="submit" />
+        <input
+            type="submit"
+            value=
+                {% if status != 'dr' %}
+                    {% trans "Re-Submit" %}
+                {% else %}
+                    {% trans "Submit" %}
+                {% endif %}
+            name="submit"
+        />
         {% endif %}
     </form>
 {% endblock %}

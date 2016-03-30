@@ -9,10 +9,10 @@
     <form method="POST">
         {% csrf_token %}
         <h1>{% trans "Experience Approval" %}</h1>
-        <p><a href="{% url 'hallstaff_dash' %}">Return to Hall Staff Dashboard</a></p>
+        <p><a href="{% url 'hallstaff_dash' %}">{% trans "Return to Hall Staff Dashboard" %}</a></p>
         <span class="form-errors">{{ form.non_field_errors }}</span>
         <span class="form-errors">{{ comment_form.non_field_errors }}</span>
-        <p>Note: Set the 'Supervisor' field to the LLC approver if this experience needs LLC approval.</p>
+        <p>{% trans "Note: Set the 'Supervisor' field to the LLC approver if this experience needs LLC approval." %}</p>
         <hr/>
         <div class="experience-display">
             {% for field in form %}
@@ -35,7 +35,7 @@
         <div>{% trans "Add Comment" %}:</div>
         <span class="form-errors">{{ comment_form.message.errors }}</span>
         <div><span>{{ comment_form.message.label }}{{ comment_form.message }}</span></div>
-        <input type="submit" value="deny" name="deny" />
-        <input type="submit" value="approve" name="approve" />
+        <input type="submit" value="{% trans "deny" %}" name="deny" />
+        <input type="submit" value="{% trans "approve" %}" name="approve" />
     </form>
 {% endblock %}
