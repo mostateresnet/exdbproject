@@ -1,0 +1,49 @@
+{% extends "exdb/base.html" %}
+{% load i18n %}
+{% load staticfiles %}
+{% block css %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/edit_experience.css' %}" />
+{% endblock %}
+{% block content %}
+    {{ block.super }}
+    <h1>{% trans "Edit Experience" %}</h1>
+    <p><a href="{% url 'ra_home' %}">{% trans "Back to Home" %}</a></p>
+    {% if object.status == 'ad' %}
+        <p class="warning">{% trans "Warning! Editing an approved experience will resubmit it for approval." %}</p>
+    {% endif %}
+    <div class="errors">{{ form.non_field_errors }}</div>
+    <div class="errors">{{ new_comment_form.non_field_errors }}</div>
+    <hr />
+    <form method="POST">
+        {% csrf_token %}
+        {% for field in form %}
+            <div>
+                <p class="errors">{{ field.errors }}</p>
+                {{ field.label_tag }}
+                {{ field }}
+            </div>
+        {% endfor %}
+        <hr />
+        {% for comment in object.comment_set.all %}
+            <p>{{ comment.message }}</p>
+        {% empty %}
+            <p>{% trans "No Comments" %}</p>
+        {% endfor %}
+        {% if object.status != 'ad' %}
+            <input type="submit" value="{% trans "Save Changes" %}" name="save" />
+        {% endif %}
+        {% if object.status != 'pe' %}
+            <input
+                type="submit"
+                value=
+                    {% if object.status != 'dr' %}
+                        {% trans "Re-Submit" %}
+                    {% else %}
+                        {% trans "Submit" %}
+                    {% endif %}
+                name="submit"
+            />
+        {% endif %}
+    </form>
+{% endblock %}
