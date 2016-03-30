@@ -16,9 +16,15 @@
                 <h1 class="status">{{ status }}</h1>
                 {% for ex in experiences %}
                     <div class="experience">
-                        <a href="{% if ex.needs_evaluation %}{% url 'conclusion' pk=ex.pk %}
-                            {% elif ex.status == 'co' %}{% url 'view_experience' pk=ex.pk %}
-                            {% else %}{% url 'edit' pk=ex.pk %}{% endif %}">
+                        <a href=
+                            "{% if ex.needs_evaluation %}
+                                {% url 'conclusion' pk=ex.pk %}
+                            {% elif ex.status == 'co' %}
+                                {% url 'view_experience' pk=ex.pk %}
+                            {% else %}
+                                {% url 'edit' pk=ex.pk %}
+                            {% endif %}"
+                        >
                             <div class="experience-name">{{ ex.name }}</div>
                             <div>
                                 <span class="experience-times">{% trans 'Start time' %}: {{ ex.start_datetime }}</span>

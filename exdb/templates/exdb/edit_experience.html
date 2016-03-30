@@ -8,12 +8,12 @@
 {% block content %}
     {{ block.super }}
     <h1>{% trans "Edit Experience" %}</h1>
-    <p><a href="{% url 'ra_home' %}">{% trans "Back to Home" %}</a></p>
-    {% if status == 'ad' %}
+    <p><a href="{% url 'ra_home' %}">Back to Home</a></p>
+    {% if object.status == 'ad' %}
         <p class="warning">{% trans "Warning! Editing an approved experience will resubmit it for approval." %}</p>
     {% endif %}
-    <span class="errors">{{ form.non_field_errors }}</span>
-    <span class="errors">{{ new_comment_form.non_field_errors }}</span>
+    <div class="errors">{{ form.non_field_errors }}</div>
+    <div class="errors">{{ new_comment_form.non_field_errors }}</div>
     <hr />
     <form method="POST">
         {% csrf_token %}
@@ -25,25 +25,25 @@
             </div>
         {% endfor %}
         <hr />
-        {% for comment in experience_comments %}
+        {% for comment in object.comment_set.all %}
             <p>{{ comment.message }}</p>
         {% empty %}
             <p>{% trans "No Comments" %}</p>
         {% endfor %}
-        {% if status != 'ad' %}
+        {% if object.status != 'ad' %}
             <input type="submit" value="{% trans "Save Changes" %}" name="save" />
         {% endif %}
-        {% if status != 'pe' %}
-        <input
-            type="submit"
-            value=
-                {% if status != 'dr' %}
-                    {% trans "Re-Submit" %}
-                {% else %}
-                    {% trans "Submit" %}
-                {% endif %}
-            name="submit"
-        />
+        {% if object.status != 'pe' %}
+            <input
+                type="submit"
+                value=
+                    {% if object.status != 'dr' %}
+                        {% trans "Re-Submit" %}
+                    {% else %}
+                        {% trans "Submit" %}
+                    {% endif %}
+                name="submit"
+            />
         {% endif %}
     </form>
 {% endblock %}

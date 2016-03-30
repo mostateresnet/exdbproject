@@ -12,7 +12,7 @@ class StandardTestCase(TestCase):
 
     def setUp(self):
         self.test_date = make_aware(datetime(2015, 1, 1, 1, 30), timezone=utc)
-        users = ['ra', 'hs']
+        users = ['ra', 'hs', 'llc']
         self.clients = {}
         for user in users:
             self.clients[user] = Client()
@@ -331,8 +331,7 @@ class ExperienceApprovalViewTest(StandardTestCase):
         e = self.create_experience('pe', start=(now() + timedelta(days=1)), end=(now() + timedelta(days=2)))
         status = 'approve' if approve else 'deny'
         description = "" if invalid_description else e.description
-        next_approver = get_user_model().objects.create_user(
-            'test_llc_user', 'llc@u.com', 'a').pk if llc_approval else e.next_approver.pk
+        next_approver = self.clients['llc'].user_object.pk if llc_approval else e.next_approver.pk
         self.clients['ra'].post(reverse('approval', args=[e.pk]), {
             'name': e.name,
             'description': description,
@@ -422,7 +421,7 @@ class HallStaffDashboardViewTest(StandardTestCase):
         )
 
 
-class EditViewTest(StandardTestCase):
+class EditExperienceViewTest(StandardTestCase):
 
     def post_data(self, status='pe', invalid_description=False, save=False):
         e = self.create_experience(status, start=(now() + timedelta(days=1)), end=(now() + timedelta(days=2)))
@@ -465,7 +464,7 @@ class EditViewTest(StandardTestCase):
 
     def test_does_not_change_edited_pending_status(self):
         e = self.post_data()
-        self.assertEqual(e.status, 'pe', "An edited pendiing experience should not have its status changed.")
+        self.assertEqual(e.status, 'pe', "An edited pending experience should not have its status changed.")
 
     def test_does_not_change_draft_status_when_saved(self):
         e = self.post_data('dr', save=True)
