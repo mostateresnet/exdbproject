@@ -126,6 +126,10 @@ class ExperienceApprovalView(UpdateView):
         comment_form = self.second_form_class(request.POST)
         if experience_form.is_valid() and (self.request.POST.get('approve') or comment_form.is_valid()):
             return self.form_valid(experience_form, comment_form)
+        elif self.request.POST.get('delete'):
+            self.object.status = 'ca'
+            self.object.save()
+            return HttpResponseRedirect(self.get_success_url())
         else:
             return self.form_invalid(experience_form, comment_form)
 
@@ -187,10 +191,15 @@ class ViewExperienceView(TemplateView):
 class EditExperienceView(UpdateView):
     access_level = 'basic'
     template_name = 'exdb/edit_experience.html'
-    form_class = ExperienceSubmitForm
 
     def get_success_url(self):
         return reverse('ra_home')
+
+    def get_form_class(self):
+        if self.request.method.upper() == 'POST' and 'submit' in self.request.POST:
+            return ExperienceSubmitForm
+        else:
+            return ExperienceSaveForm
 
     def get_queryset(self):
         return Experience.objects.filter(Q(author=self.request.user) | (Q(planners=self.request.user) & ~Q(status='dr')),
@@ -199,4 +208,8 @@ class EditExperienceView(UpdateView):
     def form_valid(self, form):
         if self.request.POST.get('submit'):
             form.instance.status = 'pe'
+        if self.request.POST.get('delete') and self.get_object().status == 'dr':
+            # An experience can only be 'deleted' from this view if the status of this experience
+            # in the database is draft.
+            form.instance.status = 'ca'
         return super(EditExperienceView, self).form_valid(form)

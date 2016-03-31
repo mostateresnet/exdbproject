@@ -45,5 +45,8 @@
                 name="submit"
             />
         {% endif %}
+        {% if object.status == 'dr' %}
+            <input type="submit" value={% trans "Delete" %} name="delete" />
+        {% endif %}
     </form>
 {% endblock %}

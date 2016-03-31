@@ -35,7 +35,8 @@
         <div>{% trans "Add Comment" %}:</div>
         <div class="form-errors">{{ comment_form.message.errors }}</div>
         <div>{{ comment_form.message.label }}{{ comment_form.message }}</div>
-        <input type="submit" value="{% trans "deny" %}" name="deny" />
-        <input type="submit" value="{% trans "approve" %}" name="approve" />
+        <input type="submit" value={% trans "deny" %} name="deny" />
+        <input type="submit" value={% trans "approve" %} name="approve" />
+        <input type="submit" value={% trans "delete" %} name="delete" />
     </form>
 {% endblock %}
