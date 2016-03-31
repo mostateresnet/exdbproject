@@ -76,4 +76,16 @@
             </p>
         {% endif %}
     </div>
+    <hr/>
+    <div>
+        <h3>{% trans "Comments" %}</h3>
+        {% for comment in experience.comment_set.all %}
+            <div>
+                <div>{{ comment.message }}</div>
+                <div class="comment-author">-{{ comment.author }} said on {{ comment.timestamp }}</div>
+            </div>
+        {% empty %}
+            <tr><td>{% trans "No comments" %}</td></tr>
+        {% endfor %}
+    </div>
 {% endblock %}

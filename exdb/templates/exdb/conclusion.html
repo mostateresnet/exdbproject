@@ -1,6 +1,10 @@
 {% extends "exdb/base.html" %}
 {% load i18n %}
 {% load staticfiles %}
+{% block css %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/conclusion.css' %}" />
+{% endblock %}
 {% block content %}
     <form method="POST">
         {% csrf_token %}
@@ -76,4 +80,16 @@
             {% endfor %}
         </div>
         <input type="submit" name="submit" />
+        <hr/>
+        <div>
+            <h3>{% trans "Comments" %}</h3>
+            {% for comment in experience.comment_set.all %}
+                <div>
+                    <div>{{ comment.message }}</div>
+                    <div class="comment-author">-{{ comment.author }} said on {{ comment.timestamp }}</div>
+                </div>
+            {% empty %}
+                <tr><td>{% trans "No comments" %}</td></tr>
+            {% endfor %}
+        </div>
 {% endblock %}
