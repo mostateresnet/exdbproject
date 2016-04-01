@@ -489,7 +489,7 @@ class EditExperienceViewTest(StandardTestCase):
 
     def test_does_not_delete_non_draft(self):
         e = self.post_data('pe', delete=True)
-        self.assertEqual(e.status, 'pe', "The experience should not be cancled from the edit page")
+        self.assertEqual(e.status, 'pe', "Only drafts may be cancled from the edit page")
 
 
 class LoginViewTest(StandardTestCase):
