@@ -1,9 +1,10 @@
 from collections import OrderedDict
-from django.views.generic import TemplateView, ListView
+from django.views.generic import TemplateView, ListView, RedirectView
 from django.views.generic.edit import CreateView, UpdateView
 from django.shortcuts import get_object_or_404
 from django.core.urlresolvers import reverse
 from django.contrib import auth
+from django.contrib.auth.views import logout
 from django.http import HttpResponseRedirect
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
@@ -74,10 +75,10 @@ class HallStaffDashboardView(ListView):
                     experience_dict[experience.get_status_display()].append(experience)
         context['experience_dict'] = experience_dict
 
-        one_month = timezone.now() + timezone.timedelta(days=31)
+        one_week = timezone.now() + timezone.timedelta(days=7)
         upcoming = []
         for experience in context['experience_dict'][_('Approved')]:
-            if experience.start_datetime > timezone.now() and experience.start_datetime < one_month:
+            if experience.start_datetime > timezone.now() and experience.start_datetime < one_week:
                 upcoming.append(experience)
         context['upcoming'] = upcoming
         return context
@@ -106,10 +107,10 @@ class RAHomeView(ListView):
                 experience_dict[experience.get_status_display()].append(experience)
         context['experience_dict'] = experience_dict
 
-        one_week = timezone.now() + timezone.timedelta(days=7)
+        one_month = timezone.now() + timezone.timedelta(days=31)
         upcoming = []
         for experience in context['experience_dict'][_('Approved')]:
-            if experience.start_datetime > timezone.now() and experience.start_datetime < one_week:
+            if experience.start_datetime > timezone.now() and experience.start_datetime < one_month:
                 upcoming.append(experience)
         context['upcoming'] = upcoming
         return context
@@ -232,3 +233,11 @@ class EditExperienceView(UpdateView):
         if self.request.POST.get('submit'):
             form.instance.status = 'pe'
         return super(EditExperienceView, self).form_valid(form)
+
+
+class LogoutView(RedirectView):
+    access_level = 'basic'
+
+    def get(self, request, *args, **kwargs):
+        logout(request)
+        return HttpResponseRedirect(reverse('login'))

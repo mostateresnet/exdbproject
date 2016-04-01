@@ -535,3 +535,10 @@ class LoginViewTest(StandardTestCase):
     def test_unauthorized_access_redirects_login(self):
         response = Client().get(reverse('welcome'))
         self.assertEqual(response.url.split('?')[0], reverse('login'))
+
+
+class LogoutViewTest(StandardTestCase):
+
+    def test_logout(self):
+        response = self.clients['hs'].get(reverse('logout'))
+        self.assertEqual(response.status_code, 302)

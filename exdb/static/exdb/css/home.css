@@ -92,3 +92,8 @@ a {
 .experience-div>.experience:nth-of-type(4n-3), .experience-div>.experience:nth-of-type(4n-2){
     background-color: lightgrey;
 }
+
+.log-out {
+    float: right;
+    margin-right: 5em;
+}

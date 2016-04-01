@@ -26,4 +26,5 @@ urlpatterns = [
     url(r'^view/experience/(?P<pk>\d+)$', views.ViewExperienceView.as_view(), name='view_experience'),
     url(r'^view/edit/(?P<pk>\d+)$', views.EditExperienceView.as_view(), name='edit'),
     url(r'^login$', login, name='login', kwargs={'template_name': 'exdb/login.html'}),
+    url('^logout$', views.LogoutView.as_view(), name='logout'),
 ]
