@@ -333,14 +333,14 @@ class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
         return Type.objects.create(name="Spontaneous", needs_verification=False)
 
     def test_attendance_hidden(self):
-        self.client.get('/create')
+        self.client.get(reverse('create_experience'))
         attnd_element = self.driver.find_element(By.ID, 'id_attendance')
         self.assertFalse(attnd_element.find_element(By.XPATH, '..').is_displayed(),
                          'Attendance field should be hidden on load.')
 
     def test_shows_attendance_field(self):
         self.create_spontaneous_type()
-        self.client.get('/create')
+        self.client.get(reverse('create_experience'))
         type_element = self.driver.find_element(By.ID, 'id_type')
         type_element.find_element_by_class_name('no-verification').click()
         attnd_element = self.driver.find_element(By.ID, 'id_attendance')
@@ -349,7 +349,7 @@ class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
 
     def test_rehides_attendance_field(self):
         self.create_spontaneous_type()
-        self.client.get('/create')
+        self.client.get(reverse('create_experience'))
         type_element = self.driver.find_element(By.ID, 'id_type')
         type_element.find_element_by_class_name('no-verification').click()
         type_element.find_elements_by_tag_name('option')[0].click()
