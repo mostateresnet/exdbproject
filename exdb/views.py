@@ -90,7 +90,8 @@ class RAHomeView(ListView):
     context_object_name = 'experiences'
 
     def get_queryset(self):
-        return Experience.objects.filter(author=self.request.user).order_by('created_datetime')
+        return Experience.objects.filter(Q(author=self.request.user) | (Q(planners=self.request.user) & ~Q(
+            status='dr'))).exclude(status__in=('ca')).order_by('created_datetime')
 
     def get_context_data(self, *args, **kwargs):
         context = super(RAHomeView, self).get_context_data(*args, **kwargs)

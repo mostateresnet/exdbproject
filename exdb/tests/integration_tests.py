@@ -541,4 +541,4 @@ class LogoutViewTest(StandardTestCase):
 
     def test_logout(self):
         response = self.clients['hs'].get(reverse('logout'))
-        self.assertEqual(response.status_code, 302)
+        self.assertFalse(response.wsgi_request.user.is_authenticated(), "User should have been logged out")
