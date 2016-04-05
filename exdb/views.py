@@ -8,6 +8,7 @@ from django.http import HttpResponseRedirect
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth import get_user_model
+from django.db.models import Q
 
 from exdb.models import Experience, ExperienceComment, ExperienceApproval
 from .forms import ExperienceSubmitForm, ExperienceSaveForm, ApprovalForm, ExperienceConclusionForm
@@ -94,12 +95,14 @@ class RAHomeView(ListView):
         return context
 
 
-class ExperienceApprovalView(CreateView):
+class ExperienceApprovalView(UpdateView):
     access_level = 'basic'
     template_name = 'exdb/experience_approval.html'
-    form_class = ApprovalForm
+    form_class = ExperienceSubmitForm
+    second_form_class = ApprovalForm
+    model = Experience
 
-    def get_experience(self):
+    def get_object(self):
         return get_object_or_404(Experience, pk=self.kwargs['pk'], status='pe', next_approver=self.request.user)
 
     def get_success_url(self):
@@ -107,34 +110,48 @@ class ExperienceApprovalView(CreateView):
 
     def get_context_data(self, **kwargs):
         context = super(ExperienceApprovalView, self).get_context_data()
-        context['experience'] = self.get_experience()
+        if kwargs.get('invalid_comment'):
+            # If the post returned form invalid and the comment form was invalid
+            # this adds the comment_form with the validation errors and previous
+            # input to the context data.
+            context['comment_form'] = kwargs.get('invalid_comment')
+        else:
+            context['comment_form'] = self.second_form_class()
         context['comments'] = ExperienceComment.objects.filter(experience=context['experience'])
         return context
 
-    def form_valid(self, form):
-        form.instance.author = self.request.user
-        form.instance.experience = self.get_experience()
-        form.instance.experience.status = 'ad' if self.request.POST.get('approve') else 'de'
-        if form.instance.experience.status == 'ad':
-            form.instance.experience.next_approver = None
-            ExperienceApproval.objects.create(
-                experience=form.instance.experience,
-                approver=self.request.user
-            )
-        form.instance.experience.save()
-        return super(ExperienceApprovalView, self).form_valid(form)
-
-    def form_invalid(self, form):
-        if self.request.POST.get('approve'):
-            experience = self.get_experience()
-            experience.next_approver = None
-            experience.status = 'ad'
-            experience.save()
-            ExperienceApproval.objects.create(experience=experience,
-                                              approver=self.request.user)
-            return HttpResponseRedirect(self.get_success_url())
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        experience_form = self.get_form()
+        comment_form = self.second_form_class(request.POST)
+        if experience_form.is_valid() and (self.request.POST.get('approve') or comment_form.is_valid()):
+            return self.form_valid(experience_form, comment_form)
         else:
-            return super(ExperienceApprovalView, self).form_invalid(form)
+            return self.form_invalid(experience_form, comment_form)
+
+    def form_valid(self, experience_form, comment_form):
+        comment_form.instance.author = self.request.user
+        if self.request.POST.get('approve'):
+            if experience_form.instance.next_approver == self.request.user:
+                experience_form.instance.next_approver = None
+                experience_form.instance.status = 'ad'
+            ExperienceApproval.objects.create(experience=experience_form.instance,
+                                              approver=self.request.user)
+        else:
+            experience_form.instance.status = 'de'
+            experience_form.instance.next_approver = self.request.user
+        experience_form.save()
+        comment_form.instance.experience = experience_form.instance
+        if comment_form.is_valid():
+            comment_form.save()
+        return HttpResponseRedirect(self.get_success_url())
+
+    def form_invalid(self, experience_form, comment_form, **kwargs):
+        if not experience_form.is_valid():
+            return super(ExperienceApprovalView, self).form_invalid(experience_form)
+        else:
+            kwargs['invalid_comment'] = comment_form
+            return self.render_to_response(self.get_context_data(**kwargs))
 
 
 class ExperienceConclusionView(UpdateView):
@@ -165,3 +182,21 @@ class ViewExperienceView(TemplateView):
         context = super(ViewExperienceView, self).get_context_data()
         context['experience'] = get_object_or_404(Experience, pk=self.kwargs['pk'])
         return context
+
+
+class EditExperienceView(UpdateView):
+    access_level = 'basic'
+    template_name = 'exdb/edit_experience.html'
+    form_class = ExperienceSubmitForm
+
+    def get_success_url(self):
+        return reverse('ra_home')
+
+    def get_queryset(self):
+        return Experience.objects.filter(Q(author=self.request.user) | (Q(planners=self.request.user) & ~Q(status='dr')),
+                                         start_datetime__gt=timezone.now()).exclude(status__in=('ca', 'co')).prefetch_related('comment_set')
+
+    def form_valid(self, form):
+        if self.request.POST.get('submit'):
+            form.instance.status = 'pe'
+        return super(EditExperienceView, self).form_valid(form)
