@@ -108,6 +108,11 @@ class ExperienceApprovalView(UpdateView):
     def get_success_url(self):
         return reverse('hallstaff_dash')
 
+    def get_form_kwargs(self, **kwargs):
+        kw_args = super(ExperienceApprovalView, self).get_form_kwargs()
+        kw_args['submit'] = self.request.POST.get('approve') or self.request.POST.get('deny')
+        return kw_args
+
     def get_context_data(self, **kwargs):
         context = super(ExperienceApprovalView, self).get_context_data()
         if kwargs.get('invalid_comment'):
@@ -132,7 +137,7 @@ class ExperienceApprovalView(UpdateView):
     def form_valid(self, experience_form, comment_form):
         comment_form.instance.author = self.request.user
         if self.request.POST.get('approve'):
-            if experience_form.instance.next_approver == self.request.user:
+            if experience_form.instance.next_approver == self.request.user or not experience_form.instance.next_approver:
                 experience_form.instance.next_approver = None
                 experience_form.instance.status = 'ad'
             ExperienceApproval.objects.create(experience=experience_form.instance,

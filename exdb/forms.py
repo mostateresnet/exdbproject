@@ -45,8 +45,10 @@ class ExperienceSaveForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         when = kwargs.pop('when', now())
+        submit = kwargs.pop('submit', None)
         super(ExperienceSaveForm, self).__init__(*args, **kwargs)
         self.when = when
+        self.approval_form = submit
 
 
 class ExperienceSubmitForm(ExperienceSaveForm):
@@ -64,7 +66,8 @@ class ExperienceSubmitForm(ExperienceSaveForm):
             (not self.cleaned_data.get('start_datetime'), ValidationError(_('A start time is required'))),
             (not self.cleaned_data.get('sub_type'), ValidationError(_('The sub type field is required'))),
             (not ex_type, ValidationError(_('The type field is required'))),
-            (ex_type and (not self.cleaned_data.get('next_approver') and ex_type.needs_verification),
+            (ex_type and not self.approval_form and
+                not self.cleaned_data.get('next_approver') and ex_type.needs_verification,
              ValidationError(_('Please select the supervisor to review this experience'))),
             (self.cleaned_data.get('start_datetime', max_dt) >= self.cleaned_data.get('end_datetime', min_dt),
              ValidationError(_('Start time must be before end time'))),
