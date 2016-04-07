@@ -2,6 +2,11 @@ from django.db import models
 from django.utils.timezone import now
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
+from django.contrib.auth.models import AbstractUser
+
+
+class EXDBUser(AbstractUser):
+    affiliation = models.ForeignKey('Affiliation', null=True)
 
 
 class SubType(models.Model):
@@ -19,8 +24,13 @@ class Type(models.Model):
         return self.name
 
 
-class Organization(models.Model):
+class Affiliation(models.Model):
     name = models.CharField(max_length=300)
+
+
+class Section(models.Model):
+    name = models.CharField(max_length=300)
+    affiliation = models.ForeignKey(Affiliation)
 
     def __str__(self):
         return self.name
@@ -64,7 +74,7 @@ class Experience(models.Model):
     guest_office = models.CharField(max_length=300, blank=True)
     attendance = models.IntegerField(null=True, blank=True)
     created_datetime = models.DateTimeField(default=now, blank=True)
-    recognition = models.ManyToManyField(Organization, blank=True)
+    recognition = models.ManyToManyField(Section, blank=True)
     status = models.CharField(max_length=2, choices=STATUS_TYPES, default=STATUS_TYPES[1][0])
     next_approver = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True, related_name='approval_queue')
     conclusion = models.TextField(blank=True)
