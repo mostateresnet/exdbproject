@@ -76,7 +76,7 @@ class ModelCoverageTest(StandardTestCase):
         t = self.create_type()
         self.assertEqual(str(Type.objects.get(pk=t.pk)), t.name, "Type object should have been created.")
 
-    def test_organization_str_method(self):
+    def test_section_str_method(self):
         o = self.create_section()
         self.assertEqual(str(Section.objects.get(pk=o.pk)), o.name,
                          "Section object should have been created.")
