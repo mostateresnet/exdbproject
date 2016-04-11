@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.shortcuts import get_object_or_404
 
-from exdb.models import Experience, Type, SubType, Organization, Keyword, ExperienceComment, ExperienceApproval
+from exdb.models import Affiliation, Experience, Type, SubType, Section, Keyword, ExperienceComment, ExperienceApproval
 from exdb.forms import ExperienceSubmitForm
 
 
@@ -30,8 +30,11 @@ class StandardTestCase(TestCase):
     def create_sub_type(self, name="Test Sub Type"):
         return SubType.objects.get_or_create(name=name)[0]
 
-    def create_org(self, name="Test Organization"):
-        return Organization.objects.get_or_create(name=name)[0]
+    def create_affiliation(self, name="Test Affiliation"):
+        return Affiliation.objects.get_or_create(name=name)[0]
+
+    def create_section(self, name="Test Section"):
+        return Section.objects.get_or_create(name=name, affiliation=self.create_affiliation())[0]
 
     def create_keyword(self, name="Test Keyword"):
         return Keyword.objects.get_or_create(name=name)[0]
@@ -77,10 +80,10 @@ class ModelCoverageTest(StandardTestCase):
         t = self.create_type()
         self.assertEqual(str(Type.objects.get(pk=t.pk)), t.name, "Type object should have been created.")
 
-    def test_organization_str_method(self):
-        o = self.create_org()
-        self.assertEqual(str(Organization.objects.get(pk=o.pk)), o.name,
-                         "Organization object should have been created.")
+    def test_section_str_method(self):
+        o = self.create_section()
+        self.assertEqual(str(Section.objects.get(pk=o.pk)), o.name,
+                         "Section object should have been created.")
 
     def test_keyword_str_method(self):
         k = self.create_keyword()
@@ -107,7 +110,7 @@ class ExperienceCreationFormTest(StandardTestCase):
         self.test_type = self.create_type()
         self.test_past_type = self.create_type(needs_verification=False)
         self.test_sub_type = self.create_sub_type()
-        self.test_org = self.create_org()
+        self.test_org = self.create_section()
         self.test_keyword = self.create_keyword()
 
     def get_post_data(self, start, end):
@@ -218,7 +221,7 @@ class ExperienceCreationViewTest(StandardTestCase):
         self.test_type = self.create_type()
         self.test_past_type = self.create_type(needs_verification=False)
         self.test_sub_type = self.create_sub_type()
-        self.test_org = self.create_org()
+        self.test_org = self.create_section()
         self.test_keyword = self.create_keyword()
 
     def get_post_data(self, start, end, action='submit'):

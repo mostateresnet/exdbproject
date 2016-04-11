@@ -150,6 +150,9 @@ LOGIN_REDIRECT_URL = 'home'
 
 LOGIN_URL = 'login'
 
+# Use augmented user model
+AUTH_USER_MODEL = 'exdb.EXDBUser'
+
 # override settings with settings_local
 try:
     from exdbproject.settings_local import *  # pylint: disable=wildcard-import,unused-wildcard-import,wrong-import-position
