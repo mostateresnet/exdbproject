@@ -72,6 +72,7 @@ class Experience(models.Model):
     status = models.CharField(max_length=2, choices=STATUS_TYPES, default=STATUS_TYPES[1][0])
     next_approver = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True, related_name='approval_queue')
     conclusion = models.TextField(blank=True)
+    needs_author_email = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name

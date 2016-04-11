@@ -4,15 +4,6 @@ from exdb import emails
 
 
 class Command(BaseCommand):
-    help = '''Email Command
-    Subcommands:
-        create
-            Creates the EmailTask objects for the classes defined in emails.py
-        sync
-            Runs the sync_addrs method for every EmailTask object in the database
-        send
-            Sends the emails based on the information in EmailTask
-    '''
 
     def create_email_tasks(self):
         emails_attrs = dir(emails)
@@ -42,12 +33,6 @@ class Command(BaseCommand):
 
         self.stdout.write('%d new task(s) created out of %d total email tasks.' % (len(created_tasks), len(email_tasks.keys())))
 
-    def sync_addrs(self):
-        tasks = EmailTask.objects.all()
-        addresses_updated = 0
-        for task in tasks:
-            addresses_updated += task.sync_addrs()
-        self.stdout.write("%d address(es) updated" % addresses_updated)
 
     def send_emails(self):
         tasks = EmailTask.objects.all()
@@ -61,20 +46,14 @@ class Command(BaseCommand):
             self.send_emails()
         if options['create']:
             self.create_email_tasks()
-        if options['sync']:
-            self.sync_addrs()
     
     def add_arguments(self, parser):
         parser.add_argument('--send',
                             action='store_true',
                             dest='send',
                             default=False,
-                            help='Send all the emails!!!!!!')
+                            help='Send all the emails for each email task.')
         parser.add_argument('--create',
                             action='store_true',
                             dest='create',
-                            help='Create all the emails!!!!!!!!')
-        parser.add_argument('--sync',
-                            action='store_true',
-                            dest='sync',
-                            help='Sync all the addresses!!!!!!!!')
+                            help='Create email task that are specified in the emails.py file.')

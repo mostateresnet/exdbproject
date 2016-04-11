@@ -1,1 +1,24 @@
-There are 4 experiences that need attention
+There {{ experience_count|pluralize:"is, are" }} <a href="{{ url_prefix }}{% url 'hallstaff_dash' %}">{{ experience_count }} experience(s) needing action.</a>
+
+{% for status, experiences in experience_dict.items %}
+    {% if experiences|length %}
+        <h1 class="status">{{ status }}</h1>
+        <table style="border: 1px solid black">
+            <tr style="border: 1px solid black">
+                <th style="border: 1px solid black">Name</th>
+                <th style="border: 1px solid black">Start Time</th>
+                <th style="border: 1px solid black">End Time</th>
+                <th style="border: 1px solid black">Author</th>
+            </tr>
+            {% for ex in experiences %}
+                <tr style="border: 1px solid black">
+                    <td style="border: 1px solid black"><a href="{{ url_prefix }}{% url 'view_experience' ex.pk %}">{{ ex.name }}</a></td>
+                    <td style="border: 1px solid black">{{ ex.start_datetime }}</td>
+                    <td style="border: 1px solid black">{{ ex.end_datetime }}</td>
+                    <td style="border: 1px solid black">{{ ex.author }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+        <hr />
+    {% endif %}
+{% endfor %}
