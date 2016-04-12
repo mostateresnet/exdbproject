@@ -31,8 +31,8 @@ class Command(BaseCommand):
 
         created_tasks = EmailTask.objects.bulk_create(email_task_database_objects)
 
-        self.stdout.write('%d new task(s) created out of %d total email tasks.' % (len(created_tasks), len(email_tasks.keys())))
-
+        self.stdout.write('%d new task(s) created out of %d total email tasks.' %
+                          (len(created_tasks), len(email_tasks.keys())))
 
     def send_emails(self):
         tasks = EmailTask.objects.all()
@@ -46,7 +46,7 @@ class Command(BaseCommand):
             self.send_emails()
         if options['create']:
             self.create_email_tasks()
-    
+
     def add_arguments(self, parser):
         parser.add_argument('--send',
                             action='store_true',

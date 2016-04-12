@@ -82,7 +82,15 @@ class Experience(models.Model):
     status = models.CharField(max_length=2, choices=STATUS_TYPES, default=STATUS_TYPES[1][0])
     next_approver = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True, related_name='approval_queue')
     conclusion = models.TextField(blank=True)
+
+    # needs_author_email is to signify the author needs to recieve an email
+    # after the status has changed to either approved or denied.
     needs_author_email = models.BooleanField(default=False)
+
+    # last_evaluation_email is after an experience needs to be evaluated we
+    # send an email, as well as every 24 hours after the email was sent until
+    # the user evaluates it.
+    last_evaluation_email_datetime = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return self.name
