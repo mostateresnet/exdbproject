@@ -26,7 +26,7 @@ class Command(BaseCommand):
                 try:
                     et = EmailTask(name=cls.task_name, package=class_name)
                     email_task_database_objects.append(et)
-                except AttributeError as e:
+                except AttributeError as e:  # pragma: no cover
                     raise AttributeError("task_name must be defined for %s" % class_name)
 
         created_tasks = EmailTask.objects.bulk_create(email_task_database_objects)

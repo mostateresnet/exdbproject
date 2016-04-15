@@ -1,17 +1,21 @@
 from django.test import TestCase, Client
-from django.utils.timezone import datetime, timedelta, now, make_aware, utc
+from django.utils.timezone import datetime, timedelta, now, make_aware, utc, localtime
+from django.utils.six import StringIO
 from django.core.urlresolvers import reverse
+from django.core import mail
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
+from django.core.management import call_command
+from auto_mock import full_mock, easy_mock
 
-from exdb.models import Affiliation, Experience, Type, SubType, Section, Keyword, ExperienceComment, ExperienceApproval
+from exdb.models import Affiliation, Experience, Type, SubType, Section, Keyword, ExperienceComment, ExperienceApproval, Email, EmailTask
 from exdb.forms import ExperienceSubmitForm
 
 
 class StandardTestCase(TestCase):
 
     def setUp(self):
-        self.test_date = make_aware(datetime(2015, 1, 1, 1, 30), timezone=utc)
+        self.test_date = make_aware(datetime(2015, 1, 1, 16, 1), timezone=utc)
         users = ['ra', 'hs', 'llc']
         self.clients = {}
         for user in users:
@@ -52,7 +56,7 @@ class StandardTestCase(TestCase):
             audience="b",
             status=exp_status,
             attendance=attendance,
-            next_approver=self.clients['ra'].user_object,
+            next_approver=self.clients['hs'].user_object,
         )[0]
 
     def create_experience_comment(self, exp, message="Test message"):
@@ -335,7 +339,7 @@ class ExperienceApprovalViewTest(StandardTestCase):
         status = 'approve' if approve else 'deny'
         description = "" if invalid_description else e.description
         next_approver = self.clients['llc'].user_object.pk if llc_approval else e.next_approver.pk
-        self.clients['ra'].post(reverse('approval', args=[e.pk]), {
+        self.clients['hs'].post(reverse('approval', args=[e.pk]), {
             'name': e.name,
             'description': description,
             'start_datetime_month': e.start_datetime.month,
@@ -359,12 +363,12 @@ class ExperienceApprovalViewTest(StandardTestCase):
     def test_gets_correct_experience(self):
         e = self.create_experience('pe')
         self.create_experience('pe')
-        response = self.clients['ra'].get(reverse('approval', args=[e.pk]))
+        response = self.clients['hs'].get(reverse('approval', args=[e.pk]))
         self.assertEqual(response.context['experience'].pk, e.pk, "The correct experience was not retrieved.")
 
     def test_404_when_experience_not_pending(self):
         e = self.create_experience('dr')
-        response = self.clients['ra'].get(reverse('approval', args=[e.pk]))
+        response = self.clients['hs'].get(reverse('approval', args=[e.pk]))
         self.assertEqual(
             response.status_code,
             404,
@@ -407,7 +411,7 @@ class ExperienceApprovalViewTest(StandardTestCase):
         e = self.post_data(llc_approval=True)
         self.assertEqual(
             e.next_approver.pk,
-            self.clients['ra'].user_object.pk,
+            self.clients['hs'].user_object.pk,
             "If denied, next approver should be denying user.")
 
 
@@ -416,10 +420,10 @@ class HallStaffDashboardViewTest(StandardTestCase):
     def test_get_user(self):
         self.create_experience('pe')
         self.create_experience('dr')
-        response = self.clients['ra'].get(reverse('hallstaff_dash'))
+        response = self.clients['hs'].get(reverse('hallstaff_dash'))
         self.assertEqual(
             response.context["user"].pk,
-            self.clients['ra'].user_object.pk,
+            self.clients['hs'].user_object.pk,
             "The correct user was not retrieved!"
         )
 
@@ -504,3 +508,76 @@ class LoginViewTest(StandardTestCase):
     def test_unauthorized_access_redirects_login(self):
         response = Client().get(reverse('welcome'))
         self.assertEqual(response.url.split('?')[0], reverse('login'))
+
+
+class EmailTest(StandardTestCase):
+
+    def setUp(self):
+        super(EmailTest, self).setUp()
+        # Redefine now() so is_time_to_send in emails will return true and
+        # we will be able to test the send function.
+        from exdb import emails
+        emails.now = lambda: self.test_date
+        self.orig_now = emails.now
+
+    def tearDown(self):
+        from exdb import emails
+        emails.now = self.orig_now
+
+    def send_emails(self):
+        out = StringIO()
+        call_command('email', '--create', stdout=out)
+        call_command('email', '--send', stdout=out)
+
+    def test_sends_correct_number_of_emails(self):
+        self.create_experience('pe', start=(self.test_date - timedelta(days=2)),
+                               end=(self.test_date - timedelta(days=1)))
+        self.create_experience('ad', start=(self.test_date + timedelta(days=2)),
+                               end=(self.test_date + timedelta(days=3)))
+
+        self.send_emails()
+
+        self.assertEqual(len(mail.outbox), 1, "Only one email should have been sent")
+
+    def test_sends_needs_evaluation(self):
+        e = self.create_experience('ad', start=(self.test_date - timedelta(days=3)),
+                                   end=(self.test_date - timedelta(days=2)))
+        ExperienceApproval.objects.get_or_create(experience=e, approver=e.next_approver)
+        self.create_experience('pe', start=(self.test_date - timedelta(days=2)),
+                               end=(self.test_date - timedelta(days=1)))
+
+        self.send_emails()
+
+        self.assertEqual(len(mail.outbox), 2, "Two emails should be sent")
+
+    def test_does_not_send_if_no_applicable_email(self):
+        self.create_experience('co', start=(self.test_date - timedelta(days=2)),
+                               end=(self.test_date - timedelta(days=1)))
+        e = self.create_experience('ad', start=(self.test_date + timedelta(days=3)),
+                                   end=(self.test_date + timedelta(days=4)))
+        ExperienceApproval.objects.get_or_create(experience=e, approver=e.next_approver)
+
+        self.send_emails()
+
+        self.assertEqual(len(mail.outbox), 0, "0 emails should be sent")
+
+    def test_sends_update_email(self):
+        e = self.create_experience('ad', start=(self.test_date + timedelta(days=2)),
+                                   end=(self.test_date + timedelta(days=3)))
+        e.needs_author_email = True
+        e.save()
+
+        self.send_emails()
+
+        self.assertEqual(len(mail.outbox), 1, "1 email should be sent")
+
+    def test_does_not_send_daily_not_1600(self):
+        from exdb import emails
+        emails.now = lambda: now()
+
+        self.create_experience('pe', start=(self.test_date - timedelta(days=2)),
+                               end=(self.test_date - timedelta(days=1)))
+
+        self.send_emails()
+
+        self.assertEqual(len(mail.outbox), 0, "0 emails should have been sent")

@@ -30,13 +30,9 @@ def send_mass_mail(datatuple, fail_silently=False, user=None, password=None, con
 
     messages = []
     for emailtuple in datatuple:
-        if len(emailtuple) == 5:
-            subject, text, html, from_email, recipient = emailtuple
-            message = EmailMultiAlternatives(subject, text, from_email, recipient, connection=connection)
-            message.attach_alternative(html, 'text/html')
-        else:
-            subject, text, from_email, recipient = emailtuple
-            message = EmailMessage(subject, text, from_email, recipient, connection=connection)
+        subject, text, html, from_email, recipient = emailtuple
+        message = EmailMultiAlternatives(subject, text, from_email, recipient, connection=connection)
+        message.attach_alternative(html, 'text/html')
         messages.append(message)
 
     return connection.send_messages(messages)
@@ -45,30 +41,8 @@ def send_mass_mail(datatuple, fail_silently=False, user=None, password=None, con
 class EmailTaskBase(object):
     # task_name = "Email Task Base"
 
-    def send(self, emails, *args, **kwargs):
+    def send(self, emails, *args, **kwargs):  # pragma: no cover
         raise NotImplementedError('send must be overridden for EmailTaskBase')
-
-    def sync_addrs(self, email_task):
-        '''Creates Emails if they do not already exist
-           Adds existing or created Emails to the EmailTask
-           Removes Emails from the EmailTask if they are not in the list
-        '''
-        addrs = self.get_addrs()
-        existing_addrs = Email.objects.filter(addr__in=addrs).values_list("addr", flat=True)
-
-        addrs_to_create = set(addrs) - set(existing_addrs)
-        new_emails = []
-        for addr in addrs_to_create:
-            new_emails.append(Email(addr=addr))
-        Email.objects.bulk_create(new_emails)
-
-        # if they aren't in the addrs list remove them
-        email_task.emails.remove(*Email.objects.exclude(addr__in=addrs))
-
-        # if they are in the list add them
-        email_task.emails.add(*Email.objects.filter(addr__in=addrs))
-
-        return len(addrs)
 
 
 class DailyDigest(EmailTaskBase):
@@ -99,11 +73,13 @@ class DailyDigest(EmailTaskBase):
         return users
 
     def send(self, *args, **kwargs):
-        if self.is_time_to_send() or 'test' in args:
+        if self.is_time_to_send():
+
             emails = []
             from_email = settings.SERVER_EMAIL
             subject = settings.EMAIL_SUBJECT_PREFIX + ' Daily Digest'
             for user in self.get_addrs():
+
                 # Find all the approvals that need evaluation and all the experiences that
                 # need to be approved by the current user
                 experience_approvals = ExperienceApproval.objects.filter(
