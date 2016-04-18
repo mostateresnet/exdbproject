@@ -5,6 +5,10 @@
     {{ block.super }}
     <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/edit_experience.css' %}" />
 {% endblock %}
+{% block javascript %}
+    {{ block.super }}
+    <script type="text/javascript" src="{% static 'exdb/js/edit_experience.js' %}"></script>
+{% endblock %}
 {% block content %}
     {{ block.super }}
     <h1>{% trans "Edit Experience" %}</h1>
@@ -46,7 +50,7 @@
             />
         {% endif %}
         {% if object.status == 'dr' %}
-            <input type="submit" value={% trans "Delete" %} name="delete" />
+            <input type="submit" id="delete" value={% trans "Delete" %} name="delete" />
         {% endif %}
     </form>
 {% endblock %}
