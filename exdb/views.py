@@ -196,7 +196,7 @@ class EditExperienceView(UpdateView):
 
     def get_queryset(self):
         return Experience.objects.filter(Q(author=self.request.user) | (Q(planners=self.request.user) & ~Q(status='dr')),
-                                         start_datetime__gt=timezone.now()).exclude(status__in=('ca', 'co')).prefetch_related('comment_set')
+                                         start_datetime__gt=timezone.now()).exclude(status__in=('ca', 'co')).prefetch_related('comment_set', 'edit_log')
 
     def form_valid(self, form):
         if self.request.POST.get('submit'):

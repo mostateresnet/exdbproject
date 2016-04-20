@@ -3,6 +3,10 @@
     font-weight: bold;
 }
 
+.timestamp{
+    font-size: 11px;
+}
+
 span.errors ul{
     color: red;
     list-style-type: None;

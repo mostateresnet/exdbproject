@@ -111,4 +111,4 @@ class ExperienceEdit(models.Model):
     timestamp = models.DateTimeField(default=now)
 
     class Meta:
-        ordering = ['timestamp']
+        ordering = ['-timestamp']
