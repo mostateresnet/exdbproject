@@ -2,9 +2,7 @@
 
 $(document).ready(function () {
 
-    if (!$('#id_type option:selected').hasClass('no-verification')) {
-        $('#id_attendance').closest('div').addClass('hide');
-    }
+    $('#id_attendance').closest('div').addClass('hide');
 
     $('#id_type').change(function () {
         var att_field = $('#id_attendance').closest('div');

@@ -270,18 +270,6 @@ class DefaultLiveServerTestCase(StaticLiveServerTestCase):
         self.driver.delete_all_cookies()
 
 
-class SeleniumJSCoverage(DefaultLiveServerTestCase):
-
-    def test_load(self):
-        self.client.get('/')
-        self.assertEqual(self.driver.find_element(By.XPATH, '//h1').text, _('Welcome'))
-
-    def test_something_else(self):
-        self.client.get('/')
-        self.assertEqual(self.driver.find_element(By.XPATH, '//h1').text, _('Welcome'))
-        self.driver.execute_script('f()')
-
-
 class LiveLoginViewTest(DefaultLiveServerTestCase):
 
     def setUp(self):
