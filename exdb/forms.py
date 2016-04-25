@@ -31,8 +31,8 @@ class ExperienceSaveForm(ModelForm):
         widgets = {
             'description': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
             'goal': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
-            'start_datetime': forms.SelectDateWidget(),
-            'end_datetime': forms.SelectDateWidget(),
+            'start_datetime': forms.TextInput(),
+            'end_datetime': forms.TextInput(),
         }
 
         labels = {

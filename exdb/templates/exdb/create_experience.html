@@ -4,6 +4,14 @@
 {% block css %}
     {{ block.super }}
     <link href="{% static 'exdb/css/create_experience.css' %}" rel="stylesheet">
+    <link href="{% static 'exdb/css/foundation.css' %}" rel="stylesheet">
+    <link href="{% static 'exdb/css/foundation-datepicker.css' %}" rel="stylesheet">
+{% endblock %}
+{% block javascript %}
+    {{ block.super }}
+    <script type="text/javascript" src="{% static 'exdb/js/libraries/foundation.js' %}"></script>
+    <script type="text/javascript" src="{% static 'exdb/js/libraries/foundation-datepicker.js' %}"></script>
+    <script type="text/javascript" src="{% static 'exdb/js/create_experience.js' %}"></script>
 {% endblock %}
 {% block content %}
     {{ block.super }}
