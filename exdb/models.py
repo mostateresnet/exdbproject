@@ -103,3 +103,12 @@ class ExperienceComment(models.Model):
 
     class Meta:
         ordering = ['timestamp']
+
+
+class ExperienceEdit(models.Model):
+    experience = models.ForeignKey(Experience, related_name='edit_log')
+    editor = models.ForeignKey(settings.AUTH_USER_MODEL)
+    timestamp = models.DateTimeField(default=now)
+
+    class Meta:
+        ordering = ['-timestamp']

@@ -10,7 +10,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 
-from exdb.models import Experience, ExperienceComment, ExperienceApproval
+from exdb.models import Experience, ExperienceComment, ExperienceApproval, ExperienceEdit
 from .forms import ExperienceSubmitForm, ExperienceSaveForm, ApprovalForm, ExperienceConclusionForm
 
 
@@ -137,6 +137,8 @@ class ExperienceApprovalView(UpdateView):
             return self.form_invalid(experience_form, comment_form)
 
     def form_valid(self, experience_form, comment_form):
+        if experience_form.has_changed():
+            ExperienceEdit.objects.create(experience=experience_form.instance, editor=self.request.user)
         comment_form.instance.author = self.request.user
         if self.request.POST.get('approve'):
             if experience_form.instance.next_approver == self.request.user:
@@ -209,7 +211,7 @@ class EditExperienceView(UpdateView):
         current_status_allows_edits = ~Q(status__in=('ca', 'co'))
         event_already_occured = Q(status='ad') & Q(start_datetime__lte=timezone.now())
         editable_experience = user_has_editing_privs & current_status_allows_edits & ~event_already_occured
-        return Experience.objects.filter(editable_experience).prefetch_related('comment_set').distinct()
+        return Experience.objects.filter(editable_experience).prefetch_related('comment_set', 'edit_log').distinct()
 
     def form_valid(self, form):
         if self.request.POST.get('submit'):
@@ -221,4 +223,5 @@ class EditExperienceView(UpdateView):
             experience.status = 'ca'
             experience.save()
             return HttpResponseRedirect(self.get_success_url())
+        ExperienceEdit.objects.create(experience=form.instance, editor=self.request.user)
         return super(EditExperienceView, self).form_valid(form)

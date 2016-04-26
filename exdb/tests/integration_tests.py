@@ -4,7 +4,7 @@ from django.core.urlresolvers import reverse
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 
-from exdb.models import Affiliation, Experience, Type, SubType, Section, Keyword, ExperienceComment, ExperienceApproval
+from exdb.models import Affiliation, Experience, Type, SubType, Section, Keyword, ExperienceComment, ExperienceApproval, ExperienceEdit
 from exdb.forms import ExperienceSubmitForm
 
 
@@ -342,13 +342,12 @@ class RAHomeViewTest(StandardTestCase):
 
 class ExperienceApprovalViewTest(StandardTestCase):
 
-    def post_data(self, message="", submit="deny", invalid_description=False, llc_approval=False):
-        """Posts approval/denial data and returns updated experience for comparisons
-        default value is no comment and deny"""
+    def get_post_data(self, message="", submit="deny", invalid_description=False, llc_approval=False):
+        """Creates post data and returns the data"""
         e = self.create_experience('pe', start=(now() + timedelta(days=1)), end=(now() + timedelta(days=2)))
         description = "" if invalid_description else e.description
         next_approver = self.clients['llc'].user_object.pk if llc_approval else e.next_approver.pk
-        self.clients['ra'].post(reverse('approval', args=[e.pk]), {
+        data = {
             'name': e.name,
             'description': description,
             'start_datetime_month': e.start_datetime.month,
@@ -366,8 +365,14 @@ class ExperienceApprovalViewTest(StandardTestCase):
             'guest_office': e.guest_office,
             'message': message,
             'next_approver': next_approver,
-            submit: submit})
-        return get_object_or_404(Experience, pk=e.pk)
+            submit: submit,
+            'experience': e.pk}
+        return data
+
+    def post_data(self, data):
+        pk = data.pop('experience')
+        self.clients['ra'].post(reverse('approval', args=[pk]), data)
+        return get_object_or_404(Experience, pk=pk)
 
     def test_gets_correct_experience(self):
         e = self.create_experience('pe')
@@ -384,28 +389,28 @@ class ExperienceApprovalViewTest(StandardTestCase):
             "Attempting to retrieve a non-pending experience did not generate a 404.")
 
     def test_does_not_allow_deny_without_comment(self):
-        e = self.post_data()
+        e = self.post_data(self.get_post_data())
         self.assertEqual(e.status, 'pe', "An experience cannot be denied without a comment.")
 
     def test_approves_experience_no_comment(self):
-        e = self.post_data(submit="approve")
+        e = self.post_data(self.get_post_data(submit="approve"))
         self.assertEqual(e.status, 'ad', "Approval should be allowed without a comment")
 
     def test_approves_experience_with_comment(self):
-        e = self.post_data(message="Test Comment", submit="approve")
+        e = self.post_data(self.get_post_data(message="Test Comment", submit="approve"))
         self.assertEqual(e.status, 'ad', "Approval should be allowed with a comment")
 
     def test_does_not_allow_invalid_experience_edit(self):
-        e = self.post_data(submit="approve", invalid_description=True)
+        e = self.post_data(self.get_post_data(submit="approve", invalid_description=True))
         self.assertEqual(e.status, 'pe', "Approve/Deny should not be allowed if there is an invalid edit.")
 
     def test_creates_comment(self):
-        e = self.post_data(message="Test Message")
+        e = self.post_data(self.get_post_data(message="Test Message"))
         comments = ExperienceComment.objects.filter(experience=e)
         self.assertEqual(len(comments), 1, "A comment should have been created.")
 
     def test_does_not_create_comment(self):
-        e = self.post_data()
+        e = self.post_data(self.get_post_data())
         comments = ExperienceComment.objects.filter(experience=e)
         self.assertEqual(
             len(comments),
@@ -413,19 +418,26 @@ class ExperienceApprovalViewTest(StandardTestCase):
             "If message is an empty string, no ExperienceComment object should be created.")
 
     def test_does_not_change_status_if_sent_to_llc_approver(self):
-        e = self.post_data(llc_approval=True, submit="approve")
+        e = self.post_data(self.get_post_data(llc_approval=True, submit="approve"))
         self.assertEqual(e.status, 'pe', "If sent to LLC approver, status should still be pending")
 
     def test_sets_next_approver_to_user_if_denied(self):
-        e = self.post_data(llc_approval=True)
+        e = self.post_data(self.get_post_data(llc_approval=True))
         self.assertEqual(
             e.next_approver.pk,
             self.clients['ra'].user_object.pk,
             "If denied, next approver should be denying user.")
 
     def test_delete_experience(self):
-        e = self.post_data(submit="delete")
+        e = self.post_data(self.get_post_data(submit="delete"))
         self.assertEqual(e.status, 'ca', "The status should have been changed to cancled")
+
+    def test_creates_ExperienceEdit_object(self):
+        data = self.get_post_data(submit="approve")
+        data['guest_office'] = "N/A"
+        e = self.post_data(data)
+        edit = ExperienceEdit.objects.filter(experience=e, editor=self.clients['ra'].user_object)[0]
+        self.assertEqual(edit.experience, e, "An ExperienceEdit object should have been created.")
 
 
 class HallStaffDashboardViewTest(StandardTestCase):
@@ -443,7 +455,7 @@ class HallStaffDashboardViewTest(StandardTestCase):
 
 class EditExperienceViewTest(StandardTestCase):
 
-    def post_data(self, status='pe', invalid_description=False, save=False, delete=False):
+    def get_post_data(self, status='pe', invalid_description=False, save=False, delete=False):
         e = self.create_experience(status, start=(now() + timedelta(days=1)), end=(now() + timedelta(days=2)))
         if status == 'ad' or (status in ('dr', 'de') and not save and not delete):
             submit = 'submit'
@@ -452,7 +464,7 @@ class EditExperienceViewTest(StandardTestCase):
         else:
             submit = 'save'
         description = "" if invalid_description else e.description
-        self.clients['ra'].post(reverse('edit', args=[e.pk]), {
+        data = {
             'name': e.name,
             'description': description,
             'start_datetime_month': e.start_datetime.month,
@@ -469,44 +481,57 @@ class EditExperienceViewTest(StandardTestCase):
             'guest': e.guest,
             'guest_office': e.guest_office,
             'next_approver': self.clients['hs'].user_object.pk,
-            submit: submit})
-        return get_object_or_404(Experience, pk=e.pk)
+            submit: submit,
+            'experience': e.pk}
+        return data
+
+    def post_data(self, data):
+        pk = data.pop('experience')
+        self.clients['ra'].post(reverse('edit', args=[pk]), data)
+        return get_object_or_404(Experience, pk=pk)
 
     def test_resubmit_edited_approved_experience(self):
-        e = self.post_data(status='ad')
+        e = self.post_data(self.get_post_data(status='ad'))
         self.assertEqual(e.status, 'pe', "An edited approved experience should be re-submitted.")
 
     def test_resubmit_denied_experience(self):
-        e = self.post_data(status='de')
+        e = self.post_data(self.get_post_data(status='de'))
         self.assertEqual(e.status, 'pe', "A re-submitted denied experience status should be pending.")
 
     def test_submits_submitted_draft(self):
-        e = self.post_data(status='dr')
+        e = self.post_data(self.get_post_data(status='dr'))
         self.assertEqual(e.status, 'pe', "A submitted draft should gain pending status.")
 
     def test_does_not_change_edited_pending_status(self):
-        e = self.post_data()
+        e = self.post_data(self.get_post_data())
         self.assertEqual(e.status, 'pe', "An edited pending experience should not have its status changed.")
 
     def test_does_not_change_draft_status_when_saved(self):
-        e = self.post_data('dr', save=True)
+        e = self.post_data(self.get_post_data('dr', save=True))
         self.assertEqual(e.status, 'dr', "A saved draft should have no status change.")
 
     def test_saved_denied_experience_no_status_change(self):
-        e = self.post_data('de', save=True)
+        e = self.post_data(self.get_post_data('de', save=True))
         self.assertEqual(e.status, 'de', "A saved denied experience should have no status change.")
 
     def test_does_not_submit_invalid(self):
-        e = self.post_data('ad', invalid_description=True)
+        e = self.post_data(self.get_post_data('ad', invalid_description=True))
         self.assertEqual(e.status, 'ad', "An invalid experience should not be submitted.")
 
     def test_delete_draft(self):
-        e = self.post_data('dr', delete=True)
+        e = self.post_data(self.get_post_data('dr', delete=True))
         self.assertEqual(e.status, 'ca', "A draft should be allowed to be cancled")
 
     def test_does_not_delete_non_draft(self):
-        e = self.post_data('pe', delete=True)
+        e = self.post_data(self.get_post_data('pe', delete=True))
         self.assertEqual(e.status, 'pe', "Only drafts may be cancled from the edit page")
+
+    def test_creates_ExperienceEdit_object(self):
+        data = self.get_post_data('pe')
+        data['guest'] = "NEW GUEST EDIT"
+        e = self.post_data(data)
+        edit = ExperienceEdit.objects.filter(experience=e, editor=self.clients['ra'].user_object)[0]
+        self.assertEqual(e, edit.experience, "An ExperienceEdit object should have been created for this experience.")
 
 
 class LoginViewTest(StandardTestCase):
