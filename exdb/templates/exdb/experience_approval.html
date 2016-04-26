@@ -24,18 +24,21 @@
             {% endfor %}
         </div>
         <hr/>
-        <table>
-            <tr><th>{% trans "Comments" %}</th></tr>
-            {% for comment in comments %}
-                <tr><td>{{ comment.message }}</td></tr>
-            {% empty %}
-                <tr><td>{% trans "No comments" %}</td></tr>
-            {% endfor %}
-        </table>
         <div>{% trans "Add Comment" %}:</div>
         <div class="form-errors">{{ comment_form.message.errors }}</div>
         <div>{{ comment_form.message.label }}{{ comment_form.message }}</div>
         <input type="submit" value="{% trans "deny" %}" name="deny" />
         <input type="submit" value="{% trans "approve" %}" name="approve" />
+        <div>
+            <h3>{% trans "Comments" %}</h3>
+            {% for comment in comments %}
+                <div>
+                    <div>{{ comment.message }}</div>
+                    <div class="comment-author">-{{ comment.author }} said on {{ comment.timestamp }}</div>
+                </div>
+            {% empty %}
+                <tr><td>{% trans "No comments" %}</td></tr>
+            {% endfor %}
+        </div>
     </form>
 {% endblock %}

@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from django.views.generic import TemplateView, ListView
+from django.views.generic import TemplateView, ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView
 from django.shortcuts import get_object_or_404
 from django.core.urlresolvers import reverse
@@ -164,7 +164,7 @@ class ExperienceConclusionView(UpdateView):
         return reverse('ra_home')
 
     def get_queryset(self, **kwargs):
-        return Experience.objects.filter(pk=self.kwargs['pk'])
+        return Experience.objects.prefetch_related('comment_set')
 
     def form_valid(self, form):
         valid_form = super(ExperienceConclusionView, self).form_valid(form)
@@ -174,20 +174,19 @@ class ExperienceConclusionView(UpdateView):
         return valid_form
 
 
-class ViewExperienceView(TemplateView):
+class ViewExperienceView(DetailView):
     access_level = 'basic'
     template_name = 'exdb/experience_view.html'
 
-    def get_context_data(self, **kwargs):
-        context = super(ViewExperienceView, self).get_context_data()
-        context['experience'] = get_object_or_404(Experience, pk=self.kwargs['pk'])
-        return context
+    def get_queryset(self):
+        return Experience.objects.prefetch_related('comment_set')
 
 
 class EditExperienceView(UpdateView):
     access_level = 'basic'
     template_name = 'exdb/edit_experience.html'
     form_class = ExperienceSubmitForm
+    context_object_name = 'experience'
 
     def get_success_url(self):
         return reverse('ra_home')
