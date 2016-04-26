@@ -277,7 +277,7 @@ class ExperienceCreationViewTest(StandardTestCase):
         data['conclusion'] = "Test conclusion"
         self.clients['ra'].post(reverse('create_experience'), data)
         self.assertEqual('co', Experience.objects.get(name='test').status,
-                         "Experience should have been saved with approved status")
+                         "Experience should have been saved with completed status")
 
 
 class ViewExperienceViewTest(StandardTestCase):

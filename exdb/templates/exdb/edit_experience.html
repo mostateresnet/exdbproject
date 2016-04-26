@@ -5,6 +5,10 @@
     {{ block.super }}
     <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/edit_experience.css' %}" />
 {% endblock %}
+{% block javascript %}
+    {{ block.super }}
+    <script type="text/javascript" src="{% static 'exdb/js/experience_form.js' %}"></script>
+{% endblock %}
 {% block content %}
     {{ block.super }}
     <h1>{% trans "Edit Experience" %}</h1>
@@ -22,6 +26,7 @@
                 <p class="errors">{{ field.errors }}</p>
                 {{ field.label_tag }}
                 {{ field }}
+                <span class="help">{{ field.help_text }}</span>
             </div>
         {% endfor %}
         <hr />
