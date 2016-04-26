@@ -19,7 +19,8 @@ from django.contrib.sessions.models import Session
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.conf import settings
 from django.core.urlresolvers import reverse
-from exdb.models import Type
+from django.utils.timezone import datetime, timedelta, now, make_aware, utc
+from exdb.models import Experience, Type, SubType
 
 
 class CustomRunnerMetaClass(type):
@@ -223,6 +224,33 @@ class DefaultLiveServerTestCase(StaticLiveServerTestCase):
             raise SkipTest('Skipped due to argument')  # pragma: no cover
         super(DefaultLiveServerTestCase, cls).setUpClass()
 
+    def create_type(self, needs_verification=True, name="Test Type"):
+        return Type.objects.get_or_create(name=name, needs_verification=needs_verification)[0]
+
+    def create_sub_type(self, name="Test Sub Type"):
+        return SubType.objects.get_or_create(name=name)[0]
+
+    def create_experience(self, exp_status, user=None, start=None, end=None):
+        """Creates and returns an experience object with status,
+        start_time, end_time and/or name of your choice"""
+        start = start or make_aware(datetime(2015, 1, 1, 1, 30), timezone=utc)
+        end = end or (make_aware(datetime(2015, 1, 1, 1, 30), timezone=utc) + timedelta(days=1))
+        user = user or get_user_model().objects.get(username='user')
+        return Experience.objects.get_or_create(
+            author=user,
+            name="Test",
+            description="test",
+            start_datetime=start,
+            end_datetime=end,
+            type=self.create_type(),
+            sub_type=self.create_sub_type(),
+            goal="Test",
+            audience="c",
+            status=exp_status,
+            attendance=0,
+            next_approver=user,
+        )[0]
+
     class SeleniumClient:
 
         def __init__(self, driver):
@@ -241,7 +269,7 @@ class DefaultLiveServerTestCase(StaticLiveServerTestCase):
                 # if we would be trying to set a cross domain cookie change the domain
                 self.get(reverse('login'))
 
-            cookie = {'name': 'sessionid', 'value': c.session.session_key}
+            cookie = {'name': 'sessionid', 'value': c.session.session_key, 'path': '/'}
             try:
                 self.driver.add_cookie(cookie)
             except selenium.common.exceptions.WebDriverException:
@@ -356,3 +384,33 @@ class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
         att_element = self.driver.find_element(By.ID, 'id_attendance')
         visible = att_element.is_displayed() and con_element.is_displayed()
         self.assertTrue(visible, 'Attendance and Conclusion fields should be displayed')
+
+
+class EditExperienceBrowserTest(DefaultLiveServerTestCase):
+
+    def test_confirm_if_draft_delete(self):
+        e = self.create_experience('dr',
+                                   start=make_aware(datetime(2020, 1, 1, 1, 30), timezone=utc),
+                                   end=make_aware(datetime(2021, 1, 1, 1, 30), timezone=utc))
+        self.client.get(reverse('edit', args=[e.pk]))
+        d = self.driver.find_element(By.CSS_SELECTOR, '#delete')
+        d.click()
+        alert = False
+        if self.driver.switch_to_alert():
+            alert = True
+        self.assertTrue(alert, "The browser should have confirmed the delete.")
+
+
+class ExperienceApprovalBrowserTest(DefaultLiveServerTestCase):
+
+    def test_confirm_if_delete(self):
+        e = self.create_experience('pe',
+                                   start=make_aware(datetime(2020, 1, 1, 1, 30), timezone=utc),
+                                   end=make_aware(datetime(2021, 1, 1, 1, 30), timezone=utc))
+        self.client.get(reverse('approval', args=[e.pk]))
+        d = self.driver.find_element(By.CSS_SELECTOR, '#delete')
+        d.click()
+        alert = False
+        if self.driver.switch_to_alert():
+            alert = True
+        self.assertTrue(alert, "The browser should have confirmed the delete.")
