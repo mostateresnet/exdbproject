@@ -52,6 +52,7 @@ class ExperienceSaveForm(ModelForm):
             'goal',
             'guest',
             'guest_office',
+            'conclusion'
         ]
 
         widgets = {
@@ -60,6 +61,7 @@ class ExperienceSaveForm(ModelForm):
             'start_datetime': forms.SelectDateWidget(),
             'end_datetime': forms.SelectDateWidget(),
             'type': TypeSelect(),
+            'conclusion': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
         }
 
         labels = {
@@ -116,6 +118,11 @@ class ExperienceSubmitForm(ExperienceSaveForm):
 
         if ex_type.needs_verification and self.cleaned_data.get('attendance'):
             raise ValidationError(_('%(name)s events cannot have an attendance') % {'name': ex_type.name})
+
+        # There are too many branches in this function; this is fixed on
+        # the approval validation branch.
+        if not ex_type.needs_verification and not self.cleaned_data.get('conclusion'):
+            raise ValidationError(_('%(name)s events must have a conclusion') % {'name': ex_type.name})
 
         return self.cleaned_data
 

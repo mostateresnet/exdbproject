@@ -344,3 +344,15 @@ class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
         attnd_element = self.driver.find_element(By.ID, 'id_attendance')
         self.assertFalse(attnd_element.find_element(By.XPATH, '..').is_displayed(),
                          'Attendance field should be hidden when spontaneous is not selected.')
+
+    def test_attendance_conclusion_not_hidden_if_no_verify(self):
+        self.create_spontaneous_type()
+        self.client.get(reverse('create_experience'))
+        type_element = self.driver.find_element(By.ID, 'id_type')
+        type_element.find_element_by_class_name('no-verification').click()
+        type_element.find_elements_by_tag_name('option')[1].click()
+        self.driver.find_element(By.ID, 'submit_experience').click()
+        con_element = self.driver.find_element(By.ID, 'id_conclusion')
+        att_element = self.driver.find_element(By.ID, 'id_attendance')
+        visible = att_element.is_displayed() and con_element.is_displayed()
+        self.assertTrue(visible, 'Attendance and Conclusion fields should be displayed')
