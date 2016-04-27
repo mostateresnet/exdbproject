@@ -18,6 +18,7 @@
                         {{ field.label_tag }}
                         <div class="field-error">{{ field.errors }}</div>
                         {{ field }}
+                        <span class="help">{{ field.help_text }}</span>
                     </div>
                 {% endfor %}
             <input id="save_experience" type="submit" value="{% trans 'Save as draft' %}" name="save" />

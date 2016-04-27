@@ -14,23 +14,24 @@ class ExperienceSaveForm(ModelForm):
             'name',
             'description',
             'planners',
+            'recognition',
             'start_datetime',
             'end_datetime',
             'type',
             'subtype',
-            'recognition',
             'audience',
             'attendance',
             'keywords',
             'next_approver',
-            'goal',
+            'goals',
             'guest',
             'guest_office',
+            'funds',
         ]
 
         widgets = {
             'description': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
-            'goal': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
+            'goals': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
             'start_datetime': forms.SelectDateWidget(),
             'end_datetime': forms.SelectDateWidget(),
         }

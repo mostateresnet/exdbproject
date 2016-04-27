@@ -59,25 +59,36 @@ class Experience(models.Model):
         ('f', _('Floor')),
     )
 
+    FUND_TYPES = (
+        ('na', _('Not necessary')),
+        ('y', _('Yes, but request not submitted yet')),
+        ('ys', _('Yes, request submitted')),
+        ('ya', _('Yes, request approved')),
+    )
+
     author = models.ForeignKey(settings.AUTH_USER_MODEL)
     planners = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='planner_set', blank=True)
+    recognition = models.ManyToManyField(Section, blank=True)
     name = models.CharField(max_length=300)
     description = models.TextField(blank=True)
     start_datetime = models.DateTimeField()
     end_datetime = models.DateTimeField()
     type = models.ForeignKey(Type)
     subtype = models.ForeignKey(Subtype)
-    goal = models.TextField(blank=True)
+    goals = models.TextField(blank=True)
     keywords = models.ManyToManyField(Keyword, blank=True)
     audience = models.CharField(max_length=1, choices=AUDIENCE_TYPES, blank=True)
     guest = models.CharField(max_length=300, blank=True)
     guest_office = models.CharField(max_length=300, blank=True)
     attendance = models.IntegerField(null=True, blank=True)
     created_datetime = models.DateTimeField(default=now, blank=True)
-    recognition = models.ManyToManyField(Section, blank=True)
     status = models.CharField(max_length=2, choices=STATUS_TYPES, default=STATUS_TYPES[1][0])
     next_approver = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True, related_name='approval_queue')
-    conclusion = models.TextField(blank=True)
+    funds = models.CharField(max_length=2, choices=FUND_TYPES, blank=True)
+    conclusion = models.TextField(
+        blank=True,
+        help_text=_('What went well? What would change about this experience in the future?'),
+    )
 
     def __str__(self):
         return self.name
