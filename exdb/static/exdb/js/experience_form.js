@@ -1,23 +1,17 @@
 "use strict";
 
+
 $(document).ready(function () {
 
-    if (!$('#id_type option:selected').hasClass('no-verification')) {
-        $('#id_attendance').closest('div').addClass('hide');
-        $('#id_conclusion').closest('div').addClass('hide');
+    function toggle_fields() {
+        //This next line is redundant solely for coverage.
+        //It can be simplified when another branch is added to the project's js.
+        var no_verification = $('#id_type option.no-verification:selected').length ? true : false;
+        $('#id_attendance').closest('div').toggle(no_verification);
+        $('#id_conclusion').closest('div').toggle(no_verification);
     }
 
-    $('#id_type').change(function () {
-        var att_field, con_field;
-        att_field = $('#id_attendance').closest('div');
-        con_field = $('#id_conclusion').closest('div');
-        if ($('#id_type option:selected').hasClass('no-verification') && att_field.hasClass('hide') && con_field.hasClass('hide')) {
-            att_field.removeClass('hide');
-            con_field.removeClass('hide');
-        }
-        if (!$('#id_type option:selected').hasClass('no-verification') && !att_field.hasClass('hide') && !con_field.hasClass('hide')) {
-            att_field.addClass('hide');
-            con_field.addClass('hide');
-        }
-    });
+    toggle_fields();
+
+    $('#id_type').change(toggle_fields);
 });
