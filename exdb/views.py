@@ -31,7 +31,7 @@ class CreateExperienceView(CreateView):
         form.instance.author = self.request.user
 
         if 'submit' in self.request.POST:
-            if form.instance.type.needs_verification:
+            if form.instance.subtype.needs_verification:
                 form.instance.status = 'pe'
             else:
                 form.instance.status = 'co'

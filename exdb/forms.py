@@ -9,7 +9,7 @@ from django.forms import ModelForm
 from exdb.models import Experience, ExperienceComment
 
 
-class TypeSelect(forms.Select):
+class SubtypeSelect(forms.Select):
 
     def render_option(self, selected_choices, option_value, option_label):
         if option_value is None:
@@ -40,27 +40,28 @@ class ExperienceSaveForm(ModelForm):
             'name',
             'description',
             'planners',
+            'recognition',
             'start_datetime',
             'end_datetime',
             'type',
-            'sub_type',
-            'recognition',
+            'subtype',
             'audience',
             'attendance',
             'keywords',
             'next_approver',
-            'goal',
+            'goals',
             'guest',
             'guest_office',
-            'conclusion'
+            'funds',
+            'conclusion',
         ]
 
         widgets = {
             'description': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
-            'goal': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
+            'goals': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
             'start_datetime': forms.SelectDateWidget(),
             'end_datetime': forms.SelectDateWidget(),
-            'type': TypeSelect(),
+            'subtype': SubtypeSelect(),
             'conclusion': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
         }
 
@@ -89,40 +90,40 @@ class ExperienceSubmitForm(ExperienceSaveForm):
         if not self.cleaned_data.get('start_datetime'):
             raise ValidationError(_('A start time is required'))
 
-        if not self.cleaned_data.get('sub_type'):
-            raise ValidationError(_('The sub type field is required'))
-
         if not self.cleaned_data.get('type'):
             raise ValidationError(_('The type field is required'))
 
-        ex_type = self.cleaned_data.get('type')
+        if not self.cleaned_data.get('subtype'):
+            raise ValidationError(_('The subtype field is required'))
 
-        if not self.cleaned_data.get('next_approver') and ex_type.needs_verification:
+        ex_subtype = self.cleaned_data.get('subtype')
+
+        if not self.cleaned_data.get('next_approver') and ex_subtype.needs_verification:
             raise ValidationError(_('Please select the supervisor to review this experience'))
 
         if self.cleaned_data.get('start_datetime') >= self.cleaned_data.get('end_datetime'):
             raise ValidationError(_('Start time must be before end time'))
 
-        if not ex_type.needs_verification and self.cleaned_data.get('start_datetime') > self.when:
-            raise ValidationError(_('%(name)s experiences must have happened in the past') % {'name': ex_type.name})
+        if not ex_subtype.needs_verification and self.cleaned_data.get('start_datetime') > self.when:
+            raise ValidationError(_('%(name)s experiences must have happened in the past') % {'name': ex_subtype.name})
 
-        if ex_type.needs_verification and self.cleaned_data.get('start_datetime') < self.when:
-            raise ValidationError(_('%(name)s events cannot happen in the past') % {'name': ex_type.name})
+        if ex_subtype.needs_verification and self.cleaned_data.get('start_datetime') < self.when:
+            raise ValidationError(_('%(name)s events cannot happen in the past') % {'name': ex_subtype.name})
 
-        if not ex_type.needs_verification and (not self.cleaned_data.get(
+        if not ex_subtype.needs_verification and (not self.cleaned_data.get(
                 'attendance') or self.cleaned_data.get('attendance') < 1):
-            raise ValidationError(_('%(name)s events must have an attendance') % {'name': ex_type.name})
+            raise ValidationError(_('%(name)s events must have an attendance') % {'name': ex_subtype.name})
 
-        if not ex_type.needs_verification and not self.cleaned_data.get('audience'):
-            raise ValidationError(_('%(name)s events must have an audience') % {'name': ex_type.name})
+        if not ex_subtype.needs_verification and not self.cleaned_data.get('audience'):
+            raise ValidationError(_('%(name)s events must have an audience') % {'name': ex_subtype.name})
 
-        if ex_type.needs_verification and self.cleaned_data.get('attendance'):
-            raise ValidationError(_('%(name)s events cannot have an attendance') % {'name': ex_type.name})
+        if ex_subtype.needs_verification and self.cleaned_data.get('attendance'):
+            raise ValidationError(_('%(name)s events cannot have an attendance') % {'name': ex_subtype.name})
 
         # There are too many branches in this function; this is fixed on
         # the approval validation branch.
-        if not ex_type.needs_verification and not self.cleaned_data.get('conclusion'):
-            raise ValidationError(_('%(name)s events must have a conclusion') % {'name': ex_type.name})
+        if not ex_subtype.needs_verification and not self.cleaned_data.get('conclusion'):
+            raise ValidationError(_('%(name)s events must have a conclusion') % {'name': ex_subtype.name})
 
         return self.cleaned_data
 
