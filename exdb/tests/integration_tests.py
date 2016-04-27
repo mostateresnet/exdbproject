@@ -2,6 +2,7 @@ from django.test import TestCase, Client
 from django.utils.timezone import datetime, timedelta, now, make_aware, utc
 from django.core.urlresolvers import reverse
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.shortcuts import get_object_or_404
 
 from exdb.models import Affiliation, Experience, Type, Subtype, Section, Keyword, ExperienceComment, ExperienceApproval, ExperienceEdit
@@ -12,12 +13,15 @@ class StandardTestCase(TestCase):
 
     def setUp(self):
         self.test_date = make_aware(datetime(2015, 1, 1, 1, 30), timezone=utc)
-        users = ['ra', 'hs', 'llc']
+        users = ['ra', 'hs']
+        self.groups = {}
         self.clients = {}
         for user in users:
+            self.groups[user] = Group.objects.get_or_create(name=user)
             self.clients[user] = Client()
             # avoid setting the password and force_login for speed
             self.clients[user].user_object = get_user_model().objects.create(username=user)
+            self.clients[user].user_object.groups.add(Group.objects.get(name=user))
             self.clients[user].force_login(self.clients[user].user_object)
 
     def create_type(self, name="Test Type"):
@@ -52,7 +56,7 @@ class StandardTestCase(TestCase):
             audience="b",
             status=exp_status,
             attendance=attendance,
-            next_approver=self.clients['ra'].user_object,
+            next_approver=self.clients['hs'].user_object,
         )[0]
 
     def create_experience_comment(self, exp, message="Test message"):
@@ -321,7 +325,8 @@ class RAHomeViewTest(StandardTestCase):
     def test_coverage(self):
         self.create_experience('pe')
         self.create_experience('dr')
-        response = self.clients['ra'].get(reverse('ra_home'))
+        response = self.clients['ra'].get(reverse('home'))
+
         self.assertEqual(len(response.context["experiences"]), 2, "There should be 2 experiences displayed")
 
     def test_week_ahead(self):
@@ -336,8 +341,8 @@ class RAHomeViewTest(StandardTestCase):
                                          audience="b",
                                          status="ad",
                                          attendance=3)
-        response = self.clients['ra'].get(reverse('ra_home'))
-        self.assertEqual(len(response.context["week_ahead"]), 1, "There should be 1 experience in the next week")
+        response = self.clients['ra'].get(reverse('home'))
+        self.assertEqual(len(response.context["upcoming"]), 1, "There should be 1 experience in the next month")
 
 
 class ExperienceApprovalViewTest(StandardTestCase):
@@ -377,12 +382,12 @@ class ExperienceApprovalViewTest(StandardTestCase):
     def test_gets_correct_experience(self):
         e = self.create_experience('pe')
         self.create_experience('pe')
-        response = self.clients['ra'].get(reverse('approval', args=[e.pk]))
+        response = self.clients['hs'].get(reverse('approval', args=[e.pk]))
         self.assertEqual(response.context['experience'].pk, e.pk, "The correct experience was not retrieved.")
 
     def test_404_when_experience_not_pending(self):
         e = self.create_experience('dr')
-        response = self.clients['ra'].get(reverse('approval', args=[e.pk]))
+        response = self.clients['hs'].get(reverse('approval', args=[e.pk]))
         self.assertEqual(
             response.status_code,
             404,
@@ -424,8 +429,8 @@ class ExperienceApprovalViewTest(StandardTestCase):
     def test_sets_next_approver_to_user_if_denied(self):
         e = self.post_data(self.get_post_data(llc_approval=True))
         self.assertEqual(
-            e.next_approver.pk,
-            self.clients['ra'].user_object.pk,
+            e.next_approver,
+            self.clients['hs'].user_object,
             "If denied, next approver should be denying user.")
 
     def test_delete_experience(self):
@@ -445,12 +450,36 @@ class HallStaffDashboardViewTest(StandardTestCase):
     def test_get_user(self):
         self.create_experience('pe')
         self.create_experience('dr')
-        response = self.clients['ra'].get(reverse('hallstaff_dash'))
+        response = self.clients['hs'].get(reverse('home'))
+
         self.assertEqual(
             response.context["user"].pk,
-            self.clients['ra'].user_object.pk,
+            self.clients['hs'].user_object.pk,
             "The correct user was not retrieved!"
         )
+
+    def test_coverage(self):
+        self.create_experience('pe')
+        self.create_experience('dr')
+        response = self.clients['hs'].get(reverse('home'))
+
+        self.assertEqual(len(response.context["experiences"]), 2, "There should be 2 experiences displayed")
+
+    def test_week_ahead(self):
+        self.create_experience('ad')
+        Experience.objects.get_or_create(author=self.clients['ra'].user_object,
+                                         name="E1", description="test description",
+                                         start_datetime=(now() + timedelta(days=2)),
+                                         end_datetime=(now() + timedelta(days=3)),
+                                         type=self.create_type(),
+                                         sub_type=self.create_sub_type(),
+                                         goal="Test Goal",
+                                         audience="b",
+                                         status="ad",
+                                         attendance=3,
+                                         next_approver=self.clients['hs'].user_object)
+        response = self.clients['hs'].get(reverse('home'))
+        self.assertEqual(len(response.context["upcoming"]), 1, "There should be 1 experience in the next week")
 
 
 class EditExperienceViewTest(StandardTestCase):
@@ -545,7 +574,7 @@ class LoginViewTest(StandardTestCase):
     def test_login_success(self):
         username, _, password = self.credentials
         response = Client().post(reverse('login'), {'username': username, 'password': password})
-        self.assertRedirects(response, reverse('welcome'))
+        self.assertRedirects(response, reverse('home'))
 
     def test_login_failure(self):
         username, _, password = self.credentials
@@ -556,3 +585,10 @@ class LoginViewTest(StandardTestCase):
     def test_unauthorized_access_redirects_login(self):
         response = Client().get(reverse('welcome'))
         self.assertEqual(response.url.split('?')[0], reverse('login'))
+
+
+class LogoutViewTest(StandardTestCase):
+
+    def test_logout(self):
+        response = self.clients['hs'].get(reverse('logout'))
+        self.assertFalse(response.wsgi_request.user.is_authenticated(), "User should have been logged out")

@@ -1,0 +1,61 @@
+{% extends "exdb/base.html" %}
+{% load i18n %}
+{% load staticfiles %}
+{% block css %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/home.css' %}"/>
+{% endblock %}
+{% block content %}
+    {{ block.super }}
+    <h3 class="log-out"><a href="{% url 'logout' %}">Log out</a></h3>
+    <h2>{% trans 'Hello' %} {{ user }}</h2>
+    <p><a href={% url 'create_experience' %}>{% trans 'Create an experience' %}</a></p>
+    <hr class="break" />
+    <div class="experience-panel">
+        {% for status, experiences in experience_dict.items %}
+            {% if experiences|length %}
+                <div class='experience-div'>
+                    <h1 class="status">{{ status }}</h1>
+                    {% for ex in experiences %}
+                        <div class="experience">
+                            <a href=
+                                "{% if ex.needs_evaluation %}
+                                    {% url 'conclusion' pk=ex.pk %}
+                                {% elif ex.next_approver_id == user.pk and ex.status == 'pe' %}
+                                    {% url 'approval' pk=ex.pk %}
+                                {% elif ex.status == 'co' %}
+                                    {% url 'view_experience' pk=ex.pk %}
+                                {% else %}
+                                    {% url 'edit' pk=ex.pk %}
+                                {% endif %}"
+                            >
+                                <div class="experience-name">{{ ex.name }}</div>
+                                <div>
+                                    <span class="experience-times">{% trans 'Start time' %}: {{ ex.start_datetime }}</span>
+                                    <span class="experience-times">{% trans 'End time' %}: {{ ex.end_datetime }}</span>
+                                </div>
+                                <div class="experience-footer">
+                                    {% trans 'Created on' %}: {{ ex.created_datetime }}
+                                </div>
+                            </a>
+                        </div>
+                    {% endfor %}
+                    <hr class="break" />
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+    <div class="week-ahead">
+        <h1 class="status">{% trans 'Upcoming' %}</h1>
+        {% if upcoming|length %}
+            <div class='experience-div'>
+                {% for experience in upcoming %}
+                    <div class="experience"><a href={% url 'view_experience' pk=experience.pk %}>
+                        <p>{% trans 'Name' %}: {{ experience.name }}</p>
+                        <p>{% trans 'Start Time' %}: {{ experience.start_datetime }}</p>
+                    </a></div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

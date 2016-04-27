@@ -146,7 +146,7 @@ PERMS_AND_LEVELS = {
     'basic': lambda x: True,
 }
 
-LOGIN_REDIRECT_URL = 'welcome'
+LOGIN_REDIRECT_URL = 'home'
 
 LOGIN_URL = 'login'
 

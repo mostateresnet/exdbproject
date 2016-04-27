@@ -10,7 +10,7 @@
         {% csrf_token %}
         <h1>Evaluation</h1>
         <h2>Experience: {{ experience.name }}</h2>
-        <p><a href="{% url 'ra_home' %}">Back to Home</a></p>
+        <p><a href="{% url 'home' %}">Return Home</a></p>
         <span class="form-errors">{{ form.non_field_errors }}</span>
         <hr/>
         <div class="experience-display">

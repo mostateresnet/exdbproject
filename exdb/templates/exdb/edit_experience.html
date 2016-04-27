@@ -12,11 +12,11 @@
 {% block content %}
     {{ block.super }}
     <h1>{% trans "Edit Experience" %}</h1>
-    <p><a href="{% url 'ra_home' %}">{% trans "Back to Home" %}</a></p>
+    <p><a href="{% url 'home' %}">{% trans "Back to Home" %}</a></p>
     {% if experience.status == 'ad' %}
         <p class="warning">{% trans "Warning! Editing an approved experience will resubmit it for approval." %}</p>
     {% endif %}
-    {% with object.edit_log.all.0 as last_edit %}
+    {% with experience.edit_log.all.0 as last_edit %}
         {% if last_edit %}
             <p>Last edited: {{ last_edit.editor }} <span class="timestamp">{{ last_edit.timestamp }}</span></p>
         {% endif %}
@@ -50,7 +50,7 @@
                 name="submit"
             />
         {% endif %}
-        {% if object.status == 'dr' %}
+        {% if experience.status == 'dr' %}
             <input type="submit" id="delete" value={% trans "Delete" %} name="delete" />
         {% endif %}
         <div>
