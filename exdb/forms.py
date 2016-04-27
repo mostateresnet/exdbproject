@@ -17,7 +17,7 @@ class ExperienceSaveForm(ModelForm):
             'start_datetime',
             'end_datetime',
             'type',
-            'sub_type',
+            'subtype',
             'recognition',
             'audience',
             'attendance',
@@ -60,35 +60,35 @@ class ExperienceSubmitForm(ExperienceSaveForm):
         if not self.cleaned_data.get('start_datetime'):
             raise ValidationError(_('A start time is required'))
 
-        if not self.cleaned_data.get('sub_type'):
-            raise ValidationError(_('The sub type field is required'))
-
         if not self.cleaned_data.get('type'):
             raise ValidationError(_('The type field is required'))
 
-        ex_type = self.cleaned_data.get('type')
+        if not self.cleaned_data.get('subtype'):
+            raise ValidationError(_('The subtype field is required'))
 
-        if not self.cleaned_data.get('next_approver') and ex_type.needs_verification:
+        ex_subtype = self.cleaned_data.get('subtype')
+
+        if not self.cleaned_data.get('next_approver') and ex_subtype.needs_verification:
             raise ValidationError(_('Please select the supervisor to review this experience'))
 
         if self.cleaned_data.get('start_datetime') >= self.cleaned_data.get('end_datetime'):
             raise ValidationError(_('Start time must be before end time'))
 
-        if not ex_type.needs_verification and self.cleaned_data.get('start_datetime') > self.when:
-            raise ValidationError(_('%(name)s experiences must have happened in the past') % {'name': ex_type.name})
+        if not ex_subtype.needs_verification and self.cleaned_data.get('start_datetime') > self.when:
+            raise ValidationError(_('%(name)s experiences must have happened in the past') % {'name': ex_subtype.name})
 
-        if ex_type.needs_verification and self.cleaned_data.get('start_datetime') < self.when:
-            raise ValidationError(_('%(name)s events cannot happen in the past') % {'name': ex_type.name})
+        if ex_subtype.needs_verification and self.cleaned_data.get('start_datetime') < self.when:
+            raise ValidationError(_('%(name)s events cannot happen in the past') % {'name': ex_subtype.name})
 
-        if not ex_type.needs_verification and (not self.cleaned_data.get(
+        if not ex_subtype.needs_verification and (not self.cleaned_data.get(
                 'attendance') or self.cleaned_data.get('attendance') < 1):
-            raise ValidationError(_('%(name)s events must have an attendance') % {'name': ex_type.name})
+            raise ValidationError(_('%(name)s events must have an attendance') % {'name': ex_subtype.name})
 
-        if not ex_type.needs_verification and not self.cleaned_data.get('audience'):
-            raise ValidationError(_('%(name)s events must have an audience') % {'name': ex_type.name})
+        if not ex_subtype.needs_verification and not self.cleaned_data.get('audience'):
+            raise ValidationError(_('%(name)s events must have an audience') % {'name': ex_subtype.name})
 
-        if ex_type.needs_verification and self.cleaned_data.get('attendance'):
-            raise ValidationError(_('%(name)s events cannot have an attendance') % {'name': ex_type.name})
+        if ex_subtype.needs_verification and self.cleaned_data.get('attendance'):
+            raise ValidationError(_('%(name)s events cannot have an attendance') % {'name': ex_subtype.name})
 
         return self.cleaned_data
 
