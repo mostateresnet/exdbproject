@@ -317,8 +317,9 @@ class HallStaffDashboardBrowserTest(DefaultLiveServerTestCase):
 
 class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
 
-    def create_spontaneous_type(self):
-        return Type.objects.create(name="Spontaneous", needs_verification=False)
+    def setUp(self):
+        super(CreateExperienceBrowserTest, self).setUp()
+        Type.objects.create(name="Spontaneous", needs_verification=False)
 
     def test_attendance_hidden(self):
         self.client.get(reverse('create_experience'))
@@ -327,7 +328,6 @@ class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
                          'Attendance field should be hidden on load.')
 
     def test_shows_attendance_field(self):
-        self.create_spontaneous_type()
         self.client.get(reverse('create_experience'))
         type_element = self.driver.find_element(By.ID, 'id_type')
         type_element.find_element_by_class_name('no-verification').click()
@@ -336,7 +336,6 @@ class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
                         'Attendance field should not be hidden when spontaneous is selected.')
 
     def test_rehides_attendance_field(self):
-        self.create_spontaneous_type()
         self.client.get(reverse('create_experience'))
         type_element = self.driver.find_element(By.ID, 'id_type')
         type_element.find_element_by_class_name('no-verification').click()
@@ -346,11 +345,9 @@ class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
                          'Attendance field should be hidden when spontaneous is not selected.')
 
     def test_attendance_conclusion_not_hidden_if_no_verify(self):
-        self.create_spontaneous_type()
         self.client.get(reverse('create_experience'))
         type_element = self.driver.find_element(By.ID, 'id_type')
         type_element.find_element_by_class_name('no-verification').click()
-        type_element.find_elements_by_tag_name('option')[1].click()
         self.driver.find_element(By.ID, 'submit_experience').click()
         con_element = self.driver.find_element(By.ID, 'id_conclusion')
         att_element = self.driver.find_element(By.ID, 'id_attendance')

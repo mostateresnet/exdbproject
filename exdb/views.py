@@ -195,8 +195,8 @@ class EditExperienceView(UpdateView):
     def get_queryset(self):
         user_has_editing_privs = Q(author=self.request.user) | (Q(planners=self.request.user) & ~Q(status='dr'))
         current_status_allows_edits = ~Q(status__in=('ca', 'co'))
-        event_already_occured = Q(status='ad') & Q(start_datetime__lte=timezone.now())
-        editable_experience = user_has_editing_privs & current_status_allows_edits & ~event_already_occured
+        event_already_occurred = Q(status='ad') & Q(start_datetime__lte=timezone.now())
+        editable_experience = user_has_editing_privs & current_status_allows_edits & ~event_already_occurred
         return Experience.objects.filter(editable_experience).prefetch_related('comment_set').distinct()
 
     def form_valid(self, form):

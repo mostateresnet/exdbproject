@@ -279,6 +279,15 @@ class ExperienceCreationViewTest(StandardTestCase):
         self.assertEqual('co', Experience.objects.get(name='test').status,
                          "Experience should have been saved with completed status")
 
+    def test_conclusion_set_to_empty_string_if_needs_verification(self):
+        start = now() + timedelta(days=1)
+        end = now() + timedelta(days=2)
+        data = self.get_post_data(start, end)
+        data['conclusion'] = "Test Conclusion"
+        self.clients['ra'].post(reverse('create_experience'), data)
+        self.assertEqual(Experience.objects.get(name='test').conclusion, "",
+                         "Experience should have been saved with pending status")
+
 
 class ViewExperienceViewTest(StandardTestCase):
 

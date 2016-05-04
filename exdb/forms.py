@@ -21,12 +21,12 @@ class TypeSelect(forms.Select):
                 selected_choices.remove(option_value)
         else:
             selected_html = ''
-        css_class = ''
+        css_class = []
         choice_dict = {str(c.pk): c for c in self.choices.queryset}
-        if option_value in choice_dict.keys() and not choice_dict[option_value].needs_verification:
-            css_class = 'class=no-verification'
-        return format_html('<option {} value="{}"{}>{}</option>',
-                           css_class,
+        if option_value in choice_dict and not choice_dict[option_value].needs_verification:
+            css_class.append('no-verification ')
+        return format_html('<option class="{}" value="{}"{}>{}</option>',
+                           ''.join(css_class),
                            option_value,
                            selected_html,
                            force_text(option_label))
@@ -123,6 +123,9 @@ class ExperienceSubmitForm(ExperienceSaveForm):
         # the approval validation branch.
         if not ex_type.needs_verification and not self.cleaned_data.get('conclusion'):
             raise ValidationError(_('%(name)s events must have a conclusion') % {'name': ex_type.name})
+
+        if ex_type.needs_verification and self.cleaned_data.get('conclusion'):
+            self.cleaned_data['conclusion'] = ""
 
         return self.cleaned_data
 
