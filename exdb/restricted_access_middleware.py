@@ -45,7 +45,7 @@ class RestrictedAccess(object):
     def process_request(self, request):
         if request.user.is_authenticated():
             return self._check_authenticated_user(request)
-        elif request.path_info == reverse('login'):
+        elif request.path == reverse('login'):
             return None
         else:
-            return redirect_to_login(request.path_info)
+            return redirect_to_login(request.path)
