@@ -286,7 +286,7 @@ class ExperienceCreationViewTest(StandardTestCase):
         data['conclusion'] = "Test Conclusion"
         self.clients['ra'].post(reverse('create_experience'), data)
         self.assertEqual(Experience.objects.get(name='test').conclusion, "",
-                         "The conclusion shouls have been set to the empty string")
+                         "The conclusion should have been set to the empty string")
 
 
 class ViewExperienceViewTest(StandardTestCase):
