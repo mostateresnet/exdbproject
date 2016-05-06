@@ -21,12 +21,12 @@ class TypeSelect(forms.Select):
                 selected_choices.remove(option_value)
         else:
             selected_html = ''
-        css_class = []
+        css_classes = []
         choice_dict = {str(c.pk): c for c in self.choices.queryset}
         if option_value in choice_dict and not choice_dict[option_value].needs_verification:
-            css_class.append('no-verification ')
+            css_classes.append('no-verification')
         return format_html('<option class="{}" value="{}"{}>{}</option>',
-                           ''.join(css_class),
+                           ' '.join(css_classes),
                            option_value,
                            selected_html,
                            force_text(option_label))
