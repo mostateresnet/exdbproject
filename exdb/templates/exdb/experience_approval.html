@@ -5,6 +5,10 @@
     {{ block.super }}
     <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/experience_approval.css' %}" />
 {% endblock %}
+{% block javascript %}
+    {{ block.super }}
+    <script type="text/javascript" src="{% static 'exdb/js/experience_form.js' %}"></script>
+{% endblock %}
 {% block content %}
     <form method="POST">
         {% csrf_token %}
@@ -20,6 +24,7 @@
                 <div>
                     {{ field.label }}
                     {{ field }}
+                    <span class="help">{{ field.help_text }}</span>
                 </div>
             {% endfor %}
         </div>

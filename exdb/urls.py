@@ -18,9 +18,8 @@ from django.contrib.auth.views import login
 from exdb import views
 
 urlpatterns = [
-    url(r'^$', views.WelcomeView.as_view(), name='welcome'),
+    url(r'^$', views.HomeView.as_view(), name='home'),
     url(r'^create$', views.CreateExperienceView.as_view(), name='create_experience'),
-    url(r'^home$', views.HomeView.as_view(), name='home'),
     url(r'^approval/(?P<pk>\d+)$', views.ExperienceApprovalView.as_view(), name='approval'),
     url(r'^conclusion/(?P<pk>\d+)$', views.ExperienceConclusionView.as_view(), name='conclusion'),
     url(r'^view/experience/(?P<pk>\d+)$', views.ViewExperienceView.as_view(), name='view_experience'),

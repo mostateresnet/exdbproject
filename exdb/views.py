@@ -15,11 +15,6 @@ from exdb.models import Experience, ExperienceComment, ExperienceApproval
 from .forms import ExperienceSubmitForm, ExperienceSaveForm, ApprovalForm, ExperienceConclusionForm
 
 
-class WelcomeView(TemplateView):
-    access_level = 'basic'
-    template_name = 'exdb/welcome.html'
-
-
 class CreateExperienceView(CreateView):
     access_level = 'basic'
     model = Experience
@@ -227,8 +222,11 @@ class EditExperienceView(UpdateView):
         return reverse('home')
 
     def get_queryset(self):
-        return Experience.objects.filter(Q(author=self.request.user) | (Q(planners=self.request.user) & ~Q(status='dr')),
-                                         start_datetime__gt=timezone.now()).exclude(status__in=('ca', 'co')).prefetch_related('comment_set')
+        user_has_editing_privs = Q(author=self.request.user) | (Q(planners=self.request.user) & ~Q(status='dr'))
+        current_status_allows_edits = ~Q(status__in=('ca', 'co'))
+        event_already_occurred = Q(status='ad') & Q(start_datetime__lte=timezone.now())
+        editable_experience = user_has_editing_privs & current_status_allows_edits & ~event_already_occurred
+        return Experience.objects.filter(editable_experience).prefetch_related('comment_set').distinct()
 
     def form_valid(self, form):
         if self.request.POST.get('submit'):
