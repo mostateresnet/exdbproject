@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/dev/ref/settings/
 
 import os
 from django.core.exceptions import ImproperlyConfigured
+from django.utils import timezone
 
 # register checks
 import exdbproject.checks
@@ -152,6 +153,9 @@ LOGIN_URL = 'login'
 
 # Use augmented user model
 AUTH_USER_MODEL = 'exdb.EXDBUser'
+
+HALLSTAFF_TIME_AHEAD = timezone.timedelta(days=7)
+RA_TIME_AHEAD = timezone.timedelta(days=31)
 
 # override settings with settings_local
 try:

@@ -13,7 +13,7 @@
     <hr class="break" />
     <div class="experience-panel">
         {% for status, experiences in experience_dict.items %}
-            {% if experiences|length %}
+            {% if experiences %}
                 <div class='experience-div'>
                     <h1 class="status">{{ status }}</h1>
                     {% for ex in experiences %}
@@ -21,7 +21,7 @@
                             <a href=
                                 "{% if ex.needs_evaluation %}
                                     {% url 'conclusion' pk=ex.pk %}
-                                {% elif ex.next_approver_id == user.pk and ex.status == 'pe' %}
+                                {% elif ex.can_approve %}
                                     {% url 'approval' pk=ex.pk %}
                                 {% elif ex.status == 'co' %}
                                     {% url 'view_experience' pk=ex.pk %}
@@ -47,7 +47,7 @@
     </div>
     <div class="week-ahead">
         <h1 class="status">{% trans 'Upcoming' %}</h1>
-        {% if upcoming|length %}
+        {% if upcoming %}
             <div class='experience-div'>
                 {% for experience in upcoming %}
                     <div class="experience"><a href={% url 'view_experience' pk=experience.pk %}>

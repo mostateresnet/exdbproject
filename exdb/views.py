@@ -9,6 +9,7 @@ from django.http import HttpResponseRedirect
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth import get_user_model
+from django.conf import settings
 from django.db.models import Q
 
 from exdb.models import Experience, ExperienceComment, ExperienceApproval
@@ -42,27 +43,51 @@ class CreateExperienceView(CreateView):
             return ExperienceSaveForm
 
 
-class HallStaffDashboardView(ListView):
-    acess_leve = 'basic'
+class HomeView(ListView):
     template_name = 'exdb/home.html'
+    access_level = 'basic'
     context_object_name = 'experiences'
 
-    def get_queryset(self):
+    def is_hs(self):
+        return self.request.user.groups.filter(name='hs')
+
+    def get_hs_queryset(self):
         experience_approvals = ExperienceApproval.objects.filter(
-            approver=self.request.user, experience__status='ad')
-        experiences = Experience.objects.filter(Q(next_approver=self.request.user) | Q(
-            pk__in=experience_approvals.values('experience')))
+            approver=self.request.user, experience__status='ad'
+        )
+        experiences = Experience.objects.filter(
+            Q(next_approver=self.request.user) |
+            Q(pk__in=experience_approvals.values('experience'))
+        )
         return experiences
 
-    def get_context_data(self):
-        context = super(HallStaffDashboardView, self).get_context_data()
+    def get_ra_queryset(self):
+        return Experience.objects.filter(Q(author=self.request.user) | (Q(planners=self.request.user) & ~Q(status='dr')))\
+            .exclude(status__in=('ca')).order_by('created_datetime').distinct()
+
+    def get_queryset(self):
+        if self.is_hs():
+            return self.get_hs_queryset()
+        else:
+            return self.get_ra_queryset()
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(HomeView, self).get_context_data(*args, **kwargs)
         context['user'] = self.request.user
 
-        status_to_display = [_('Pending Approval'), _('Needs Evaluation'), _('Approved')]
+        # This is what experience groups we are showing the user and in what order
+        if self.is_hs():
+            status_to_display = [_('Pending Approval'), _('Approved')]
+        else:
+            status_to_display = [_(x[1]) for x in Experience.STATUS_TYPES]
+        status_to_display.append(_('Needs Evaluation'))
+
+        # Grouping of experiences for display
         experience_dict = OrderedDict()
         for status in status_to_display:
             experience_dict[status] = []
         for experience in context[self.context_object_name]:
+            experience.can_approve = experience.approvable_by_user(self.request.user)
             if experience.needs_evaluation():
                 experience_dict[_('Needs Evaluation')].append(experience)
             else:
@@ -70,58 +95,15 @@ class HallStaffDashboardView(ListView):
                     experience_dict[experience.get_status_display()].append(experience)
         context['experience_dict'] = experience_dict
 
-        one_week = timezone.now() + timezone.timedelta(days=7)
+        # Which experiences are coming up soon enough that we want to show them
+        time_ahead = timezone.now()
+        time_ahead += settings.HALLSTAFF_TIME_AHEAD if self.is_hs() else settings.RA_TIME_AHEAD
         upcoming = []
         for experience in context['experience_dict'][_('Approved')]:
-            if experience.start_datetime > timezone.now() and experience.start_datetime < one_week:
+            if experience.start_datetime > timezone.now() and experience.start_datetime < time_ahead:
                 upcoming.append(experience)
         context['upcoming'] = upcoming
         return context
-
-
-class RAHomeView(ListView):
-    template_name = 'exdb/home.html'
-    access_level = 'basic'
-    context_object_name = 'experiences'
-
-    def get_queryset(self):
-        return Experience.objects.filter(Q(author=self.request.user) | (Q(planners=self.request.user) & ~Q(
-            status='dr'))).exclude(status__in=('ca')).order_by('created_datetime').distinct()
-
-    def get_context_data(self, *args, **kwargs):
-        context = super(RAHomeView, self).get_context_data(*args, **kwargs)
-        context['user'] = self.request.user
-
-        experience_dict = OrderedDict()
-        experience_dict[_('Needs Evaluation')] = []
-        for status in Experience.STATUS_TYPES:
-            experience_dict[status[1]] = []
-        for experience in context[self.context_object_name]:
-            if experience.needs_evaluation():
-                experience_dict[_('Needs Evaluation')].append(experience)
-            else:
-                experience_dict[experience.get_status_display()].append(experience)
-        context['experience_dict'] = experience_dict
-
-        one_month = timezone.now() + timezone.timedelta(days=31)
-        upcoming = []
-        for experience in context['experience_dict'][_('Approved')]:
-            if experience.start_datetime > timezone.now() and experience.start_datetime < one_month:
-                upcoming.append(experience)
-        context['upcoming'] = upcoming
-        return context
-
-
-class HomeView(ListView):
-    access_level = 'basic'
-    hall_staff_view = staticmethod(HallStaffDashboardView.as_view())
-    ra_view = staticmethod(RAHomeView.as_view())
-
-    def dispatch(self, request, *args, **kwargs):
-        if self.request.user.groups.filter(name='hs'):
-            return self.hall_staff_view(request, *args, **kwargs)
-        else:
-            return self.ra_view(request, *args, **kwargs)
 
 
 class ExperienceApprovalView(UpdateView):
@@ -132,7 +114,7 @@ class ExperienceApprovalView(UpdateView):
     model = Experience
 
     def get_object(self):
-        return get_object_or_404(Experience, pk=self.kwargs['pk'], status='pe', next_approver=self.request.user)
+        return get_object_or_404(Experience.approvable_experiences_by_user(self.kwargs['pk'], self.request.user))
 
     def get_success_url(self):
         return reverse('home')
