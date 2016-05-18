@@ -56,7 +56,7 @@ class StandardTestCase(TestCase):
             audience="b",
             status=exp_status,
             attendance=attendance,
-            next_approver=self.clients['hs'].user_object,
+            next_approver=self.clients['ra'].user_object,
         )[0]
 
     def create_experience_comment(self, exp, message="Test message"):
@@ -368,7 +368,7 @@ class ExperienceApprovalViewTest(StandardTestCase):
         status = 'approve' if approve else 'deny'
         description = "" if invalid_description else e.description
         next_approver = self.llc_user.pk if llc_approval else e.next_approver.pk
-        self.clients['hs'].post(reverse('approval', args=[e.pk]), {
+        self.clients['ra'].post(reverse('approval', args=[e.pk]), {
             'name': e.name,
             'description': description,
             'start_datetime_month': e.start_datetime.month,
@@ -392,12 +392,12 @@ class ExperienceApprovalViewTest(StandardTestCase):
     def test_gets_correct_experience(self):
         e = self.create_experience('pe')
         self.create_experience('pe')
-        response = self.clients['hs'].get(reverse('approval', args=[e.pk]))
+        response = self.clients['ra'].get(reverse('approval', args=[e.pk]))
         self.assertEqual(response.context['experience'].pk, e.pk, "The correct experience was not retrieved.")
 
     def test_404_when_experience_not_pending(self):
         e = self.create_experience('dr')
-        response = self.clients['hs'].get(reverse('approval', args=[e.pk]))
+        response = self.clients['ra'].get(reverse('approval', args=[e.pk]))
         self.assertEqual(
             response.status_code,
             404,
@@ -440,7 +440,7 @@ class ExperienceApprovalViewTest(StandardTestCase):
         e = self.post_data(llc_approval=True)
         self.assertEqual(
             e.next_approver,
-            self.clients['hs'].user_object,
+            self.clients['ra'].user_object,
             "If denied, next approver should be denying user.")
 
 
@@ -449,18 +449,18 @@ class HallStaffDashboardViewTest(StandardTestCase):
     def test_get_user(self):
         self.create_experience('pe')
         self.create_experience('dr')
-        response = self.clients['hs'].get(reverse('home'))
+        response = self.clients['ra'].get(reverse('home'))
 
         self.assertEqual(
             response.context["user"].pk,
-            self.clients['hs'].user_object.pk,
+            self.clients['ra'].user_object.pk,
             "The correct user was not retrieved!"
         )
 
-    def test_coverage(self):
+    def test_number_of_experiences(self):
         self.create_experience('pe')
         self.create_experience('dr')
-        response = self.clients['hs'].get(reverse('home'))
+        response = self.clients['ra'].get(reverse('home'))
 
         self.assertEqual(len(response.context["experiences"]), 2, "There should be 2 experiences displayed")
 
