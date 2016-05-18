@@ -13,15 +13,15 @@ class StandardTestCase(TestCase):
 
     def setUp(self):
         self.test_date = make_aware(datetime(2015, 1, 1, 1, 30), timezone=utc)
-        users = ['ra', 'hs']
+        users = [('ra',) * 2, ('hs',) * 2, ('llc', 'hs')]
         self.groups = {}
         self.clients = {}
-        for user in users:
-            self.groups[user] = Group.objects.get_or_create(name=user)
+        for user, group in users:
+            self.groups[user] = Group.objects.get_or_create(name=group)[0]
             self.clients[user] = Client()
             # avoid setting the password and force_login for speed
             self.clients[user].user_object = get_user_model().objects.create(username=user)
-            self.clients[user].user_object.groups.add(Group.objects.get(name=user))
+            self.clients[user].user_object.groups.add(self.groups[user])
             self.clients[user].force_login(self.clients[user].user_object)
 
     def create_type(self, needs_verification=True, name="Test Type"):
@@ -356,18 +356,13 @@ class RAHomeViewTest(StandardTestCase):
 
 class ExperienceApprovalViewTest(StandardTestCase):
 
-    def setUp(self):
-        super(ExperienceApprovalViewTest, self).setUp()
-        self.llc_user = get_user_model().objects.create(username='llc')
-        self.llc_user.groups.add(Group.objects.get_or_create(name='hs')[0])
-
     def post_data(self, message="", approve=False, invalid_description=False, llc_approval=False):
         """Posts approval/denial data and returns updated experience for comparisons
         default value is no comment and deny"""
         e = self.create_experience('pe', start=(now() + timedelta(days=1)), end=(now() + timedelta(days=2)))
         status = 'approve' if approve else 'deny'
         description = "" if invalid_description else e.description
-        next_approver = self.llc_user.pk if llc_approval else e.next_approver.pk
+        next_approver = self.clients['llc'].user_object.pk if llc_approval else e.next_approver.pk
         self.clients['ra'].post(reverse('approval', args=[e.pk]), {
             'name': e.name,
             'description': description,
