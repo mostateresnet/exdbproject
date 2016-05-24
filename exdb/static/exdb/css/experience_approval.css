@@ -2,7 +2,7 @@ div.experience-display{
     margin-left: 3%;
 }
 
-div.experience-display span{
+div.experience-display span:not(.help){
     font-weight: bold;
 }
 

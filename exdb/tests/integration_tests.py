@@ -132,6 +132,7 @@ class ExperienceCreationFormTest(StandardTestCase):
         data = self.get_post_data((self.test_date - timedelta(days=2)), (self.test_date - timedelta(days=1)))
         data['attendance'] = 1
         data['type'] = self.test_past_type.pk
+        data['conclusion'] = "Test conclusion"
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertTrue(form.is_valid(), "Form should have been valid")
 
@@ -209,6 +210,14 @@ class ExperienceCreationFormTest(StandardTestCase):
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should NOT have been valid if next_approver is not specified")
 
+    def test_experience_creation_spontaneous_no_conclusion(self):
+        data = self.get_post_data((self.test_date - timedelta(days=2)), (self.test_date - timedelta(days=1)))
+        data['attendance'] = 1
+        data['type'] = self.test_past_type.pk
+        data['conclusion'] = ""
+        form = ExperienceSubmitForm(data, when=self.test_date)
+        self.assertFalse(form.is_valid(), "Form should not be valid with no conclusion if it does not need approval")
+
 
 class ExperienceCreationViewTest(StandardTestCase):
 
@@ -239,6 +248,10 @@ class ExperienceCreationViewTest(StandardTestCase):
                 'goal': 'test',
                 action: action}
 
+    def test_gets_create(self):
+        response = self.clients['ra'].get(reverse('create_experience'))
+        self.assertEqual(response.status_code, 200, "The create experience page should have loaded")
+
     def test_valid_future_experience_creation_view_submit(self):
         start = now() + timedelta(days=1)
         end = now() + timedelta(days=2)
@@ -261,9 +274,19 @@ class ExperienceCreationViewTest(StandardTestCase):
         data = self.get_post_data(start, end)
         data['attendance'] = 1
         data['type'] = self.test_past_type.pk
+        data['conclusion'] = "Test conclusion"
         self.clients['ra'].post(reverse('create_experience'), data)
         self.assertEqual('co', Experience.objects.get(name='test').status,
                          "Experience should have been saved with completed status")
+
+    def test_conclusion_set_to_empty_string_if_needs_verification(self):
+        start = now() + timedelta(days=1)
+        end = now() + timedelta(days=2)
+        data = self.get_post_data(start, end)
+        data['conclusion'] = "Test Conclusion"
+        self.clients['ra'].post(reverse('create_experience'), data)
+        self.assertEqual(Experience.objects.get(name='test').conclusion, "",
+                         "The conclusion should have been set to the empty string")
 
 
 class ViewExperienceViewTest(StandardTestCase):
