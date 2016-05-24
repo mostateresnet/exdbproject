@@ -7,7 +7,7 @@
 {% endblock %}
 {% block javascript %}
     {{ block.super }}
-    <script type="text/javascript" src="{% static 'exdb/js/edit_experience.js' %}"></script>
+    <script type="text/javascript" src="{% static 'exdb/js/experience_form.js' %}"></script>
 {% endblock %}
 {% block content %}
     {{ block.super }}
@@ -26,6 +26,7 @@
                 <p class="errors">{{ field.errors }}</p>
                 {{ field.label_tag }}
                 {{ field }}
+                <span class="help">{{ field.help_text }}</span>
             </div>
         {% endfor %}
         <hr />
