@@ -97,7 +97,7 @@ class HomeView(ListView):
 
         # Which experiences are coming up soon enough that we want to show them
         time_ahead = timezone.now()
-        time_ahead += settings.HALLSTAFF_TIME_AHEAD if self.is_hs() else settings.RA_TIME_AHEAD
+        time_ahead += settings.HALLSTAFF_UPCOMING_TIMEDELTA if self.is_hs() else settings.RA_UPCOMING_TIMEDELTA
         upcoming = []
         for experience in context['experience_dict'][_('Approved')]:
             if experience.start_datetime > timezone.now() and experience.start_datetime < time_ahead:

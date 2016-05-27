@@ -1,4 +1,4 @@
-from django.test import TestCase, Client
+from django.test import TestCase, Client, override_settings
 from django.utils.timezone import datetime, timedelta, now, make_aware, utc
 from django.core.urlresolvers import reverse
 from django.contrib.auth import get_user_model
@@ -338,6 +338,7 @@ class RAHomeViewTest(StandardTestCase):
 
         self.assertEqual(len(response.context["experiences"]), 2, "There should be 2 experiences displayed")
 
+    @override_settings(HALLSTAFF_UPCOMING_TIMEDELTA=timedelta(days=0), RA_UPCOMING_TIMEDELTA=timedelta(days=31))
     def test_week_ahead(self):
         self.create_experience('ad')
         Experience.objects.get_or_create(author=self.clients['ra'].user_object,
@@ -459,6 +460,7 @@ class HallStaffDashboardViewTest(StandardTestCase):
 
         self.assertEqual(len(response.context["experiences"]), 2, "There should be 2 experiences displayed")
 
+    @override_settings(HALLSTAFF_UPCOMING_TIMEDELTA=timedelta(days=7), RA_UPCOMING_TIMEDELTA=timedelta(days=0))
     def test_week_ahead(self):
         self.create_experience('ad')
         Experience.objects.get_or_create(author=self.clients['ra'].user_object,
@@ -470,7 +472,7 @@ class HallStaffDashboardViewTest(StandardTestCase):
                                          goal="Test Goal",
                                          audience="b",
                                          status="ad",
-                                         attendance=3,
+                                         attendance=None,
                                          next_approver=self.clients['hs'].user_object)
         response = self.clients['hs'].get(reverse('home'))
         self.assertEqual(len(response.context["upcoming"]), 1, "There should be 1 experience in the next week")
