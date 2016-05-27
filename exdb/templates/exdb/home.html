@@ -9,7 +9,7 @@
     {{ block.super }}
     <h3 class="log-out"><a href="{% url 'logout' %}">{% trans "Log out" %}</a></h3>
     <h2>{% trans 'Hello' %} {{ user }}</h2>
-    <p><a href={% url 'create_experience' %}>{% trans 'Create an experience' %}</a></p>
+    <p><a href="{% url 'create_experience' %}">{% trans 'Create an experience' %}</a></p>
     <hr class="break" />
     <div class="experience-panel">
         {% for status, experiences in experience_dict.items %}
@@ -50,7 +50,7 @@
         {% if upcoming %}
             <div class='experience-div'>
                 {% for experience in upcoming %}
-                    <div class="experience"><a href={% url 'view_experience' pk=experience.pk %}>
+                    <div class="experience"><a href="{% url 'view_experience' pk=experience.pk %}">
                         <p>{% trans 'Name' %}: {{ experience.name }}</p>
                         <p>{% trans 'Start Time' %}: {{ experience.start_datetime }}</p>
                     </a></div>
