@@ -76,10 +76,9 @@ class HomeView(ListView):
 
         # This is what experience groups we are showing the user and in what order
         if self.is_hs():
-            status_to_display = [_('Pending Approval'), _('Approved')]
+            status_to_display = [_('Pending Approval'), _('Needs Evaluation'), _('Approved')]
         else:
-            status_to_display = [_(x[1]) for x in Experience.STATUS_TYPES]
-        status_to_display.append(_('Needs Evaluation'))
+            status_to_display = [_('Needs Evaluation')] + [x[1] for x in Experience.STATUS_TYPES]
 
         # Grouping of experiences for display
         experience_dict = OrderedDict()
