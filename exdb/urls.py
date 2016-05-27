@@ -14,7 +14,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  url(r'^blog/', include(blog_urls))
 """
 from django.conf.urls import url
-from django.contrib.auth.views import login
+from django.contrib.auth.views import login, logout_then_login
 from exdb import views
 
 urlpatterns = [
@@ -25,5 +25,5 @@ urlpatterns = [
     url(r'^view/experience/(?P<pk>\d+)$', views.ViewExperienceView.as_view(), name='view_experience'),
     url(r'^view/edit/(?P<pk>\d+)$', views.EditExperienceView.as_view(), name='edit'),
     url(r'^login$', login, name='login', kwargs={'template_name': 'exdb/login.html'}),
-    url('^logout$', views.LogoutView.as_view(), name='logout'),
+    url(r'^logout$', logout_then_login, name='logout'),
 ]

@@ -4,7 +4,6 @@ from django.views.generic.edit import CreateView, UpdateView
 from django.shortcuts import get_object_or_404
 from django.core.urlresolvers import reverse
 from django.contrib import auth
-from django.contrib.auth.views import logout
 from django.http import HttpResponseRedirect
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
@@ -215,11 +214,3 @@ class EditExperienceView(UpdateView):
         if self.request.POST.get('submit'):
             form.instance.status = 'pe'
         return super(EditExperienceView, self).form_valid(form)
-
-
-class LogoutView(RedirectView):
-    access_level = 'basic'
-
-    def get(self, request, *args, **kwargs):
-        logout(request)
-        return HttpResponseRedirect(reverse('login'))

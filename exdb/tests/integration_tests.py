@@ -556,10 +556,3 @@ class LoginViewTest(StandardTestCase):
     def test_unauthorized_access_redirects_login(self):
         response = Client().get(reverse('home'))
         self.assertEqual(response.url.split('?')[0], reverse('login'))
-
-
-class LogoutViewTest(StandardTestCase):
-
-    def test_logout(self):
-        response = self.clients['hs'].get(reverse('logout'))
-        self.assertFalse(response.wsgi_request.user.is_authenticated(), "User should have been logged out")
