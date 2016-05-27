@@ -86,8 +86,9 @@ class HomeView(ListView):
         experience_dict = OrderedDict()
         for status in status_to_display:
             experience_dict[status] = []
+        approvable_experiences = self.request.user.approvable_experiences()
         for experience in context[self.context_object_name]:
-            experience.can_approve = experience.approvable_by_user(self.request.user)
+            experience.can_approve = experience in approvable_experiences
             if experience.needs_evaluation():
                 experience_dict[_('Needs Evaluation')].append(experience)
             else:
@@ -113,8 +114,8 @@ class ExperienceApprovalView(UpdateView):
     second_form_class = ApprovalForm
     model = Experience
 
-    def get_object(self):
-        return get_object_or_404(Experience.approvable_experiences_by_user(self.kwargs['pk'], self.request.user))
+    def get_queryset(self):
+        return self.request.user.approvable_experiences()
 
     def get_success_url(self):
         return reverse('home')

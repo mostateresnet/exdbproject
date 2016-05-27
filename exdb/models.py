@@ -8,6 +8,9 @@ from django.contrib.auth.models import AbstractUser
 class EXDBUser(AbstractUser):
     affiliation = models.ForeignKey('Affiliation', null=True)
 
+    def approvable_experiences(self):
+        return self.approval_queue.filter(status='pe')
+
 
 class SubType(models.Model):
     name = models.CharField(max_length=300)
@@ -84,13 +87,6 @@ class Experience(models.Model):
 
     def needs_evaluation(self):
         return self.status == 'ad' and self.end_datetime <= now()
-
-    def approvable_by_user(self, user):
-        return self.approvable_experiences_by_user([self.pk], user)
-
-    @staticmethod
-    def approvable_experiences_by_user(pk, user):
-        return Experience.objects.filter(pk__in=pk, status='pe', next_approver=user)
 
 
 class ExperienceApproval(models.Model):
