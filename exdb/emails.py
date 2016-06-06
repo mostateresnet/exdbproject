@@ -55,7 +55,7 @@ class DailyDigest(EmailTaskBase):
     def is_time_to_send(self):
         # Send the daily email at 1600
         right_now = localtime(now())
-        return right_now.hour == 16 and(0 <= right_now.minute < 5)
+        return right_now.hour == 16 and (0 <= right_now.minute < 5)
 
     def get_addrs(self):
         """

@@ -1,4 +1,4 @@
-from django.test import TestCase, Client
+from django.test import TestCase, Client, override_settings
 from django.utils.timezone import datetime, timedelta, now, make_aware, utc, localtime
 from django.utils.six import StringIO
 from django.core.urlresolvers import reverse
@@ -510,6 +510,7 @@ class LoginViewTest(StandardTestCase):
         self.assertEqual(response.url.split('?')[0], reverse('login'))
 
 
+@override_settings(TIME_ZONE='UTC')
 class EmailTest(StandardTestCase):
 
     def setUp(self):
@@ -573,7 +574,7 @@ class EmailTest(StandardTestCase):
 
     def test_does_not_send_daily_not_1600(self):
         from exdb import emails
-        emails.now = lambda: now()
+        emails.now = lambda: make_aware(datetime(2015, 1, 1, 15, 1), timezone=utc)
 
         self.create_experience('pe', start=(self.test_date - timedelta(days=2)),
                                end=(self.test_date - timedelta(days=1)))
