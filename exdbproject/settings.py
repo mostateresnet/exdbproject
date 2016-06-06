@@ -153,15 +153,12 @@ LOGIN_URL = 'login'
 # Use augmented user model
 AUTH_USER_MODEL = 'exdb.EXDBUser'
 
+# Root URL path for EXDB - excluding trailing slash
+# This is used for links in emails
+URL_PREFIX = 'http://example.com/exdb'
+
 # override settings with settings_local
 try:
     from exdbproject.settings_local import *  # pylint: disable=wildcard-import,unused-wildcard-import,wrong-import-position
 except ImportError:
     pass
-
-
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = ''
-EMAIL_SUBJECT_PREFIX = '[EXDB]'
-URL_PREFIX = ''
-SERVER_EMAIL = 'noreply@a.com'
