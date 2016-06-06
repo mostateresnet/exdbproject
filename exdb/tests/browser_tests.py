@@ -19,6 +19,7 @@ from django.contrib.sessions.models import Session
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.conf import settings
 from django.core.urlresolvers import reverse
+from exdb.models import Type
 
 
 class CustomRunnerMetaClass(type):
@@ -150,7 +151,7 @@ class IstanbulCoverage(object):
             if isinstance(value, int):
                 result[key] = y[key] + value
             elif isinstance(value, list):
-                result[key] = [value[i] + y[key][i] for i in range(len(x))]
+                result[key] = [value[i] + y[key][i] for i in range(len(value))]
 
         return result
 
@@ -269,18 +270,6 @@ class DefaultLiveServerTestCase(StaticLiveServerTestCase):
         self.driver.delete_all_cookies()
 
 
-class SeleniumJSCoverage(DefaultLiveServerTestCase):
-
-    def test_load(self):
-        self.client.get('/')
-        self.assertEqual(self.driver.find_element(By.XPATH, '//h1').text, _('Welcome'))
-
-    def test_something_else(self):
-        self.client.get('/')
-        self.assertEqual(self.driver.find_element(By.XPATH, '//h1').text, _('Welcome'))
-        self.driver.execute_script('f()')
-
-
 class LiveLoginViewTest(DefaultLiveServerTestCase):
 
     def setUp(self):
@@ -312,15 +301,48 @@ class LiveLoginViewTest(DefaultLiveServerTestCase):
         self.assertTrue(is_logged_in)
 
 
-class WelcomeViewTest(DefaultLiveServerTestCase):
-
-    def test_load(self):
-        self.client.get('/')
-        self.assertEqual(self.driver.find_element(By.XPATH, '//h1').text, _('Welcome'))
-
-
 class HallStaffDashboardBrowserTest(DefaultLiveServerTestCase):
 
     def test_load(self):
-        self.client.get(reverse('hallstaff_dash'))
-        self.assertEqual(self.driver.find_element(By.XPATH, '//h1').text, _('Experiences Pending Approval'))
+        self.client.get(reverse('home'))
+        self.assertEqual(self.driver.find_element(By.XPATH, '//h2').text, _('Hello user'))
+
+
+class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
+
+    def setUp(self):
+        super(CreateExperienceBrowserTest, self).setUp()
+        Type.objects.create(name="Spontaneous", needs_verification=False)
+
+    def test_attendance_hidden(self):
+        self.client.get(reverse('create_experience'))
+        attnd_element = self.driver.find_element(By.ID, 'id_attendance')
+        self.assertFalse(attnd_element.find_element(By.XPATH, '..').is_displayed(),
+                         'Attendance field should be hidden on load.')
+
+    def test_shows_attendance_field(self):
+        self.client.get(reverse('create_experience'))
+        type_element = self.driver.find_element(By.ID, 'id_type')
+        type_element.find_element_by_class_name('no-verification').click()
+        attnd_element = self.driver.find_element(By.ID, 'id_attendance')
+        self.assertTrue(attnd_element.find_element(By.XPATH, '..').is_displayed(),
+                        'Attendance field should not be hidden when spontaneous is selected.')
+
+    def test_rehides_attendance_field(self):
+        self.client.get(reverse('create_experience'))
+        type_element = self.driver.find_element(By.ID, 'id_type')
+        type_element.find_element_by_class_name('no-verification').click()
+        type_element.find_elements_by_tag_name('option')[0].click()
+        attnd_element = self.driver.find_element(By.ID, 'id_attendance')
+        self.assertFalse(attnd_element.find_element(By.XPATH, '..').is_displayed(),
+                         'Attendance field should be hidden when spontaneous is not selected.')
+
+    def test_attendance_conclusion_not_hidden_if_no_verify(self):
+        self.client.get(reverse('create_experience'))
+        type_element = self.driver.find_element(By.ID, 'id_type')
+        type_element.find_element_by_class_name('no-verification').click()
+        self.driver.find_element(By.ID, 'submit_experience').click()
+        con_element = self.driver.find_element(By.ID, 'id_conclusion')
+        att_element = self.driver.find_element(By.ID, 'id_attendance')
+        visible = att_element.is_displayed() and con_element.is_displayed()
+        self.assertTrue(visible, 'Attendance and Conclusion fields should be displayed')

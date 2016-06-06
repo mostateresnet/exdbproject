@@ -12,6 +12,9 @@ from django.contrib.auth.models import AbstractUser
 class EXDBUser(AbstractUser):
     affiliation = models.ForeignKey('Affiliation', null=True)
 
+    def approvable_experiences(self):
+        return self.approval_queue.filter(status='pe')
+
 
 class SubType(models.Model):
     name = models.CharField(max_length=300)

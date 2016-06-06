@@ -1,7 +1,10 @@
 .experience {
     border: solid black 1px;
-    width: 90%;
+    width: 40%;
     margin-bottom: .5em;
+    overflow: hidden;
+    float: left;
+    margin-left: .5em;
 }
 
 .experience-name {
@@ -62,7 +65,7 @@
     width: 35%;
 }
 
-@media only screen and (max-width: 1200px) {
+@media only screen and (max-width: 1760px) {
     .week-ahead {
         display: none;
     }
@@ -74,7 +77,7 @@
         width: 95%;
     }
     .experience {
-        width: 95%;
+        width: 48%;
     }
     .experience-panel {
         width: 95%;
@@ -84,4 +87,13 @@
 a {
     text-decoration: none;
     color: black;
+}
+
+.experience-div>.experience:nth-of-type(4n-3), .experience-div>.experience:nth-of-type(4n-2){
+    background-color: lightgrey;
+}
+
+.log-out {
+    float: right;
+    margin-right: 5em;
 }

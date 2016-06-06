@@ -1,4 +1,4 @@
-There {{ experience_count|pluralize:"is, are" }} <a href="{{ url_prefix }}{% url 'hallstaff_dash' %}">{{ experience_count }} experience(s) needing action.</a>
+There {{ experience_count|pluralize:"is, are" }} <a href="{{ url_prefix }}{% url 'home' %}">{{ experience_count }} experience(s) needing action.</a>
 
 {% for status, experiences in experience_dict.items %}
     {% if experiences|length %}
