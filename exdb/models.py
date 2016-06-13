@@ -90,7 +90,7 @@ class Experience(models.Model):
     # after the status has changed to either approved or denied.
     needs_author_email = models.BooleanField(default=False)
 
-    # last_evaluation_email is after an experience needs to be evaluated we
+    # last_evaluation_email_datetime is after an experience needs to be evaluated we
     # send an email, as well as every 24 hours after the email was sent until
     # the user evaluates it.
     last_evaluation_email_datetime = models.DateTimeField(null=True, blank=True)
@@ -125,7 +125,7 @@ class EmailTask(models.Model):
     email_module = 'exdb.emails'
     package = models.CharField(max_length=100, unique=True)
     name = models.CharField(max_length=100)
-    users = models.ManyToManyField(EXDBUser)
+    users = models.ManyToManyField(settings.AUTH_USER_MODEL)
     last_sent_on = models.DateTimeField(default=now)
 
     def send(self, *args, **kwargs):

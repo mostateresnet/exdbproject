@@ -154,12 +154,9 @@ class EvaluateExperience(EmailTaskBase):
     def get_experiences(self):
         one_day = (now() - timedelta(days=1))
         return Experience.objects.filter(
-            Q(status='ad',
-                end_datetime__lt=now(),
-                last_evaluation_email_datetime__isnull=True) |
-            Q(status='ad',
-                end_datetime__lt=now(),
-                last_evaluation_email_datetime__range=((one_day - timedelta(minutes=5)), one_day))
+            Q(last_evaluation_email_datetime__isnull=True) |
+            Q(last_evaluation_email_datetime__lte=one_day),
+            status='ad', end_datetime__lt=now()
         )
 
     def send(self, *args, **kwargs):
