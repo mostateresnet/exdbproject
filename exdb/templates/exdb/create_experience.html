@@ -5,6 +5,10 @@
     {{ block.super }}
     <link href="{% static 'exdb/css/create_experience.css' %}" rel="stylesheet">
 {% endblock %}
+{% block javascript %}
+    {{ block.super }}
+    <script type="text/javascript" src="{% static 'exdb/js/experience_form.js' %}"></script>
+{% endblock %}
 {% block content %}
     {{ block.super }}
     <div>
@@ -18,10 +22,14 @@
                         {{ field.label_tag }}
                         <div class="field-error">{{ field.errors }}</div>
                         {{ field }}
+                        <span class="help">{{ field.help_text }}</span>
                     </div>
                 {% endfor %}
-            <input id="save_experience" type="submit" value="{% trans 'Save as draft' %}" name="save" />
-            <input id="submit_experience" type="submit" value="{% trans 'Submit' %}" name="submit" />
+            <hr />
+            <div>
+                <input id="save_experience" type="submit" value="{% trans 'Save as draft' %}" name="save" />
+                <input id="submit_experience" type="submit" value="{% trans 'Submit' %}" name="submit" />
+            </div>
         </form>
     </div>
 {% endblock %}

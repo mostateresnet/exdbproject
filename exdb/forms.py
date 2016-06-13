@@ -2,10 +2,36 @@ from datetime import datetime
 from django import forms
 from django.core.exceptions import ValidationError
 from django.utils.timezone import now
+from django.utils.encoding import force_text
+from django.utils.safestring import mark_safe
+from django.utils.html import format_html
 from django.utils.translation import ugettext as _
 from django.forms import ModelForm
 from django.utils.timezone import utc
 from exdb.models import Experience, ExperienceComment
+
+
+class TypeSelect(forms.Select):
+
+    def render_option(self, selected_choices, option_value, option_label):
+        if option_value is None:
+            option_value = ''  # pragma: no cover
+        option_value = force_text(option_value)
+        if option_value in selected_choices:
+            selected_html = mark_safe(' selected="selected"')
+            if not self.allow_multiple_selected:
+                selected_choices.remove(option_value)
+        else:
+            selected_html = ''
+        css_classes = []
+        choice_dict = {str(c.pk): c for c in self.choices.queryset}
+        if option_value in choice_dict and not choice_dict[option_value].needs_verification:
+            css_classes.append('no-verification')
+        return format_html('<option class="{}" value="{}"{}>{}</option>',
+                           ' '.join(css_classes),
+                           option_value,
+                           selected_html,
+                           force_text(option_label))
 
 
 class ExperienceSaveForm(ModelForm):
@@ -28,6 +54,7 @@ class ExperienceSaveForm(ModelForm):
             'goal',
             'guest',
             'guest_office',
+            'conclusion'
         ]
 
         widgets = {
@@ -35,6 +62,8 @@ class ExperienceSaveForm(ModelForm):
             'goal': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
             'start_datetime': forms.SelectDateWidget(),
             'end_datetime': forms.SelectDateWidget(),
+            'type': TypeSelect(),
+            'conclusion': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
         }
 
         labels = {
@@ -91,6 +120,14 @@ class ExperienceSubmitForm(ExperienceSaveForm):
 
         if validation_errors:
             raise ValidationError(validation_errors)
+
+        # There are too many branches in this function; this is fixed on
+        # the approval validation branch.
+        if not ex_type.needs_verification and not self.cleaned_data.get('conclusion'):
+            raise ValidationError(_('%(name)s events must have a conclusion') % {'name': ex_type.name})
+
+        if ex_type.needs_verification and self.cleaned_data.get('conclusion'):
+            self.cleaned_data['conclusion'] = ""
 
         return self.cleaned_data
 
