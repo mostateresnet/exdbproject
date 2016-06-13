@@ -7,9 +7,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.shortcuts import get_object_or_404
 from django.core.management import call_command
-from auto_mock import full_mock, easy_mock
 
-from exdb.models import Affiliation, Experience, Type, SubType, Section, Keyword, ExperienceComment, ExperienceApproval, Email, EmailTask
+from exdb.models import Affiliation, Experience, Type, SubType, Section, Keyword, ExperienceComment, ExperienceApproval, EmailTask
 from exdb.forms import ExperienceSubmitForm
 
 
@@ -639,3 +638,41 @@ class EmailTest(StandardTestCase):
         self.send_emails()
 
         self.assertEqual(len(mail.outbox), 0, "0 emails should have been sent")
+
+    def test_needs_author_email_is_updated(self):
+        e = self.create_experience('de', start=(self.test_date + timedelta(days=3)),
+                                   end=(self.test_date + timedelta(days=4)))
+        e.needs_author_email = True
+        e.save()
+
+        self.send_emails()
+
+        self.assertEqual(len(mail.outbox), 1, 'The denial email should have been sent')
+
+        e = Experience.objects.get(pk=e.pk)
+        self.assertFalse(
+            e.needs_author_email,
+            'needs_author_email should have been reset to False after sending the email')
+
+    def test_last_evaluation_email_datetime_is_updated(self):
+        e = self.create_experience('ad', start=(self.test_date - timedelta(days=3)),
+                                   end=(self.test_date - timedelta(days=2)))
+
+        self.send_emails()
+
+        self.assertEqual(len(mail.outbox), 1, 'The evaluation reminder email should have been sent')
+        e = Experience.objects.get(pk=e.pk)
+        self.assertEqual(e.last_evaluation_email_datetime, self.test_date,
+                         'last_evaluation_email_datetime should be set to now()')
+
+    def test_emailtask_str_method(self):
+        name = 'asdf'
+        et = EmailTask(name=name)
+        self.assertEqual(str(et), name)
+
+    def test_email_continuity_after_error_experience_status_update(self):
+        from exdb import emails
+        emails.send_mass_mail = 1
+
+    def test_email_continuity_after_error_evaluate_experience(self):
+        raise Exception('finish this')

@@ -11,7 +11,7 @@ from django.contrib.auth import get_user_model
 from django.db.models import Q
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
-from exdb.models import Email, Experience, ExperienceApproval
+from exdb.models import Experience, ExperienceApproval
 
 
 def send_mass_mail(datatuple, fail_silently=False, user=None, password=None, connection=None):
@@ -77,7 +77,7 @@ class DailyDigest(EmailTaskBase):
 
             emails = []
             from_email = settings.SERVER_EMAIL
-            subject = settings.EMAIL_SUBJECT_PREFIX + ' Daily Digest'
+            subject = settings.EMAIL_SUBJECT_PREFIX + 'Daily Digest'
             for user in self.get_addrs():
 
                 # Find all the approvals that need evaluation and all the experiences that
@@ -123,8 +123,9 @@ class ExperienceStatusUpdate(EmailTaskBase):
     def send(self, *args, **kwargs):
         emails = []
         from_email = settings.SERVER_EMAIL
-        subject = settings.EMAIL_SUBJECT_PREFIX + ' Experience status updated'
-        for experience in self.get_experiences():
+        subject = settings.EMAIL_SUBJECT_PREFIX + 'Experience status updated'
+        experiences = self.get_experiences()
+        for experience in experiences:
 
             html = render_to_string('exdb/emails/status_change.html',
                                     {'experience': experience,
@@ -133,9 +134,9 @@ class ExperienceStatusUpdate(EmailTaskBase):
             recipients = (experience.author.email,)
             emails.append((subject, text, html, from_email, recipients))
 
-            # Reset the bool so we do not send it out again
-            experience.needs_author_email = False
         send_mass_mail(emails)
+        # Reset the bool so we do not send it out again
+        experiences.update(needs_author_email=False)
         return len(emails)
 
 
@@ -164,8 +165,9 @@ class EvaluateExperience(EmailTaskBase):
     def send(self, *args, **kwargs):
         emails = []
         from_email = settings.SERVER_EMAIL
-        subject = settings.EMAIL_SUBJECT_PREFIX + ' Experience needs evaluation'
-        for experience in self.get_experiences():
+        subject = settings.EMAIL_SUBJECT_PREFIX + 'Experience needs evaluation'
+        experiences = self.get_experiences()
+        for experience in experiences:
 
             html = render_to_string('exdb/emails/evaluate.html',
                                     {'experience': experience,
@@ -175,7 +177,7 @@ class EvaluateExperience(EmailTaskBase):
             recipients.append(experience.author.email)
             emails.append((subject, text, html, from_email, recipients))
 
-            # Set the datetime so this email does not get sent out again
-            experience.last_evaluation_email_datetime = now()
         send_mass_mail(emails)
+        # Set the datetime so this email does not get sent out again
+        experiences.update(last_evaluation_email_datetime=now())
         return len(emails)

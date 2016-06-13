@@ -121,30 +121,16 @@ class ExperienceComment(models.Model):
         ordering = ['timestamp']
 
 
-class Email(models.Model):
-    addr = models.EmailField(validators=[validate_email], unique=True, blank=False)
-    related_content_type = models.ForeignKey(ContentType, null=True, blank=True)
-    related_object_id = models.PositiveIntegerField(null=True)
-    related_content_object = GenericForeignKey('related_content_type', 'related_object_id')
-
-    def __str__(self):
-        return self.addr
-
-
 class EmailTask(models.Model):
     email_module = 'exdb.emails'
     package = models.CharField(max_length=100, unique=True)
     name = models.CharField(max_length=100)
-    emails = models.ManyToManyField(Email)
+    users = models.ManyToManyField(EXDBUser)
     last_sent_on = models.DateTimeField(default=now)
 
     def send(self, *args, **kwargs):
         module = import_module(self.email_module)
         return getattr(module, self.package)().send(self, *args, **kwargs)
-
-    def sync_addrs(self):
-        module = import_module(self.email_module)
-        return getattr(module, self.package)().sync_addrs(self)
 
     def __str__(self):
         return self.name
