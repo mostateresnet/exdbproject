@@ -330,18 +330,11 @@ class LiveLoginViewTest(DefaultLiveServerTestCase):
         self.assertTrue(is_logged_in)
 
 
-class WelcomeViewTest(DefaultLiveServerTestCase):
-
-    def test_load(self):
-        self.client.get('/')
-        self.assertEqual(self.driver.find_element(By.XPATH, '//h1').text, _('Welcome'))
-
-
 class HallStaffDashboardBrowserTest(DefaultLiveServerTestCase):
 
     def test_load(self):
-        self.client.get(reverse('hallstaff_dash'))
-        self.assertEqual(self.driver.find_element(By.XPATH, '//h1').text, _('Experiences Pending Approval'))
+        self.client.get(reverse('home'))
+        self.assertEqual(self.driver.find_element(By.XPATH, '//h2').text, _('Hello user'))
 
 
 class EditExperienceBrowserTest(DefaultLiveServerTestCase):
