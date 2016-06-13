@@ -5,11 +5,15 @@
     {{ block.super }}
     <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/experience_approval.css' %}" />
 {% endblock %}
+{% block javascript %}
+    {{ block.super }}
+    <script type="text/javascript" src="{% static 'exdb/js/experience_form.js' %}"></script>
+{% endblock %}
 {% block content %}
     <form method="POST">
         {% csrf_token %}
         <h1>{% trans "Experience Approval" %}</h1>
-        <p><a href="{% url 'hallstaff_dash' %}">{% trans "Return to Hall Staff Dashboard" %}</a></p>
+        <p><a href="{% url 'home' %}">{% trans "Return home" %}</a></p>
         <div class="form-errors">{{ form.non_field_errors }}</div>
         <div class="form-errors">{{ comment_form.non_field_errors }}</div>
         <p>{% trans "Note: Set the 'Supervisor' field to the LLC approver if this experience needs LLC approval." %}</p>
@@ -25,6 +29,7 @@
                 <div>
                     {{ field.label }}
                     {{ field }}
+                    <span class="help">{{ field.help_text }}</span>
                 </div>
             {% endfor %}
         </div>
