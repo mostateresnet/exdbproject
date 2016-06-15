@@ -574,8 +574,8 @@ class EmailTest(StandardTestCase):
         # Redefine now() so is_time_to_send in emails will return true and
         # we will be able to test the send function.
         from exdb import emails
-        emails.now = lambda: self.test_date
         self.orig_now = emails.now
+        emails.now = lambda: self.test_date
 
     def tearDown(self):
         from exdb import emails
@@ -672,7 +672,31 @@ class EmailTest(StandardTestCase):
 
     def test_email_continuity_after_error_experience_status_update(self):
         from exdb import emails
-        emails.send_mass_mail = 1
+        mass_mail = emails.send_mass_mail
+
+        e = self.create_experience('ad', start=(self.test_date - timedelta(days=3)),
+                                   end=(self.test_date - timedelta(days=2)))
+        e.needs_author_email = True
+
+        with self.assertRaises(TypeError):
+            emails.send_mass_mail = 1
+            self.send_emails()
+
+        self.assertFalse(Experience.objects.get(pk=e.pk).needs_author_email)
+
+        emails.send_mass_mail = mass_mail
 
     def test_email_continuity_after_error_evaluate_experience(self):
-        raise Exception('finish this')
+        from exdb import emails
+        mass_mail = emails.send_mass_mail
+
+        e = self.create_experience('ad', start=(self.test_date - timedelta(days=3)),
+                                   end=(self.test_date - timedelta(days=2)))
+
+        with self.assertRaises(TypeError):
+            emails.send_mass_mail = 1
+            self.send_emails()
+
+        self.assertIsNone(Experience.objects.get(pk=e.pk).last_evaluation_email_datetime)
+
+        emails.send_mass_mail = mass_mail
