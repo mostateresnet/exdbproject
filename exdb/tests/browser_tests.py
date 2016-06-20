@@ -241,7 +241,7 @@ class DefaultLiveServerTestCase(StaticLiveServerTestCase):
                 # if we would be trying to set a cross domain cookie change the domain
                 self.get(reverse('login'))
 
-            cookie = {'name': 'sessionid', 'value': c.session.session_key}
+            cookie = {'name': 'sessionid', 'value': c.session.session_key, 'path', '/'}
             try:
                 self.driver.add_cookie(cookie)
             except selenium.common.exceptions.WebDriverException:
