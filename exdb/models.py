@@ -1,7 +1,11 @@
+from importlib import import_module
 from django.db import models
 from django.utils.timezone import now
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
+from django.core.validators import validate_email
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.auth.models import AbstractUser
 
 
@@ -82,6 +86,15 @@ class Experience(models.Model):
     next_approver = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True, related_name='approval_queue')
     conclusion = models.TextField(blank=True)
 
+    # needs_author_email is to signify the author needs to recieve an email
+    # after the status has changed to either approved or denied.
+    needs_author_email = models.BooleanField(default=False)
+
+    # last_evaluation_email_datetime is after an experience needs to be evaluated we
+    # send an email, as well as every 24 hours after the email was sent until
+    # the user evaluates it.
+    last_evaluation_email_datetime = models.DateTimeField(null=True, blank=True)
+
     def __str__(self):
         return self.name
 
@@ -106,3 +119,18 @@ class ExperienceComment(models.Model):
 
     class Meta:
         ordering = ['timestamp']
+
+
+class EmailTask(models.Model):
+    email_module = 'exdb.emails'
+    package = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=100)
+    users = models.ManyToManyField(settings.AUTH_USER_MODEL)
+    last_sent_on = models.DateTimeField(default=now)
+
+    def send(self, *args, **kwargs):
+        module = import_module(self.email_module)
+        return getattr(module, self.package)().send(self, *args, **kwargs)
+
+    def __str__(self):
+        return self.name

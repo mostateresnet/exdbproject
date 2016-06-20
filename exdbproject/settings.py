@@ -154,10 +154,16 @@ LOGIN_URL = 'login'
 # Use augmented user model
 AUTH_USER_MODEL = 'exdb.EXDBUser'
 
+
+# Root URL path for EXDB - excluding trailing slash
+# This is used for links in emails
+URL_PREFIX = 'http://example.com/exdb'
+
 # For Hall Staff users, display the Experiences that are occuring within the next 7 days
 HALLSTAFF_UPCOMING_TIMEDELTA = timezone.timedelta(days=7)
 # For RA users, display the Experiences that are occuring within the next 31 days
 RA_UPCOMING_TIMEDELTA = timezone.timedelta(days=31)
+
 
 # override settings with settings_local
 try:
