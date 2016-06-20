@@ -229,5 +229,15 @@ class SearchExperienceResultsView(ListView):
             return Experience.objects.none()
         token.strip()
         Qs = Q(name__icontains=token) | Q(description__icontains=token) | Q(goal__icontains=token) |\
-            Q(guest__icontains=token) | Q(guest_office__icontains=token) | Q(conclusion__icontains=token)
-        return Experience.objects.filter(Qs).select_related('author').prefetch_related('planners', 'keywords')
+            Q(guest__icontains=token) | Q(guest_office__icontains=token) | Q(conclusion__icontains=token) |\
+            Q(keywords__name__icontains=token) | Q(recognition__name__icontains=token) |\
+            Q(recognition__affiliation__name__icontains=token) |\
+            Q(planners__first_name__icontains=token) | Q(planners__last_name__icontains=token) |\
+            Q(author__first_name__icontains=token) | Q(author__last_name__icontains=token) |\
+            Q(type__name__icontains=token) | Q(sub_type__name__icontains=token)
+        return Experience.objects.filter(Qs).select_related('author').prefetch_related(
+            'planners',
+            'keywords',
+            'recognition',
+            'recognition__affiliation'
+        ).distinct()

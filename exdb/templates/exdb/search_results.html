@@ -13,6 +13,7 @@
     {{ block.super }}
 
     <h1>Search Results</h1>
+    <p><a href="{% url 'home' %}">Home</a></p>
 
     {% if experiences %}
         <table id="search-results" class="tablesorter">
@@ -30,7 +31,7 @@
             <tbody>
                 {% for exp in experiences %}
                     <tr>
-                        <td>{{ exp.name }}</td>
+                        <td><a href="{% url 'view_experience' pk=exp.pk %}">{{ exp.name }}</a></td>
                         <td>
                             {% for planner in exp.planners.all %}
                                 {{ planner }}{% if not forloop.last %}, {% endif %}
