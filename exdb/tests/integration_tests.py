@@ -99,6 +99,10 @@ class ModelCoverageTest(StandardTestCase):
         e = self.create_experience('dr')
         self.assertEqual(str(Experience.objects.get(pk=e.pk)), e.name, "Experience object should have been created.")
 
+    def test_affiliation_str_method(self):
+        a = self.create_affiliation()
+        self.assertEqual(str(Affiliation.objects.get(pk=a.pk)), a.name, "Affiliation object shoul have been created.")
+
     def test_experience_comment_message(self):
         ec = self.create_experience_comment(self.create_experience('de'))
         self.assertEqual(ExperienceComment.objects.get(pk=ec.pk).message, ec.message,
@@ -700,3 +704,16 @@ class EmailTest(StandardTestCase):
         self.assertIsNone(Experience.objects.get(pk=e.pk).last_evaluation_email_datetime)
 
         emails.send_mass_mail = mass_mail
+
+
+class ExperienceSearchViewTest(StandardTestCase):
+
+    def test_search_gets_experience(self):
+        self.create_experience('pe')
+        response = self.clients['ra'].get(reverse('search_results'), data={'search': 'T'})
+        self.assertEqual(len(response.context['experiences']), 1, "The search should have returned 1 experience.")
+
+    def test_search_returns_emptyset_if_passed_emptystring(self):
+        self.create_experience('pe')
+        response = self.clients['ra'].get(reverse('search_results'), data={'search': ''})
+        self.assertEqual(len(response.context['experiences']), 0, "No experiences should have been returned")

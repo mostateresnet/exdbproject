@@ -215,3 +215,19 @@ class EditExperienceView(UpdateView):
         if self.request.POST.get('submit'):
             form.instance.status = 'pe'
         return super(EditExperienceView, self).form_valid(form)
+
+
+class SearchExperienceResultsView(ListView):
+    access_level = 'basic'
+    context_object_name = 'experiences'
+    template_name = 'exdb/search_results.html'
+    model = Experience
+
+    def get_queryset(self):
+        token = self.request.GET.get('search')
+        if not token:
+            return Experience.objects.none()
+        token.strip()
+        Qs = Q(name__icontains=token) | Q(description__icontains=token) | Q(goal__icontains=token) |\
+            Q(guest__icontains=token) | Q(guest_office__icontains=token) | Q(conclusion__icontains=token)
+        return Experience.objects.filter(Qs).select_related('author').prefetch_related('planners', 'keywords')

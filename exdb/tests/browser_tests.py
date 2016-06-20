@@ -346,3 +346,10 @@ class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
         att_element = self.driver.find_element(By.ID, 'id_attendance')
         visible = att_element.is_displayed() and con_element.is_displayed()
         self.assertTrue(visible, 'Attendance and Conclusion fields should be displayed')
+
+
+class ExperienceSearchBrowserTest(DefaultLiveServerTestCase):
+
+    def test_page_loads(self):
+        self.client.get(reverse('search_results'))
+        self.assertEqual(self.driver.find_element(By.XPATH, '//h1').text, _('Search Results'))

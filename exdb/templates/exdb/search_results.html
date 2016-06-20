@@ -1,0 +1,60 @@
+{% extends "exdb/base.html" %}
+{% load i18n %}
+{% load staticfiles %}
+{% block css %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/search_results.css' %}" />
+{% endblock %}
+{% block javascript %}
+    {{ block.super }}
+    <script type="text/javascript" src="{% static 'exdb/js/search_results.js' %}"></script>
+{% endblock %}
+{% block content %}
+    {{ block.super }}
+
+    <h1>Search Results</h1>
+
+    {% if experiences %}
+        <table id="search-results" class="tablesorter">
+            <thead>
+                <tr>
+                    <th>Experience Name</th>
+                    <th>Planners</th>
+                    <th>Status</th>
+                    <th>Building</th>
+                    <th>Keywords</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for exp in experiences %}
+                    <tr>
+                        <td>{{ exp.name }}</td>
+                        <td>
+                            {% for planner in exp.planners.all %}
+                                {{ planner }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        </td>
+                        <td>{{ exp.get_status_display }}</td>
+                        <td>
+                            {% for rec in exp.recognition.all %}
+                                {{ rec.affiliation }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% for keyword in exp.keywords.all %}
+                                {{ keyword }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        </td>
+                        <td>{{ exp.start_datetime }}</td>
+                        <td>{{ exp.end_datetime }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+    <p>Your search returned no experiences</p>
+    {% endif %}
+
+{% endblock %}
