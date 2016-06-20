@@ -1,0 +1,10 @@
+Your experience <a href="{{ url_prefix }}{% url 'view_experience' experience.pk %}">{{ experience.name }}</a> has been {{ experience.get_status_display }}.
+
+<h3>Comments:</h3>
+{% for comment in experience.comment_set.all %}
+    <div>
+        <p><span style="font-size: 12">{{ comment.author }} said: </span><br>{{ comment.message }}</p>
+    </div>
+{% empty %}
+    <p>No Comments.</p>
+{% endfor %}
