@@ -147,11 +147,13 @@ class ExperienceApprovalView(UpdateView):
             if experience_form.instance.next_approver == self.request.user:
                 experience_form.instance.next_approver = None
                 experience_form.instance.status = 'ad'
+                experience_form.instance.needs_author_email = True
             ExperienceApproval.objects.create(experience=experience_form.instance,
                                               approver=self.request.user)
         else:
             experience_form.instance.status = 'de'
             experience_form.instance.next_approver = self.request.user
+            experience_form.instance.needs_author_email = True
         experience_form.save()
         comment_form.instance.experience = experience_form.instance
         if comment_form.is_valid():
