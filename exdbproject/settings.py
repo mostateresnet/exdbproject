@@ -164,6 +164,9 @@ HALLSTAFF_UPCOMING_TIMEDELTA = timezone.timedelta(days=7)
 # For RA users, display the Experiences that are occuring within the next 31 days
 RA_UPCOMING_TIMEDELTA = timezone.timedelta(days=31)
 
+# Views that are exempt from the restricted access middleware
+# be scrupulous in adding any exemptions to the middleware
+RESTRICTED_ACCESS_EXEMPTIONS = ['logout', 'login']
 
 # override settings with settings_local
 try:
