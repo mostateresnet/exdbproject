@@ -43,9 +43,9 @@ class RestrictedAccess(object):
         raise Http404('Insufficient permissions')
 
     def process_request(self, request):
-        if request.user.is_authenticated():
-            return self._check_authenticated_user(request)
-        elif request.path == reverse('login'):
+        if resolve(request.path_info).view_name in settings.RESTRICTED_ACCESS_EXEMPTIONS:
             return None
+        elif request.user.is_authenticated():
+            return self._check_authenticated_user(request)
         else:
             return redirect_to_login(request.path)

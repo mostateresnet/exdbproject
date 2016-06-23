@@ -700,3 +700,10 @@ class EmailTest(StandardTestCase):
         self.assertIsNone(Experience.objects.get(pk=e.pk).last_evaluation_email_datetime)
 
         emails.send_mass_mail = mass_mail
+
+
+class LogoutTest(StandardTestCase):
+
+    def test_logout(self):
+        response = self.clients['ra'].get(reverse('logout'))
+        self.assertFalse(response.wsgi_request.user.is_authenticated(), "User should have been logged out")
