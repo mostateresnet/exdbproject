@@ -51,13 +51,12 @@ class HomeView(ListView):
         experience_approvals = ExperienceApproval.objects.filter(
             approver=self.request.user, experience__status='ad'
         )
-        next_approver_queue = Q(next_approver=self.request.user) & ~Q(status="dr")
+        next_approver_queue = Q(next_approver=self.request.user) & Q(status='pe')
         experiences = Experience.objects.filter(
             next_approver_queue |
-            Q(pk__in=experience_approvals.values('experience')) |
-            Q(author=self.request.user, status='dr')
+            Q(pk__in=experience_approvals.values('experience'))
         )
-        return experiences
+        return experiences.distinct() | self.get_ra_queryset()
 
     def get_ra_queryset(self):
         return Experience.objects.filter(Q(author=self.request.user) | (Q(planners=self.request.user) & ~Q(status='dr')))\

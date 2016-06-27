@@ -482,18 +482,20 @@ class HallStaffDashboardViewTest(StandardTestCase):
 
     @override_settings(HALLSTAFF_UPCOMING_TIMEDELTA=timedelta(days=7), RA_UPCOMING_TIMEDELTA=timedelta(days=0))
     def test_week_ahead(self):
-        self.create_experience('ad')
-        Experience.objects.get_or_create(author=self.clients['ra'].user_object,
-                                         name="E1", description="test description",
-                                         start_datetime=(now() + timedelta(days=2)),
-                                         end_datetime=(now() + timedelta(days=3)),
-                                         type=self.create_type(),
-                                         sub_type=self.create_sub_type(),
-                                         goal="Test Goal",
-                                         audience="b",
-                                         status="ad",
-                                         attendance=None,
-                                         next_approver=self.clients['hs'].user_object)
+        e1 = self.create_experience('ad')
+        e2 = Experience.objects.get_or_create(author=self.clients['ra'].user_object,
+                                              name="E1", description="test description",
+                                              start_datetime=(now() + timedelta(days=2)),
+                                              end_datetime=(now() + timedelta(days=3)),
+                                              type=self.create_type(),
+                                              sub_type=self.create_sub_type(),
+                                              goal="Test Goal",
+                                              audience="b",
+                                              status="ad",
+                                              attendance=None,
+                                              next_approver=self.clients['hs'].user_object)[0]
+        ExperienceApproval.objects.create(experience=e1, approver=self.clients['hs'].user_object)
+        ExperienceApproval.objects.create(experience=e2, approver=self.clients['hs'].user_object)
         response = self.clients['hs'].get(reverse('home'))
         self.assertEqual(len(response.context["upcoming"]), 1, "There should be 1 experience in the next week")
 
