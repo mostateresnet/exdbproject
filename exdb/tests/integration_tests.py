@@ -18,7 +18,7 @@ class StandardTestCase(TestCase):
 
         self.test_date = make_aware(datetime(2015, 1, 1, 16, 1), timezone=utc)
 
-        users = [('ra',) * 2, ('hs',) * 2, ('llc', 'hs')]
+        users = [('ra',) * 2, ('hs', 'hallstaff'), ('llc', 'hallstaff')]
         self.groups = {}
 
         self.clients = {}
@@ -45,13 +45,15 @@ class StandardTestCase(TestCase):
     def create_keyword(self, name="Test Keyword"):
         return Keyword.objects.get_or_create(name=name)[0]
 
-    def create_experience(self, exp_status, attendance=0, start=None, end=None):
+    def create_experience(self, exp_status, attendance=0, start=None, end=None, author=None):
         """Creates and returns an experience object with status,
         start_time, end_time and/or name of your choice"""
         start = start or self.test_date
         end = end or (self.test_date + timedelta(days=1))
+        if author is None:
+            author = self.clients['ra'].user_object
         return Experience.objects.get_or_create(
-            author=self.clients['ra'].user_object,
+            author=author,
             name="Test Experience",
             description="test description",
             start_datetime=start,
@@ -486,14 +488,17 @@ class HallStaffDashboardViewTest(StandardTestCase):
 
 class EditExperienceViewTest(StandardTestCase):
 
-    def post_data(self, status='pe', invalid_description=False, save=False):
-        e = self.create_experience(status, start=(now() + timedelta(days=1)), end=(now() + timedelta(days=2)))
+    def post_data(self, status='pe', invalid_description=False, save=False, author=None, client=None):
+        e = self.create_experience(status, start=(now() + timedelta(days=1)),
+                                   end=(now() + timedelta(days=2)), author=author)
         if status == 'ad' or (status in ('dr', 'de') and not save):
             submit = 'submit'
         else:
             submit = 'save'
         description = "" if invalid_description else e.description
-        self.clients['ra'].post(reverse('edit', args=[e.pk]), {
+        if client is None:
+            client = self.clients['ra']
+        client.post(reverse('edit', args=[e.pk]), {
             'name': e.name,
             'description': description,
             'start_datetime_month': e.start_datetime.month,
@@ -540,6 +545,37 @@ class EditExperienceViewTest(StandardTestCase):
     def test_does_not_submit_invalid(self):
         e = self.post_data('ad', invalid_description=True)
         self.assertEqual(e.status, 'ad', "An invalid experience should not be submitted.")
+
+    def test_hallstaff_allowed_to_edit_non_drafts(self):
+        e = self.create_experience('ad', start=(now() + timedelta(days=1)), end=(now() + timedelta(days=2)))
+        response = self.clients['hs'].get(reverse('edit', args=[e.pk]))
+        self.assertEqual(
+            response.status_code,
+            200,
+            'Hall Staff users SHOULD be allowed to edit approved experiences made by others')
+
+    def test_hallstaff_not_allowed_to_edit_drafts(self):
+        e = self.create_experience('dr', start=(now() + timedelta(days=1)), end=(now() + timedelta(days=2)))
+        response = self.clients['hs'].get(reverse('edit', args=[e.pk]))
+        self.assertEqual(
+            response.status_code,
+            404,
+            'Hall Staff users should NOT be allowed to edit approved experiences made by others')
+
+    def test_hallstaff_allowed_to_edit_own_drafts(self):
+        e = self.create_experience('dr',
+                                   start=(now() + timedelta(days=1)),
+                                   end=(now() + timedelta(days=2)),
+                                   author=self.clients['hs'].user_object)
+        response = self.clients['hs'].get(reverse('edit', args=[e.pk]))
+        self.assertEqual(
+            response.status_code,
+            200,
+            'Hall Staff users SHOULD be allowed to their own "draft" experiences')
+
+    def test_hallstaff_edit_approved_experience_stays_approved(self):
+        e = self.post_data(status='ad', client=self.clients['hs'])
+        self.assertEqual(e.status, 'ad', "A hallstaff-edited approved experience should remain approved")
 
 
 class LoginViewTest(StandardTestCase):
