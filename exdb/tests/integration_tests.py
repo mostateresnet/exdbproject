@@ -468,6 +468,18 @@ class HallStaffDashboardViewTest(StandardTestCase):
 
         self.assertEqual(len(response.context["experiences"]), 2, "There should be 2 experiences displayed")
 
+    def test_does_not_get_drafts_when_hs_not_author(self):
+        self.create_experience('dr')
+        response = self.clients['hs'].get(reverse('home'))
+        self.assertEqual(len(response.context['experiences']), 0,
+                         "Hallstaff should not see drafts if they are not the author")
+
+    def test_gets_drafts_when_hs_is_author(self):
+        self.create_experience('dr', author=self.clients['hs'].user_object)
+        response = self.clients['hs'].get(reverse('home'))
+        self.assertEqual(len(response.context['experiences']), 1,
+                         "Hallstaff should be able to see their own drafts")
+
     @override_settings(HALLSTAFF_UPCOMING_TIMEDELTA=timedelta(days=7), RA_UPCOMING_TIMEDELTA=timedelta(days=0))
     def test_week_ahead(self):
         self.create_experience('ad')
@@ -571,7 +583,7 @@ class EditExperienceViewTest(StandardTestCase):
         self.assertEqual(
             response.status_code,
             200,
-            'Hall Staff users SHOULD be allowed to their own "draft" experiences')
+            'Hall Staff users SHOULD be allowed to edit their own "draft" experiences')
 
     def test_hallstaff_edit_approved_experience_stays_approved(self):
         e = self.post_data(status='ad', client=self.clients['hs'])

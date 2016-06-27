@@ -51,9 +51,11 @@ class HomeView(ListView):
         experience_approvals = ExperienceApproval.objects.filter(
             approver=self.request.user, experience__status='ad'
         )
+        next_approver_queue = Q(next_approver=self.request.user) & ~Q(status="dr")
         experiences = Experience.objects.filter(
-            Q(next_approver=self.request.user) |
-            Q(pk__in=experience_approvals.values('experience'))
+            next_approver_queue |
+            Q(pk__in=experience_approvals.values('experience')) |
+            Q(author=self.request.user, status='dr')
         )
         return experiences
 
