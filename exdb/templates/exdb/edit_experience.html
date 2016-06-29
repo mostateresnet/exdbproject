@@ -13,12 +13,12 @@
     {{ block.super }}
     <h1>{% trans "Edit Experience" %}</h1>
     <p><a href="{% url 'home' %}">{% trans "Back to Home" %}</a></p>
-    {% if object.status == 'ad' %}
+    {% if object.status == 'ad' and not user.is_hallstaff %}
         <p class="warning">{% trans "Warning! Editing an approved experience will resubmit it for approval." %}</p>
     {% endif %}
     {% with object.edit_log.all.0 as last_edit %}
         {% if last_edit %}
-            <p>Last edited: {{ last_edit.editor }} <span class="timestamp">{{ last_edit.timestamp }}</span></p>
+        <p>{% trans "Last edited" %}: {{ last_edit.editor }} <span class="timestamp">{{ last_edit.timestamp }}</span></p>
         {% endif %}
     {% endwith %}
     <div class="errors">{{ form.non_field_errors }}</div>

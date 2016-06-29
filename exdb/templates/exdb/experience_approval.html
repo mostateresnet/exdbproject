@@ -19,7 +19,7 @@
         <p>{% trans "Note: Set the 'Supervisor' field to the LLC approver if this experience needs LLC approval." %}</p>
         {% with object.edit_log.all.0 as last_edit %}
             {% if last_edit %}
-                <p>Last edited: {{ last_edit.editor }} <span class="timestamp">{{ last_edit.timestamp }}</span></p>
+            <p>{% trans "Last edited" %}: {{ last_edit.editor }} <span class="timestamp">{{ last_edit.timestamp }}</span></p>
             {% endif %}
         {% endwith %}
         <hr/>

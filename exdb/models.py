@@ -15,6 +15,9 @@ class EXDBUser(AbstractUser):
     def approvable_experiences(self):
         return self.approval_queue.filter(status='pe')
 
+    def is_hallstaff(self):
+        return self.groups.filter(name__icontains='hallstaff').exists()
+
 
 class SubType(models.Model):
     name = models.CharField(max_length=300)
