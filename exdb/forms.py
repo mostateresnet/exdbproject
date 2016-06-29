@@ -114,9 +114,9 @@ class ExperienceSubmitForm(ExperienceSaveForm):
             (self.cleaned_data.get('type') and needs_verification and self.cleaned_data.get('start_datetime', min_dt) < self.when,
              ValidationError(_('%(name)s events cannot happen in the past') % {'name': name})),
             (needs_verification and self.cleaned_data.get('next_approver')
-                and not self.cleaned_data.get('next_approver').groups.filter(name='hs').exists(),
+                and not self.cleaned_data.get('next_approver').is_hallstaff(),
              ValidationError(_('Supervisor must have permissions to approve and deny experiences'))),
-            (not needs_verification and not self.cleaned_data.get('conclusion'),
+            (name and not needs_verification and not self.cleaned_data.get('conclusion'),
              ValidationError(_('%(name)s events must have a conclusion') % {'name': name})),
         )
 
