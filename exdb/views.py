@@ -47,25 +47,23 @@ class HomeView(ListView):
     access_level = 'basic'
     context_object_name = 'experiences'
 
-    def is_hs(self):
-        return self.request.user.groups.filter(name='hs')
-
     def get_hs_queryset(self):
         experience_approvals = ExperienceApproval.objects.filter(
             approver=self.request.user, experience__status='ad'
         )
+        next_approver_queue = Q(next_approver=self.request.user) & Q(status='pe')
         experiences = Experience.objects.filter(
-            Q(next_approver=self.request.user) |
+            next_approver_queue |
             Q(pk__in=experience_approvals.values('experience'))
         )
-        return experiences
+        return experiences.distinct() | self.get_ra_queryset()
 
     def get_ra_queryset(self):
         return Experience.objects.filter(Q(author=self.request.user) | (Q(planners=self.request.user) & ~Q(status='dr')))\
             .exclude(status__in=('ca')).order_by('created_datetime').distinct()
 
     def get_queryset(self):
-        if self.is_hs():
+        if self.request.user.is_hallstaff():
             return self.get_hs_queryset()
         else:
             return self.get_ra_queryset()
@@ -75,8 +73,9 @@ class HomeView(ListView):
         context['user'] = self.request.user
 
         # This is what experience groups we are showing the user and in what order
-        if self.is_hs():
-            status_to_display = [_('Pending Approval'), _('Needs Evaluation'), _('Approved')]
+        if self.request.user.is_hallstaff():
+            status_to_display = [x[1] for x in Experience.STATUS_TYPES]
+            status_to_display.insert(status_to_display.index(_('Pending Approval')), _('Needs Evaluation'))
         else:
             status_to_display = [_('Needs Evaluation')] + [x[1] for x in Experience.STATUS_TYPES]
 
@@ -96,7 +95,7 @@ class HomeView(ListView):
 
         # Which experiences are coming up soon enough that we want to show them
         time_ahead = timezone.now()
-        time_ahead += settings.HALLSTAFF_UPCOMING_TIMEDELTA if self.is_hs() else settings.RA_UPCOMING_TIMEDELTA
+        time_ahead += settings.HALLSTAFF_UPCOMING_TIMEDELTA if self.request.user.is_hallstaff() else settings.RA_UPCOMING_TIMEDELTA
         upcoming = []
         for experience in context['experience_dict'][_('Approved')]:
             if experience.start_datetime > timezone.now() and experience.start_datetime < time_ahead:
@@ -205,12 +204,15 @@ class EditExperienceView(UpdateView):
 
     def get_queryset(self):
         user_has_editing_privs = Q(author=self.request.user) | (Q(planners=self.request.user) & ~Q(status='dr'))
+        if self.request.user.is_hallstaff():
+            # Let the staff do whatever they want to non-drafts
+            user_has_editing_privs |= ~Q(status='dr')
         current_status_allows_edits = ~Q(status__in=('ca', 'co'))
         event_already_occurred = Q(status='ad') & Q(start_datetime__lte=timezone.now())
         editable_experience = user_has_editing_privs & current_status_allows_edits & ~event_already_occurred
         return Experience.objects.filter(editable_experience).prefetch_related('comment_set').distinct()
 
     def form_valid(self, form):
-        if self.request.POST.get('submit'):
+        if self.request.POST.get('submit') and not self.request.user.is_hallstaff():
             form.instance.status = 'pe'
         return super(EditExperienceView, self).form_valid(form)

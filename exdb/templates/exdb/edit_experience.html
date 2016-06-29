@@ -13,7 +13,7 @@
     {{ block.super }}
     <h1>{% trans "Edit Experience" %}</h1>
     <p><a href="{% url 'home' %}">{% trans "Back to Home" %}</a></p>
-    {% if experience.status == 'ad' %}
+    {% if experience.status == 'ad' and not user.is_hallstaff %}
         <p class="warning">{% trans "Warning! Editing an approved experience will resubmit it for approval." %}</p>
     {% endif %}
     <div class="errors">{{ form.non_field_errors }}</div>
@@ -53,7 +53,7 @@
                     <div class="comment-author">-{{ comment.author }} said on {{ comment.timestamp }}</div>
                 </div>
             {% empty %}
-                <tr><td>{% trans "No comments" %}</td></tr>
+                <div>{% trans "No comments" %}</div>
             {% endfor %}
         </div>
     </form>

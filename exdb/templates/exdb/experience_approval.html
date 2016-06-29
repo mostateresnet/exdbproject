@@ -34,6 +34,7 @@
         <div>{{ comment_form.message.label }}{{ comment_form.message }}</div>
         <input type="submit" value="{% trans "deny" %}" name="deny" />
         <input type="submit" value="{% trans "approve" %}" name="approve" />
+        <hr/>
         <div>
             <h3>{% trans "Comments" %}</h3>
             {% for comment in comments %}
@@ -42,7 +43,7 @@
                     <div class="comment-author">-{{ comment.author }} said on {{ comment.timestamp }}</div>
                 </div>
             {% empty %}
-                <tr><td>{% trans "No comments" %}</td></tr>
+                <div>{% trans "No comments" %}</div>
             {% endfor %}
         </div>
     </form>

@@ -125,6 +125,7 @@ class Command(BaseCommand):
             '-d', pylint_disable,   # enable or diable codes
             '--generated-members=%s' % generated_members,
             '--dummy-variables-rgx=_|args|kwargs',  # variables which may or may not be used
+            '--max-args=10',        # make the too-many-arguments warning more lenient
         ] + files_to_check
         )
 

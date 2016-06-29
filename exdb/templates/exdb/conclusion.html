@@ -89,7 +89,7 @@
                     <div class="comment-author">-{{ comment.author }} said on {{ comment.timestamp }}</div>
                 </div>
             {% empty %}
-                <tr><td>{% trans "No comments" %}</td></tr>
+                <div>{% trans "No comments" %}</div>
             {% endfor %}
         </div>
 {% endblock %}
