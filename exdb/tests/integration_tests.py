@@ -250,6 +250,12 @@ class ExperienceCreationFormTest(StandardTestCase):
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should not be valid with no conclusion if it does not need approval")
 
+    def test_experience_creation_invalid_supervisor(self):
+        data = self.get_post_data((self.test_date + timedelta(days=1)), (self.test_date + timedelta(days=2)))
+        data['next_approver'] = self.clients['ra'].user_object.pk
+        form = ExperienceSubmitForm(data, when=self.test_date)
+        self.assertFalse(form.is_valid(), "Form should not be valid if next_approver is not hallstaff")
+
 
 class ExperienceCreationViewTest(StandardTestCase):
 
@@ -391,7 +397,7 @@ class ExperienceApprovalViewTest(StandardTestCase):
         e = self.create_experience('pe', start=(now() + timedelta(days=1)), end=(now() + timedelta(days=2)))
         status = 'approve' if approve else 'deny'
         description = "" if invalid_description else e.description
-        next_approver = self.clients['llc'].user_object.pk if llc_approval else e.next_approver.pk
+        next_approver = self.clients['llc'].user_object.pk if llc_approval else ""
         self.clients['hs'].post(reverse('approval', args=[e.pk]), {
             'name': e.name,
             'description': description,
