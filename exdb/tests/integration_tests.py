@@ -234,7 +234,7 @@ class ExperienceCreationFormTest(StandardTestCase):
         data = self.get_post_data((self.test_date + timedelta(days=1)), (self.test_date + timedelta(days=2)))
         data['next_approver'] = self.clients['ra'].user_object.pk
         form = ExperienceSubmitForm(data, when=self.test_date)
-        self.assertFalse(form.is_valid(), "Form should not be valid if next_approver user does not have 'hs' group")
+        self.assertFalse(form.is_valid(), "Form should not be valid if next_approver is not hallstaff")
 
 
 class ExperienceCreationViewTest(StandardTestCase):

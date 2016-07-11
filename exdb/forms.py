@@ -84,9 +84,9 @@ class ExperienceSaveForm(ModelForm):
 class ExperienceSubmitForm(ExperienceSaveForm):
 
     def clean(self):
-        needs_verification = self.cleaned_data.get(
-            'type').needs_verification if self.cleaned_data.get('type') else False
-        name = "" if not self.cleaned_data.get('type') else self.cleaned_data.get('type').name
+        ex_type = self.cleaned_data.get('type')
+        needs_verification = ex_type.needs_verification if ex_type else None
+        name = "" if not ex_type else ex_type.name
         min_dt = datetime.min.replace(tzinfo=utc)
         max_dt = datetime.max.replace(tzinfo=utc)
 
@@ -96,27 +96,27 @@ class ExperienceSubmitForm(ExperienceSaveForm):
             (not self.cleaned_data.get('end_datetime'), ValidationError(_('An end time is required'))),
             (not self.cleaned_data.get('start_datetime'), ValidationError(_('A start time is required'))),
             (not self.cleaned_data.get('sub_type'), ValidationError(_('The sub type field is required'))),
-            (not self.cleaned_data.get('type'), ValidationError(_('The type field is required'))),
-            (self.cleaned_data.get('type') and not self.approval_form and
+            (not ex_type, ValidationError(_('The type field is required'))),
+            (ex_type and not self.approval_form and
                 not self.cleaned_data.get('next_approver') and needs_verification,
              ValidationError(_('Please select the supervisor to review this experience'))),
             (self.cleaned_data.get('start_datetime', max_dt) >= self.cleaned_data.get('end_datetime', min_dt),
              ValidationError(_('Start time must be before end time'))),
-            ((self.cleaned_data.get('type') and not needs_verification) and (self.cleaned_data.get('start_datetime', max_dt) > self.when),
+            ((ex_type and needs_verification is False) and (self.cleaned_data.get('start_datetime', max_dt) > self.when),
              ValidationError(_('%(name)s experiences must have happened in the past') % {'name': name})),
-            ((self.cleaned_data.get('type') and not needs_verification) and (not self.cleaned_data.get(
+            ((ex_type and needs_verification is False) and (not self.cleaned_data.get(
                 'attendance') or self.cleaned_data.get('attendance') < 1),
              ValidationError(_('%(name)s events must have an attendance') % {'name': name})),
-            (self.cleaned_data.get('type') and not needs_verification and not self.cleaned_data.get('audience'),
+            (ex_type and needs_verification is False and not self.cleaned_data.get('audience'),
              ValidationError(_('%(name)s events must have an audience') % {'name': name})),
-            (self.cleaned_data.get('type') and needs_verification and self.cleaned_data.get('attendance'),
+            (ex_type and needs_verification and self.cleaned_data.get('attendance'),
              ValidationError(_('%(name)s events cannot have an attendance') % {'name': name})),
-            (self.cleaned_data.get('type') and needs_verification and self.cleaned_data.get('start_datetime', min_dt) < self.when,
+            (ex_type and needs_verification and self.cleaned_data.get('start_datetime', min_dt) < self.when,
              ValidationError(_('%(name)s events cannot happen in the past') % {'name': name})),
             (needs_verification and self.cleaned_data.get('next_approver')
                 and not self.cleaned_data.get('next_approver').is_hallstaff(),
              ValidationError(_('Supervisor must have permissions to approve and deny experiences'))),
-            (name and not needs_verification and not self.cleaned_data.get('conclusion'),
+            (name and needs_verification is False and not self.cleaned_data.get('conclusion'),
              ValidationError(_('%(name)s events must have a conclusion') % {'name': name})),
         )
 
