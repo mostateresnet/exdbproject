@@ -111,7 +111,8 @@ class ExperienceSubmitForm(ExperienceSaveForm):
              ValidationError(_('%(name)s events must have an audience') % {'name': name})),
             (needs_verification and self.cleaned_data.get('attendance'),
              ValidationError(_('%(name)s events cannot have an attendance') % {'name': name})),
-            (needs_verification and self.cleaned_data.get('start_datetime', min_dt) < self.when,
+            (needs_verification and self.cleaned_data.get('start_datetime', min_dt) < self.when and
+                not self.approval_form,
              ValidationError(_('%(name)s events cannot happen in the past') % {'name': name})),
             (needs_verification and self.cleaned_data.get('next_approver')
                 and not self.cleaned_data.get('next_approver').is_hallstaff(),
