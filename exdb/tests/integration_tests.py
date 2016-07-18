@@ -352,6 +352,12 @@ class RAHomeViewTest(StandardTestCase):
 
         self.assertEqual(len(response.context["experiences"]), 2, "There should be 2 experiences displayed")
 
+    def test_does_not_get_cancled(self):
+        self.create_experience('ca')
+        response = self.clients['ra'].get(reverse('home'))
+        self.assertEqual(len(response.context['experiences']), 0,
+                         "Canceled experiences should not appear on any home page")
+
     @override_settings(HALLSTAFF_UPCOMING_TIMEDELTA=timedelta(days=0), RA_UPCOMING_TIMEDELTA=timedelta(days=31))
     def test_week_ahead(self):
         self.create_experience('ad')

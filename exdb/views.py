@@ -59,8 +59,8 @@ class HomeView(ListView):
         return experiences.distinct() | self.get_ra_queryset()
 
     def get_ra_queryset(self):
-        return Experience.objects.filter(Q(author=self.request.user) | (Q(planners=self.request.user) & ~Q(status='dr')))\
-            .exclude(status__in=('ca')).order_by('created_datetime').distinct()
+        return Experience.objects.filter((Q(author=self.request.user) | (Q(planners=self.request.user) &
+                                                                         ~Q(status__in=('dr')))) & ~Q(status='ca')).order_by('created_datetime').distinct()
 
     def get_queryset(self):
         if self.request.user.is_hallstaff():
