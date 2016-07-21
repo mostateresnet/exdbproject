@@ -354,18 +354,33 @@ class EditExperienceBrowserTest(DefaultLiveServerTestCase):
 
 class ExperienceApprovalBrowserTest(DefaultLiveServerTestCase):
 
-    def test_confirm_if_delete(self):
+    def delete_confirm(self, confirm):
         e = self.create_experience('pe',
                                    start=make_aware(datetime(2020, 1, 1, 1, 30), timezone=utc),
                                    end=make_aware(datetime(2021, 1, 1, 1, 30), timezone=utc))
         self.client.get(reverse('approval', args=[e.pk]))
+        starting_url = self.driver.current_url
         d = self.driver.find_element(By.CSS_SELECTOR, '#delete')
+        confirm_overwrite = 'window.confirm = function() { return %s; }' % ('true' if confirm else 'false')
+        self.driver.execute_script(confirm_overwrite)
         d.click()
-        alert = False
-        if self.driver.switch_to_alert():
-            alert = True
-        self.assertTrue(alert, "The browser should have confirmed the delete.")
+        ending_url = self.driver.current_url
 
+        urls_equal = starting_url == ending_url
+        exp_canceled = Experience.objects.get(pk=e.pk).status == 'ca'
+        return urls_equal, exp_canceled
+
+    def test_confirm_dont_delete(self):
+        urls_equal, exp_canceled = self.delete_confirm(False)
+
+        self.assertTrue(urls_equal, "The browser should stayed at the same url.")
+        self.assertFalse(exp_canceled, "The browser should have aborted the delete.")
+
+    def test_confirm_delete(self):
+        urls_equal, exp_canceled = self.delete_confirm(True)
+
+        self.assertFalse(urls_equal, "The browser should have went elsewhere.")
+        self.assertTrue(exp_canceled, "The browser should have continued with the delete.")
 
 class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
 
