@@ -813,6 +813,11 @@ class ExperienceSearchViewTest(StandardTestCase):
         response = self.clients['ra'].get(reverse('search_results'), data={'search': ''})
         self.assertEqual(len(response.context['experiences']), 0, "No experiences should have been returned")
 
+    def test_does_not_show_cancelled_experiences(self):
+        self.create_experience('ca')
+        response = self.clients['ra'].get(reverse('search_results'), data={'search': 'T'})
+        self.assertEqual(len(response.context['experiences']), 0, "Search should not return cancelled experiences")
+
 
 class LogoutTest(StandardTestCase):
 

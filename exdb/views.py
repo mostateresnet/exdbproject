@@ -259,7 +259,8 @@ class SearchExperienceResultsView(ListView):
             Q(planners__first_name__icontains=token) | Q(planners__last_name__icontains=token) |\
             Q(author__first_name__icontains=token) | Q(author__last_name__icontains=token) |\
             Q(type__name__icontains=token) | Q(sub_type__name__icontains=token)
-        return Experience.objects.filter(Qs).select_related('author').prefetch_related(
+
+        return Experience.objects.filter(Qs & ~Q(status='ca')).select_related('author').prefetch_related(
             'planners',
             'keywords',
             'recognition',

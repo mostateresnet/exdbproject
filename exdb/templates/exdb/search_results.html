@@ -1,5 +1,6 @@
 {% extends "exdb/base.html" %}
 {% load i18n %}
+{% load exdbtags %}
 {% load staticfiles %}
 {% block css %}
     {{ block.super }}
@@ -24,14 +25,14 @@
                     <th>{% trans "Status" %}</th>
                     <th>{% trans "Building" %}</th>
                     <th>{% trans "Keywords" %}</th>
-                    <th>{% trans "Start Time" %}</th>
-                    <th>{% trans "End Time" %}</th>
+                    <th data-sorter="shortDate">{% trans "Start Time" %}</th>
+                    <th data-sorter="shortDate">{% trans "End Time" %}</th>
                 </tr>
             </thead>
             <tbody>
                 {% for exp in experiences %}
                     <tr>
-                        <td><a href="{% url 'view_experience' pk=exp.pk %}">{{ exp.name }}</a></td>
+                        <td><a href="{% experience_url exp user %}">{{ exp.name }}</a></td>
                         <td>
                             {% for planner in exp.planners.all %}
                                 {{ planner }}{% if not forloop.last %}, {% endif %}
@@ -48,8 +49,8 @@
                                 {{ keyword }}{% if not forloop.last %}, {% endif %}
                             {% endfor %}
                         </td>
-                        <td>{{ exp.start_datetime }}</td>
-                        <td>{{ exp.end_datetime }}</td>
+                        <td data-text="{{ exp.start_datetime|date:'Y/m/d H:i:s' }}">{{ exp.start_datetime }}</td>
+                        <td data-text="{{ exp.end_datetime|date:'Y/m/d H:i:s' }}">{{ exp.end_datetime }}</td>
                     </tr>
                 {% endfor %}
             </tbody>
