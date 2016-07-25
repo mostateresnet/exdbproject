@@ -17,7 +17,7 @@ class ExperienceNode(template.Node):
 
 
 @register.tag
-def experience_url(parser, token):
+def experience_url(parser, token):  # pylint: disable=unused-argument
     try:
         ex = token.split_contents()[1]
         user = token.split_contents()[2]

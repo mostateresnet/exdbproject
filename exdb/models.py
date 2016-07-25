@@ -108,7 +108,7 @@ class Experience(models.Model):
     def get_url(self, user):
         if self.needs_evaluation():
             return reverse('conclusion', args=[self.pk])
-        if self in user.approvable_experiences():
+        if self in user.approvable_experiences() and user.is_hallstaff():
             return reverse('approval', args=[self.pk])
         if self.start_datetime <= now():
             return reverse('view_experience', args=[self.pk])

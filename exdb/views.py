@@ -83,9 +83,7 @@ class HomeView(ListView):
         experience_dict = OrderedDict()
         for status in status_to_display:
             experience_dict[status] = []
-        approvable_experiences = self.request.user.approvable_experiences()
         for experience in context[self.context_object_name]:
-            experience.can_approve = experience in approvable_experiences
             if experience.needs_evaluation():
                 experience_dict[_('Needs Evaluation')].append(experience)
             else:
