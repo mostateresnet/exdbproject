@@ -59,8 +59,8 @@ class HomeView(ListView):
         return experiences.distinct() | self.get_ra_queryset()
 
     def get_ra_queryset(self):
-        return Experience.objects.filter(Q(author=self.request.user) | (Q(planners=self.request.user) & ~Q(status='dr')))\
-            .exclude(status__in=('ca')).order_by('created_datetime').distinct()
+        return Experience.objects.filter((Q(author=self.request.user) | (Q(planners=self.request.user) &
+                                                                         ~Q(status__in=('dr')))) & ~Q(status='ca')).order_by('created_datetime').distinct()
 
     def get_queryset(self):
         if self.request.user.is_hallstaff():
@@ -117,6 +117,11 @@ class ExperienceApprovalView(UpdateView):
     def get_success_url(self):
         return reverse('home')
 
+    def get_form_kwargs(self, **kwargs):
+        kw_args = super(ExperienceApprovalView, self).get_form_kwargs()
+        kw_args['submit'] = self.request.POST.get('approve') or self.request.POST.get('deny')
+        return kw_args
+
     def get_context_data(self, **kwargs):
         context = super(ExperienceApprovalView, self).get_context_data()
         if kwargs.get('invalid_comment'):
@@ -135,13 +140,20 @@ class ExperienceApprovalView(UpdateView):
         comment_form = self.second_form_class(request.POST)
         if experience_form.is_valid() and (self.request.POST.get('approve') or comment_form.is_valid()):
             return self.form_valid(experience_form, comment_form)
+        elif self.request.POST.get('delete'):
+            # If the approver decides to 'delete' the experience, skip validation
+            # and do not modify any field of the experience with the exception of
+            # changing the status to cancelled.
+            self.object.status = 'ca'
+            self.object.save()
+            return HttpResponseRedirect(self.get_success_url())
         else:
             return self.form_invalid(experience_form, comment_form)
 
     def form_valid(self, experience_form, comment_form):
         comment_form.instance.author = self.request.user
         if self.request.POST.get('approve'):
-            if experience_form.instance.next_approver == self.request.user:
+            if experience_form.instance.next_approver == self.request.user or not experience_form.instance.next_approver:
                 experience_form.instance.next_approver = None
                 experience_form.instance.status = 'ad'
                 experience_form.instance.needs_author_email = True
@@ -202,6 +214,12 @@ class EditExperienceView(UpdateView):
     def get_success_url(self):
         return reverse('home')
 
+    def get_form_class(self):
+        if self.request.method.upper() == 'POST' and 'submit' in self.request.POST:
+            return ExperienceSubmitForm
+        else:
+            return ExperienceSaveForm
+
     def get_queryset(self):
         user_has_editing_privs = Q(author=self.request.user) | (Q(planners=self.request.user) & ~Q(status='dr'))
         if self.request.user.is_hallstaff():
@@ -215,4 +233,11 @@ class EditExperienceView(UpdateView):
     def form_valid(self, form):
         if self.request.POST.get('submit') and not self.request.user.is_hallstaff():
             form.instance.status = 'pe'
+        experience = self.get_object()
+        if self.request.POST.get('delete') and experience.status == 'dr':
+            # An experience can only be 'deleted' from this view if the status of this experience
+            # in the database is draft.  Only the status is modified, no other field.
+            experience.status = 'ca'
+            experience.save()
+            return HttpResponseRedirect(self.get_success_url())
         return super(EditExperienceView, self).form_valid(form)

@@ -83,7 +83,7 @@
         {% for comment in experience.comment_set.all %}
             <div>
                 <div>{{ comment.message }}</div>
-                <div class="comment-author">-{{ comment.author }} said on {{ comment.timestamp }}</div>
+                <div class="comment-author">-{{ comment.author }} {% trans "said on" %} {{ comment.timestamp }}</div>
             </div>
         {% empty %}
             <div>{% trans "No comments" %}</div>

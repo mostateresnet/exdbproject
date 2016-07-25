@@ -40,11 +40,12 @@
             {% for comment in comments %}
                 <div>
                     <div>{{ comment.message }}</div>
-                    <div class="comment-author">-{{ comment.author }} said on {{ comment.timestamp }}</div>
+                    <div class="comment-author">-{{ comment.author }} {% trans "said on" %} {{ comment.timestamp }}</div>
                 </div>
             {% empty %}
                 <div>{% trans "No comments" %}</div>
             {% endfor %}
         </div>
+        <input type="submit" id="delete" value="{% trans "delete" %}" name="delete" />
     </form>
 {% endblock %}

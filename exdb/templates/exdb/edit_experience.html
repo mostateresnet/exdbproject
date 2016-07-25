@@ -36,12 +36,12 @@
         {% if experience.status != 'pe' %}
             <input
                 type="submit"
-                value=
+                value="
                     {% if experience.status != 'dr' %}
                         {% trans "Re-Submit" %}
                     {% else %}
                         {% trans "Submit" %}
-                    {% endif %}
+                    {% endif %}"
                 name="submit"
             />
         {% endif %}
@@ -50,11 +50,14 @@
             {% for comment in experience.comment_set.all %}
                 <div>
                     <div>{{ comment.message }}</div>
-                    <div class="comment-author">-{{ comment.author }} said on {{ comment.timestamp }}</div>
+                    <div class="comment-author">-{{ comment.author }} {% trans "said on" %} {{ comment.timestamp }}</div>
                 </div>
             {% empty %}
                 <div>{% trans "No comments" %}</div>
             {% endfor %}
         </div>
+        {% if experience.status == 'dr' %}
+            <input type="submit" id="delete" value="{% trans "Delete" %}" name="delete" />
+        {% endif %}
     </form>
 {% endblock %}
