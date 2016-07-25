@@ -42,13 +42,16 @@
             <input
                 type="submit"
                 value=
-                    {% if object.status != 'dr' %}
+                    "{% if object.status != 'dr' %}
                         {% trans "Re-Submit" %}
                     {% else %}
                         {% trans "Submit" %}
-                    {% endif %}
+                    {% endif %}"
                 name="submit"
             />
+        {% endif %}
+        {% if object.status == 'dr' %}
+            <input type="submit" id="delete" value="{% trans "Delete" %}" name="delete" />
         {% endif %}
     </form>
 {% endblock %}

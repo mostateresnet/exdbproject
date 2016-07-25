@@ -2,6 +2,7 @@ from importlib import import_module
 from django.db import models
 from django.utils.timezone import now
 from django.conf import settings
+from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext_lazy as _
 from django.core.validators import validate_email
 from django.contrib.contenttypes.models import ContentType
@@ -106,6 +107,15 @@ class Experience(models.Model):
 
     def needs_evaluation(self):
         return self.status == 'ad' and self.end_datetime <= now()
+
+    def get_url(self, user):
+        if self.needs_evaluation():
+            return reverse('conclusion', args=[self.pk])
+        if self in user.approvable_experiences() and user.is_hallstaff():
+            return reverse('approval', args=[self.pk])
+        if self.start_datetime <= now():
+            return reverse('view_experience', args=[self.pk])
+        return reverse('edit', args=[self.pk])
 
 
 class ExperienceApproval(models.Model):
