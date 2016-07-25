@@ -12,20 +12,20 @@
 {% block content %}
     {{ block.super }}
 
-    <h1>Search Results</h1>
-    <p><a href="{% url 'home' %}">Home</a></p>
+    <h1>{% trans "Search Results" %}</h1>
+    <p><a href="{% url 'home' %}">{% trans "Home" %}</a></p>
 
     {% if experiences %}
         <table id="search-results" class="tablesorter">
             <thead>
                 <tr>
-                    <th>Experience Name</th>
-                    <th>Planners</th>
-                    <th>Status</th>
-                    <th>Building</th>
-                    <th>Keywords</th>
-                    <th>Start Time</th>
-                    <th>End Time</th>
+                    <th>{% trans "Experience Name" %}</th>
+                    <th>{% trans "Planners" %}</th>
+                    <th>{% trans "Status" %}</th>
+                    <th>{% trans "Building" %}</th>
+                    <th>{% trans "Keywords" %}</th>
+                    <th>{% trans "Start Time" %}</th>
+                    <th>{% trans "End Time" %}</th>
                 </tr>
             </thead>
             <tbody>
@@ -55,7 +55,7 @@
             </tbody>
         </table>
     {% else %}
-    <p>Your search returned no experiences</p>
+        <p>{% trans "Your search returned no experiences" %}</p>
     {% endif %}
 
 {% endblock %}

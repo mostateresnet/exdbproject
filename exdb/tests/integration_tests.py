@@ -103,7 +103,7 @@ class ModelCoverageTest(StandardTestCase):
 
     def test_affiliation_str_method(self):
         a = self.create_affiliation()
-        self.assertEqual(str(Affiliation.objects.get(pk=a.pk)), a.name, "Affiliation object shoul have been created.")
+        self.assertEqual(str(Affiliation.objects.get(pk=a.pk)), a.name, "Affiliation object should have been created.")
 
     def test_experience_comment_message(self):
         ec = self.create_experience_comment(self.create_experience('de'))
