@@ -352,11 +352,11 @@ class RAHomeViewTest(StandardTestCase):
 
         self.assertEqual(len(response.context["experiences"]), 2, "There should be 2 experiences displayed")
 
-    def test_does_not_get_cancled(self):
+    def test_does_not_get_cancelled(self):
         self.create_experience('ca')
         response = self.clients['ra'].get(reverse('home'))
         self.assertEqual(len(response.context['experiences']), 0,
-                         "Canceled experiences should not appear on any home page")
+                         "Cancelled experiences should not appear on any home page")
 
     @override_settings(HALLSTAFF_UPCOMING_TIMEDELTA=timedelta(days=0), RA_UPCOMING_TIMEDELTA=timedelta(days=31))
     def test_week_ahead(self):
@@ -460,7 +460,7 @@ class ExperienceApprovalViewTest(StandardTestCase):
 
     def test_delete_experience(self):
         e = self.post_data(submit="delete")
-        self.assertEqual(e.status, 'ca', "The status should have been changed to cancled")
+        self.assertEqual(e.status, 'ca', "The status should have been changed to cancelled")
 
 
 class HallStaffDashboardViewTest(StandardTestCase):
@@ -579,11 +579,11 @@ class EditExperienceViewTest(StandardTestCase):
 
     def test_delete_draft(self):
         e = self.post_data('dr', delete=True)
-        self.assertEqual(e.status, 'ca', "A draft should be allowed to be cancled")
+        self.assertEqual(e.status, 'ca', "A draft should be allowed to be cancelled")
 
     def test_does_not_delete_non_draft(self):
         e = self.post_data('pe', delete=True)
-        self.assertEqual(e.status, 'pe', "Only drafts may be cancled from the edit page")
+        self.assertEqual(e.status, 'pe', "Only drafts may be cancelled from the edit page")
 
     def test_hallstaff_allowed_to_edit_non_drafts(self):
         e = self.create_experience('ad', start=(now() + timedelta(days=1)), end=(now() + timedelta(days=2)))

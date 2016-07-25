@@ -10,6 +10,10 @@ from unittest import SkipTest
 import selenium
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.alert import Alert
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import NoAlertPresentException, NoSuchElementException
 
 from django.test import Client
 from django.test.runner import DiscoverRunner
@@ -346,10 +350,7 @@ class EditExperienceBrowserTest(DefaultLiveServerTestCase):
         self.client.get(reverse('edit', args=[e.pk]))
         d = self.driver.find_element(By.CSS_SELECTOR, '#delete')
         d.click()
-        alert = False
-        if self.driver.switch_to_alert():
-            alert = True
-        self.assertTrue(alert, "The browser should have confirmed the delete.")
+        self.assertTrue(self.driver.switch_to_alert(), "The browser should have confirmed the delete.")
 
 
 class ExperienceApprovalBrowserTest(DefaultLiveServerTestCase):
@@ -381,6 +382,7 @@ class ExperienceApprovalBrowserTest(DefaultLiveServerTestCase):
 
         self.assertFalse(urls_equal, "The browser should have went elsewhere.")
         self.assertTrue(exp_canceled, "The browser should have continued with the delete.")
+
 
 class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
 

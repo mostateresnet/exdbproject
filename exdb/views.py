@@ -143,7 +143,7 @@ class ExperienceApprovalView(UpdateView):
         elif self.request.POST.get('delete'):
             # If the approver decides to 'delete' the experience, skip validation
             # and do not modify any field of the experience with the exception of
-            # changing the status to cancled.
+            # changing the status to cancelled.
             self.object.status = 'ca'
             self.object.save()
             return HttpResponseRedirect(self.get_success_url())
