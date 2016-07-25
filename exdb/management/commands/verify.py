@@ -37,6 +37,7 @@ class Command(BaseCommand):
         subprocess.call([
             'jslint',
             '--predef', '$',        # assume that '$' will be defined
+            '--predef', 'confirm',  # assume that 'confirm' will be defined
             '--browser',            # assume that browser variables will exist
         ] + files
         )
