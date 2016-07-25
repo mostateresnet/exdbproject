@@ -110,6 +110,26 @@ class ModelCoverageTest(StandardTestCase):
         e = self.create_experience('ad')
         self.assertTrue(e.needs_evaluation(), "This experience should return true for needs evaluation.")
 
+    def test_get_url_returns_conclusion(self):
+        e = self.create_experience('ad', start=(now() - timedelta(days=2)), end=(now() - timedelta(days=1)))
+        self.assertEqual(e.get_url(self.clients['ra'].user_object), reverse('conclusion', args=[e.pk]),
+                         "The url for experience conclusion should have been returned")
+
+    def test_get_url_returns_approval(self):
+        e = self.create_experience('pe')
+        self.assertEqual(e.get_url(self.clients['hs'].user_object), reverse('approval', args=[e.pk]),
+                         "The url for experience approval should have been returned")
+
+    def test_get_url_returns_view_experience(self):
+        e = self.create_experience('co')
+        self.assertEqual(e.get_url(self.clients['ra'].user_object), reverse('view_experience', args=[e.pk]),
+                         "The url for view_experience should have been returned")
+
+    def test_get_url_returns_edit(self):
+        e = self.create_experience('pe', start=(now() + timedelta(days=2)), end=(now() + timedelta(days=3)))
+        self.assertEqual(e.get_url(self.clients['ra'].user_object), reverse('edit', args=[e.pk]),
+                         "The url for experience edit should have been returned")
+
 
 class ExperienceCreationFormTest(StandardTestCase):
 
