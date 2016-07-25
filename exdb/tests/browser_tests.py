@@ -358,7 +358,7 @@ class EditExperienceBrowserTest(DefaultLiveServerTestCase):
     def test_confirm_dont_delete(self):
         urls_equal, exp_cancelled = self.delete_confirm(False)
 
-        self.assertTrue(urls_equal, "The browser should stayed at the same url.")
+        self.assertTrue(urls_equal, "The browser should have stayed at the same url.")
         self.assertFalse(exp_cancelled, "The browser should have aborted the delete.")
 
     def test_confirm_delete(self):
@@ -389,7 +389,7 @@ class ExperienceApprovalBrowserTest(DefaultLiveServerTestCase):
     def test_confirm_dont_delete(self):
         urls_equal, exp_cancelled = self.delete_confirm(False)
 
-        self.assertTrue(urls_equal, "The browser should stayed at the same url.")
+        self.assertTrue(urls_equal, "The browser should have stayed at the same url.")
         self.assertFalse(exp_cancelled, "The browser should have aborted the delete.")
 
     def test_confirm_delete(self):
