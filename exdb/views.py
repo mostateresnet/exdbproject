@@ -248,19 +248,42 @@ class SearchExperienceResultsView(ListView):
     model = Experience
 
     def get_queryset(self):
-        token = self.request.GET.get('search')
-        if not token:
+        tokens = self.request.GET.get('search', '').split()
+        if not tokens:
             return Experience.objects.none()
-        token.strip()
-        Qs = Q(name__icontains=token) | Q(description__icontains=token) | Q(goal__icontains=token) |\
-            Q(guest__icontains=token) | Q(guest_office__icontains=token) | Q(conclusion__icontains=token) |\
-            Q(keywords__name__icontains=token) | Q(recognition__name__icontains=token) |\
-            Q(recognition__affiliation__name__icontains=token) |\
-            Q(planners__first_name__icontains=token) | Q(planners__last_name__icontains=token) |\
-            Q(author__first_name__icontains=token) | Q(author__last_name__icontains=token) |\
-            Q(type__name__icontains=token) | Q(sub_type__name__icontains=token)
 
-        return Experience.objects.filter(Qs & ~Q(status='ca')).select_related('author').prefetch_related(
+        search_fields = [
+            'name',
+            'description',
+            'goal',
+            'guest',
+            'guest_office',
+            'conclusion',
+            'keywords__name',
+            'recognition__name',
+            'recognition__affiliation__name',
+            'planners__first_name',
+            'planners__last_name',
+            'author__first_name',
+            'author__last_name',
+            'type__name',
+            'sub_type__name',
+        ]
+
+        filter_Qs = Q()
+        for token in tokens:
+            or_Qs = Q()
+            for field in search_fields:
+                or_Qs |= Q(**{field + '__icontains': token})
+            filter_Qs &= or_Qs
+        # This will look something like:
+        # WHERE
+        #     (column_1 ILIKE '%token_1%' OR column_2 ILIKE '%token_1%')
+        # AND (column_1 ILIKE '%token_2%' OR column_2 ILIKE '%token_2%')
+        # AND (column_1 ILIKE '%token_3%' OR column_2 ILIKE '%token_3%')
+        queryset = Experience.objects.filter(filter_Qs).exclude(status='ca')
+
+        return queryset.select_related('author').prefetch_related(
             'planners',
             'keywords',
             'recognition',
