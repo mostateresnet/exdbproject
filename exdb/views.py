@@ -283,7 +283,7 @@ class SearchExperienceResultsView(ListView):
         # AND (column_1 ILIKE '%token_3%' OR column_2 ILIKE '%token_3%')
         queryset = Experience.objects.filter(filter_Qs).exclude(status='ca')
 
-        return queryset.select_related('author').prefetch_related(
+        return queryset.select_related('author', 'type', 'sub_type').prefetch_related(
             'planners',
             'keywords',
             'recognition',

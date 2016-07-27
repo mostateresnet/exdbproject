@@ -22,11 +22,11 @@
                 <tr>
                     <th>{% trans "Experience Name" %}</th>
                     <th>{% trans "Planners" %}</th>
-                    <th>{% trans "Status" %}</th>
+                    <th>{% trans "Type" %}</th>
+                    <th>{% trans "Subtype" %}</th>
                     <th>{% trans "Building" %}</th>
                     <th>{% trans "Keywords" %}</th>
                     <th data-sorter="shortDate">{% trans "Start Time" %}</th>
-                    <th data-sorter="shortDate">{% trans "End Time" %}</th>
                 </tr>
             </thead>
             <tbody>
@@ -38,7 +38,8 @@
                                 {{ planner }}{% if not forloop.last %}, {% endif %}
                             {% endfor %}
                         </td>
-                        <td>{{ exp.get_status_display }}</td>
+                        <td>{{ exp.type }}</td>
+                        <td>{{ exp.sub_type }}</td>
                         <td>
                             {% for rec in exp.recognition.all %}
                                 {{ rec.affiliation }}{% if not forloop.last %}, {% endif %}
@@ -50,7 +51,6 @@
                             {% endfor %}
                         </td>
                         <td data-text="{{ exp.start_datetime|date:'Y/m/d H:i:s' }}">{{ exp.start_datetime }}</td>
-                        <td data-text="{{ exp.end_datetime|date:'Y/m/d H:i:s' }}">{{ exp.end_datetime }}</td>
                     </tr>
                 {% endfor %}
             </tbody>
