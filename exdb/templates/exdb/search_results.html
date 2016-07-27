@@ -50,7 +50,7 @@
                                 {{ keyword }}{% if not forloop.last %}, {% endif %}
                             {% endfor %}
                         </td>
-                        <td data-text="{{ exp.start_datetime|date:'Y/m/d H:i:s' }}">{{ exp.start_datetime }}</td>
+                        <td>{{ exp.start_datetime|date:'N j, o g:i A' }}</td>
                     </tr>
                 {% endfor %}
             </tbody>
