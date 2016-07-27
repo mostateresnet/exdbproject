@@ -14,7 +14,9 @@ class EXDBUser(AbstractUser):
     affiliation = models.ForeignKey('Affiliation', null=True)
 
     def approvable_experiences(self):
-        return self.approval_queue.filter(status='pe')
+        if getattr(self, '_approvable_experiences', None) is None:
+            self._approvable_experiences = self.approval_queue.filter(status='pe')
+        return self._approvable_experiences
 
     def is_hallstaff(self):
         return self.groups.filter(name__icontains='hallstaff').exists()
