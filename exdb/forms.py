@@ -60,8 +60,6 @@ class ExperienceSaveForm(ModelForm):
         widgets = {
             'description': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
             'goal': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
-            'start_datetime': forms.SelectDateWidget(),
-            'end_datetime': forms.SelectDateWidget(),
             'type': TypeSelect(),
             'conclusion': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
         }
@@ -71,6 +69,7 @@ class ExperienceSaveForm(ModelForm):
             'end_datetime': 'End Time',
             'next_approver': 'Supervisor',
             'name': 'Title',
+            'goal': 'Goals'
         }
 
     def __init__(self, *args, **kwargs):
