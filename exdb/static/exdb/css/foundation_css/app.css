@@ -1,0 +1,30 @@
+div.main-menu{
+    background-color: #5E0009;
+    color: white;
+    position: fixed;
+    width: 100%;
+}
+div.body{
+    padding-top: 70px;
+}
+
+div.main-menu span{
+    padding-top: 20px;
+}
+
+a:hover{
+    color: #0093B2;
+}
+
+div.main-menu span a{
+    color: white;
+    padding: 10px;
+}
+
+div.main-menu span a:hover{
+    color: #0093B2;
+}
+
+div.main-menu h2{
+    display: inline;
+}
