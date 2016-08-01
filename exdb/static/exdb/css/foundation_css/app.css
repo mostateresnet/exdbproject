@@ -10,6 +10,10 @@ div.body{
 
 div.main-menu span{
     padding-top: 20px;
+    background-color: #5E0009;
+}
+div.main-menu li{
+    background-color: #5E0009;
 }
 
 a:hover{
@@ -27,4 +31,60 @@ div.main-menu span a:hover{
 
 div.main-menu h2{
     display: inline;
+}
+
+.Draft-foreground{
+    color: #F6B418;
+}
+
+.Draft-background{
+    background-color: #F6B418;
+}
+
+.NeedsEvaluation-foreground{
+    color: #425563;
+}
+
+.NeedsEvaluation-background{
+    background-color: #425563;
+}
+
+.Upcoming-foreground{
+    color: #AF1685;
+}
+
+.Upcoming-background{
+    background-color: #AF1685;
+}
+
+.PendingApproval-foreground{
+    color: #0093B2;
+}
+
+.PendingApproval-background{
+    background-color: #0093B2;
+}
+
+.Denied-foreground{
+    color: #E35205;
+}
+
+.Denied-background{
+    background-color: #E35205;
+}
+
+.Approved-foreground{
+    color: #A4D65E;
+}
+
+.Approved-background{
+    background-color: #A4D65E;
+}
+
+.Completed-foreground{
+    color: #5E0009;
+}
+
+.Completed-background{
+    background-color: #5E0009;
 }

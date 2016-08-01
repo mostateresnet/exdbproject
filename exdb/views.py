@@ -79,26 +79,26 @@ class HomeView(ListView):
         else:
             status_to_display = [_('Needs Evaluation')] + [x[1] for x in Experience.STATUS_TYPES]
 
+        status_to_display.insert(status_to_display.index(_('Pending Approval')), _('Upcoming'))
+
         # Grouping of experiences for display
         experience_dict = OrderedDict()
+        time_ahead = timezone.now()
+        time_ahead += settings.HALLSTAFF_UPCOMING_TIMEDELTA if self.request.user.is_hallstaff() else settings.RA_UPCOMING_TIMEDELTA
         for status in status_to_display:
             experience_dict[status] = []
         for experience in context[self.context_object_name]:
-            if experience.needs_evaluation():
+            if experience.needs_evaluation() and len(experience_dict[_('Needs Evaluation')]) < 3:
                 experience_dict[_('Needs Evaluation')].append(experience)
             else:
-                if experience.get_status_display() in experience_dict:
+                if (experience.get_status_display() in experience_dict) and (len(experience_dict[experience.get_status_display()]) < 3):
                     experience_dict[experience.get_status_display()].append(experience)
+            if experience.status == 'ad' and experience.start_datetime > timezone.now() and experience.start_datetime < time_ahead\
+                    and len(experience_dict[_('Upcoming')]) < 3 and (experience not in experience_dict[_('Upcoming')]):
+                print(experience.name, experience.pk)
+                experience_dict[_('Upcoming')].append(experience)
         context['experience_dict'] = experience_dict
 
-        # Which experiences are coming up soon enough that we want to show them
-        time_ahead = timezone.now()
-        time_ahead += settings.HALLSTAFF_UPCOMING_TIMEDELTA if self.request.user.is_hallstaff() else settings.RA_UPCOMING_TIMEDELTA
-        upcoming = []
-        for experience in context['experience_dict'][_('Approved')]:
-            if experience.start_datetime > timezone.now() and experience.start_datetime < time_ahead:
-                upcoming.append(experience)
-        context['upcoming'] = upcoming
         return context
 
 

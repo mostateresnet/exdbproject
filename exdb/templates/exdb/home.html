@@ -8,41 +8,27 @@
 {% endblock %}
 {% block content %}
     {{ block.super }}
-    <div class="experience-panel">
-        {% for status, experiences in experience_dict.items %}
-            {% if experiences %}
-                <div class='experience-div'>
-                    <h1 class="status">{{ status }}</h1>
-                    {% for ex in experiences %}
-                        <div class="experience">
-                            <a href="{% experience_url ex user %}">
-                                <div class="experience-name">{{ ex.name }}</div>
-                                <div>
-                                    <span class="experience-times">{% trans 'Start time' %}: {{ ex.start_datetime }}</span>
-                                    <span class="experience-times">{% trans 'End time' %}: {{ ex.end_datetime }}</span>
-                                </div>
-                                <div class="experience-footer">
-                                    {% trans 'Created on' %}: {{ ex.created_datetime }}
-                                </div>
-                            </a>
+        <div class="row">
+            {% for status, experiences in experience_dict.items %}
+                {% if experiences %}
+                {% if forloop.counter0|divisibleby:"3" %}</div><div class='row'>{% endif %}
+                <div class="large-4 columns card-container{% if forloop.last %} end{% endif %}">
+                        <div class="exp-card {{ status|cut:" " }}-foreground">
+                            <h3>{{ status }}</h3>
+                            {% for experience in experiences %}
+                            
+                                <a href="{% experience_url experience user %}">
+                                    <div class="{{ status|cut:" " }}-background">
+                                        {{ experience.name }} {{ experience.start_datetime|date:"DATE_FORMAT" }}
+                                    </div>
+                                </a>
+                            {% endfor %}
+                            <!--TODO: link to a list view of relevant experiences -->
+                            <div class="more"><a href="#">View More</a></div>
                         </div>
-                    {% endfor %}
-                    <hr class="break" />
-                </div>
-            {% endif %}
-        {% endfor %}
-    </div>
-    <div class="week-ahead">
-        <h1 class="status">{% trans 'Upcoming' %}</h1>
-        {% if upcoming %}
-            <div class='experience-div'>
-                {% for experience in upcoming %}
-                    <div class="experience"><a href="{% experience_url experience user %}">
-                        <p>{% trans 'Name' %}: {{ experience.name }}</p>
-                        <p>{% trans 'Start Time' %}: {{ experience.start_datetime }}</p>
-                    </a></div>
-                {% endfor %}
-            </div>
-        {% endif %}
-    </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    <ul>
 {% endblock %}
