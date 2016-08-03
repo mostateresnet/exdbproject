@@ -4,9 +4,11 @@
 {% block css %}
     {{ block.super }}
     <link href="{% static 'exdb/css/create_experience.css' %}" rel="stylesheet">
+    <link href="{% static 'exdb/css/foundation_css/foundation-datepicker.css' %}" rel="stylesheet">
 {% endblock %}
 {% block javascript %}
     {{ block.super }}
+    <script type="text/javascript" src="{% static 'exdb/js/libraries/foundation-datepicker.js' %}"></script>
     <script type="text/javascript" src="{% static 'exdb/js/experience_form.js' %}"></script>
 {% endblock %}
 {% block content %}
@@ -18,15 +20,14 @@
           <fieldset class="fieldset">
             <div class="row">
                 <div class="medium-6 medium-offset-1 columns">
-                    <h4>Create An Experience</h4>
+                    <h4>{% trans 'Create An Experience' %}</h4>
+                    <span class="form-errors">{{ form.non_field_errors }}</span>
                 </div>
-              <div class="medium-4 columns end">
-                  <input id="save_experience" type="submit" value="{% trans 'Save as draft' %}" name="save" class="button medium"/>
-                  <input id="submit_experience" type="submit" value="{% trans 'Submit' %}" name="submit" class="button medium" />
-              </div>
+            </div>
 
             <div class="row">
                 <div class="large-9 large-centered columns">
+                    <span class="field-error">{{ form.name.errors }}</span>
                     <label>
                         {{ form.name.label }}:
                         {{ form.name }}
@@ -36,6 +37,7 @@
 
             <div class="row">
                 <div class="large-9 large-centered columns">
+                    <span class="field-error">{{ form.type.errors }}</span>
                     <label>
                         {{ form.type.label }}:
                         {{ form.type }}
@@ -45,6 +47,7 @@
 
             <div class="row">
                 <div class="large-9 large-centered columns">
+                    <span class="field-error">{{ form.sub_type.errors }}</span>
                     <label>
                         {{ form.sub_type.label }}:
                         {{ form.sub_type }}
@@ -54,6 +57,7 @@
 
             <div class="row">
                 <div class="large-9 large-centered columns">
+                    <span class="field-error">{{ form.description.errors }}</span>
                     <label>
                         {{ form.description.label }}:
                         {{ form.description }}
@@ -63,6 +67,7 @@
 
             <div class="row">
                 <div class="large-9 large-centered columns">
+                    <span class="field-error">{{ form.goal.errors }}</span>
                     <label>
                         {{ form.goal.label }}:
                         {{ form.goal }}
@@ -72,6 +77,7 @@
 
             <div class="row">
                 <div class="large-9 large-centered columns">
+                    <span class="field-error">{{ form.planners.errors }}</span>
                     <label>
                         {{ form.planners.label }}:
                         {{ form.planners }}
@@ -81,6 +87,7 @@
 
             <div class="row">
                 <div class="large-9 large-centered columns">
+                    <span class="field-error">{{ form.start_datetime.errors }}</span>
                     <label>
                         {{ form.start_datetime.label }}:
                         {{ form.start_datetime }}
@@ -90,6 +97,7 @@
 
             <div class="row">
                 <div class="large-9 large-centered columns">
+                    <span class="field-error">{{ form.end_datetime.errors }}</span>
                     <label>
                         {{ form.end_datetime.label }}:
                         {{ form.end_datetime }}
@@ -99,6 +107,7 @@
 
             <div class="row">
                 <div class="large-9 large-centered columns">
+                    <span class="field-error">{{ form.recognition.errors }}</span>
                     <label>
                         {{ form.recognition.label }}:
                         {{ form.recognition }}
@@ -108,6 +117,7 @@
 
             <div class="row">
                 <div class="large-9 large-centered columns">
+                    <span class="field-error">{{ form.next_approver.errors }}</span>
                     <label>
                         {{ form.next_approver.label }}:
                         {{ form.next_approver }}
@@ -117,6 +127,7 @@
 
             <div class="row">
                 <div class="large-9 large-centered columns">
+                    <span class="field-error">{{ form.guest.errors }}</span>
                     <label>
                         {{ form.guest.label }}:
                         {{ form.guest }}
@@ -124,6 +135,12 @@
                 </div>
             </div>
 
+            <div class="row">
+                <div class="medium-4 columns medium-offset-4">
+                    <input id="save_experience" type="submit" value="{% trans 'Save as draft' %}" name="save" class="button medium"/>
+                    <input id="submit_experience" type="submit" value="{% trans 'Submit' %}" name="submit" class="button medium" />
+                </div>
+            </div>
 
         </fieldset>
         </form>
