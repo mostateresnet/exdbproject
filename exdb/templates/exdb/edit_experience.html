@@ -15,7 +15,7 @@
     {{ block.super }}
 
     <div class="row">
-        <div class="medium-9 columns">
+        <div class="medium-7 columns">
             <form method="POST">
                 {% csrf_token %}
                 <fieldset class="fieldset">
@@ -27,118 +27,19 @@
                         </div>
                     </div>
 
-                    <div class="row">
-                        <div class="large-9 large-centered columns">
-                            <span class="field-error">{{ form.name.errors }}</span>
-                            <label>
-                                {{ form.name.label }}:
-                                {{ form.name }}
-                            </label>
+                    {% for field in form %}
+                        <div class="row">
+                            <div class="large-9 large-centered columns">
+                                <span class="field-error">{{ field.errors }}</span>
+                                {{ field.label }}
+                                {{ field }}
+                                <span class="help">{{ field.help_text }}</span>
+                            </div>
                         </div>
-                    </div>
+                    {% endfor %}
 
                     <div class="row">
-                        <div class="large-9 large-centered columns">
-                            <span class="field-error">{{ form.type.errors }}</span>
-                            <label>
-                                {{ form.type.label }}:
-                                {{ form.type }}
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="large-9 large-centered columns">
-                            <span class="field-error">{{ form.sub_type.errors }}</span>
-                            <label>
-                                {{ form.sub_type.label }}:
-                                {{ form.sub_type }}
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="large-9 large-centered columns">
-                            <span class="field-error">{{ form.description.errors }}</span>
-                            <label>
-                                {{ form.description.label }}:
-                                {{ form.description }}
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="large-9 large-centered columns">
-                            <span class="field-error">{{ form.goal.errors }}</span>
-                            <label>
-                                {{ form.goal.label }}:
-                                {{ form.goal }}
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="large-9 large-centered columns">
-                            <span class="field-error">{{ form.planners.errors }}</span>
-                            <label>
-                                {{ form.planners.label }}:
-                                {{ form.planners }}
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="large-9 large-centered columns">
-                            <span class="field-error">{{ form.start_datetime.errors }}</span>
-                            <label>
-                                {{ form.start_datetime.label }}:
-                                {{ form.start_datetime }}
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="large-9 large-centered columns">
-                            <span class="field-error">{{ form.end_datetime.errors }}</span>
-                            <label>
-                                {{ form.end_datetime.label }}:
-                                {{ form.end_datetime }}
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="large-9 large-centered columns">
-                            <span class="field-error">{{ form.recognition.errors }}</span>
-                            <label>
-                                {{ form.recognition.label }}:
-                                {{ form.recognition }}
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="large-9 large-centered columns">
-                            <span class="field-error">{{ form.next_approver.errors }}</span>
-                            <label>
-                                {{ form.next_approver.label }}:
-                                {{ form.next_approver }}
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="large-9 large-centered columns">
-                            <span class="field-error">{{ form.guest.errors }}</span>
-                            <label>
-                                {{ form.guest.label }}:
-                                {{ form.guest }}
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="large-9 large-centered columns">
+                        <div class="large-12 large-centered columns">
                             {% if object.status != 'ad' %}
                                 <input type="submit" value="{% trans "Save Changes" %}" name="save" class="button medium"/>
                             {% endif %}
@@ -163,7 +64,7 @@
                 </fieldset>
 
             </div>
-            <div class="medium-3 columns">
+            <div class="medium-5 columns">
                 <fieldset class="fieldset">
                     {% for comment in object.comment_set.all %}
                         <p>{{ comment.message }}<p>

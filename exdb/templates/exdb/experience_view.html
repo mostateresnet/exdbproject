@@ -6,10 +6,11 @@
     <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/experience_approval.css' %}" />
 {% endblock %}
 {% block content %}
-    <p><a href="{% url 'home' %}">{% trans "Return Home" %}</a></p>
-    <h1>{{ experience.name }}</h1>
-    <hr/>
-    <div class="experience-display">
+    <div class="row">
+        <div class="small-3 small-centered columns">
+            <h1>{{ experience.name }}</h1>
+        </div>
+        <hr />
         <p>
             <span>{% trans "Author" %}:</span>
             {{ experience.author }}

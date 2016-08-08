@@ -40,18 +40,18 @@ class ExperienceSaveForm(ModelForm):
         model = Experience
         fields = [
             'name',
+            'type',
+            'sub_type',
             'description',
+            'goal',
             'planners',
             'start_datetime',
             'end_datetime',
-            'type',
-            'sub_type',
             'recognition',
             'audience',
             'attendance',
             'keywords',
             'next_approver',
-            'goal',
             'guest',
             'guest_office',
             'conclusion'
