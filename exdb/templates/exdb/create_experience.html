@@ -135,6 +135,26 @@
                 </div>
             </div>
 
+            <div id="id_attendance" class="row ">
+                <div class="large-9 large-centered columns">
+                    <span class="field-error">{{ form.attendance.errors }}</span>
+                    <label>
+                        {{ form.attendance.label }}:
+                        {{ form.attendance }}
+                    </label>
+                </div>
+            </div>
+
+            <div id="id_conclusion" class="row ">
+                <div class="large-9 large-centered columns">
+                    <span class="field-error">{{ form.conclusion.errors }}</span>
+                    <label>
+                        {{ form.conclusion.label }}:
+                        {{ form.conclusion }}
+                    </label>
+                </div>
+            </div>
+
             <div class="row">
                 <div class="medium-4 columns medium-offset-4">
                     <input id="save_experience" type="submit" value="{% trans 'Save as draft' %}" name="save" class="button medium"/>

@@ -264,7 +264,7 @@ class DefaultLiveServerTestCase(StaticLiveServerTestCase):
             'Login a browser without visiting the login page'
             c = Client()
             # avoid setting the password and force_login for speed
-            user_object = get_user_model().objects.create(username='user')
+            user_object = get_user_model().objects.create(username='user', first_name="User")
             c.force_login(user_object)
             if CustomRunner.live_server_url not in self.driver.current_url:
                 # if we would be trying to set a cross domain cookie change the domain
@@ -330,11 +330,17 @@ class LiveLoginViewTest(DefaultLiveServerTestCase):
         self.assertTrue(is_logged_in)
 
 
-class HallStaffDashboardBrowserTest(DefaultLiveServerTestCase):
+class HomeBrowserTest(DefaultLiveServerTestCase):
 
     def test_load(self):
         self.client.get(reverse('home'))
-        self.assertEqual(self.driver.find_element(By.XPATH, '//h2').text, _('Hello user'))
+        self.assertEqual(self.driver.find_element(By.XPATH, '//h2').text, _('Hello User'))
+
+    def test_toggle_mobile_menu(self):
+        self.client.get(reverse('home'))
+        mobile_menu = self.driver.find_element(By.CSS_SELECTOR, 'ul#mobile-menu')
+        self.driver.find_element(By.CSS_SELECTOR, 'button#mobile-menu-toggle').click()
+        self.assertTrue(mobile_menu.is_displayed(), 'Clicking the mobile menu button should show the menu')
 
 
 class EditExperienceBrowserTest(DefaultLiveServerTestCase):
@@ -408,7 +414,7 @@ class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
     def test_attendance_hidden(self):
         self.client.get(reverse('create_experience'))
         attnd_element = self.driver.find_element(By.ID, 'id_attendance')
-        self.assertFalse(attnd_element.find_element(By.XPATH, '..').is_displayed(),
+        self.assertFalse(attnd_element.is_displayed(),
                          'Attendance field should be hidden on load.')
 
     def test_shows_attendance_field(self):
@@ -416,7 +422,7 @@ class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
         type_element = self.driver.find_element(By.ID, 'id_type')
         type_element.find_element_by_class_name('no-verification').click()
         attnd_element = self.driver.find_element(By.ID, 'id_attendance')
-        self.assertTrue(attnd_element.find_element(By.XPATH, '..').is_displayed(),
+        self.assertTrue(attnd_element.is_displayed(),
                         'Attendance field should not be hidden when spontaneous is selected.')
 
     def test_rehides_attendance_field(self):
@@ -425,7 +431,7 @@ class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
         type_element.find_element_by_class_name('no-verification').click()
         type_element.find_elements_by_tag_name('option')[0].click()
         attnd_element = self.driver.find_element(By.ID, 'id_attendance')
-        self.assertFalse(attnd_element.find_element(By.XPATH, '..').is_displayed(),
+        self.assertFalse(attnd_element.is_displayed(),
                          'Attendance field should be hidden when spontaneous is not selected.')
 
     def test_attendance_conclusion_not_hidden_if_no_verify(self):

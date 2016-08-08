@@ -91,11 +91,11 @@ class HomeView(ListView):
             if experience.needs_evaluation() and len(experience_dict[_('Needs Evaluation')]) < 3:
                 experience_dict[_('Needs Evaluation')].append(experience)
             else:
-                if (experience.get_status_display() in experience_dict) and (len(experience_dict[experience.get_status_display()]) < 3):
+                if (experience.get_status_display() in experience_dict) and (
+                        len(experience_dict[experience.get_status_display()]) < 3):
                     experience_dict[experience.get_status_display()].append(experience)
             if experience.status == 'ad' and experience.start_datetime > timezone.now() and experience.start_datetime < time_ahead\
                     and len(experience_dict[_('Upcoming')]) < 3 and (experience not in experience_dict[_('Upcoming')]):
-                print(experience.name, experience.pk)
                 experience_dict[_('Upcoming')].append(experience)
         context['experience_dict'] = experience_dict
 
@@ -229,7 +229,8 @@ class EditExperienceView(UpdateView):
         return Experience.objects.filter(editable_experience).prefetch_related('comment_set').distinct()
 
     def form_valid(self, form):
-        if self.request.POST.get('submit') and not self.request.user.is_hallstaff():
+        if self.request.POST.get('submit') and (not self.request.user.is_hallstaff()
+                                                or self.request.user == form.instance.author):
             form.instance.status = 'pe'
         experience = self.get_object()
         if self.request.POST.get('delete') and experience.status == 'dr':

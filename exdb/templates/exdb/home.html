@@ -11,8 +11,7 @@
         <div class="row">
             {% for status, experiences in experience_dict.items %}
                 {% if experiences %}
-                {% if forloop.counter0|divisibleby:"3" %}</div><div class='row'>{% endif %}
-                <div class="large-4 columns card-container{% if forloop.last %} end{% endif %}">
+                    <div class="large-4 columns card-container end">
                         <div class="exp-card {{ status|cut:" " }}-foreground">
                             <h3>{{ status }}</h3>
                             {% for experience in experiences %}

@@ -268,12 +268,8 @@ class ExperienceCreationViewTest(StandardTestCase):
         self.test_keyword = self.create_keyword()
 
     def get_post_data(self, start, end, action='submit'):
-        return {'start_datetime_month': start.month,
-                'start_datetime_day': start.day,
-                'start_datetime_year': start.year,
-                'end_datetime_month': end.month,
-                'end_datetime_day': end.day,
-                'end_datetime_year': end.year,
+        return {'start_datetime': start.strftime("%Y-%m-%d %H:%M:%S"),
+                'end_datetime': end.strftime("%Y-%m-%d %H:%M"),
                 'name': 'test',
                 'description': 'test',
                 'type': self.test_type.pk,
@@ -392,7 +388,8 @@ class RAHomeViewTest(StandardTestCase):
                                          status="ad",
                                          attendance=3)
         response = self.clients['ra'].get(reverse('home'))
-        self.assertEqual(len(response.context["upcoming"]), 1, "There should be 1 experience in the next month")
+        self.assertEqual(len(response.context["experience_dict"]["Upcoming"]),
+                         1, "There should be 1 experience in the next month")
 
 
 class ExperienceApprovalViewTest(StandardTestCase):
@@ -406,12 +403,8 @@ class ExperienceApprovalViewTest(StandardTestCase):
         self.clients['hs'].post(reverse('approval', args=[e.pk]), {
             'name': e.name,
             'description': description,
-            'start_datetime_month': e.start_datetime.month,
-            'start_datetime_day': e.start_datetime.day,
-            'start_datetime_year': e.start_datetime.year,
-            'end_datetime_year': e.end_datetime.year,
-            'end_datetime_day': e.end_datetime.day,
-            'end_datetime_month': e.end_datetime.month,
+            'start_datetime': e.start_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+            'end_datetime': e.end_datetime.strftime("%Y-%m-%d %H:%M:%S"),
             'type': e.type.pk,
             'sub_type': e.sub_type.pk,
             'audience': e.audience,
@@ -532,7 +525,8 @@ class HallStaffDashboardViewTest(StandardTestCase):
         ExperienceApproval.objects.create(experience=e1, approver=self.clients['hs'].user_object)
         ExperienceApproval.objects.create(experience=e2, approver=self.clients['hs'].user_object)
         response = self.clients['hs'].get(reverse('home'))
-        self.assertEqual(len(response.context["upcoming"]), 1, "There should be 1 experience in the next week")
+        self.assertEqual(len(response.context["experience_dict"]["Upcoming"]),
+                         1, "There should be 1 experience in the next week")
 
 
 class EditExperienceViewTest(StandardTestCase):
@@ -552,12 +546,8 @@ class EditExperienceViewTest(StandardTestCase):
         client.post(reverse('edit', args=[e.pk]), {
             'name': e.name,
             'description': description,
-            'start_datetime_month': e.start_datetime.month,
-            'start_datetime_day': e.start_datetime.day,
-            'start_datetime_year': e.start_datetime.year,
-            'end_datetime_year': e.end_datetime.year,
-            'end_datetime_day': e.end_datetime.day,
-            'end_datetime_month': e.end_datetime.month,
+            'start_datetime': e.start_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+            'end_datetime': e.end_datetime.strftime("%Y-%m-%d %H:%M:%S"),
             'type': e.type.pk,
             'sub_type': e.sub_type.pk,
             'audience': e.audience,
