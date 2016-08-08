@@ -64,9 +64,9 @@ class HomeView(ListView):
 
     def get_queryset(self):
         if self.request.user.is_hallstaff():
-            return self.get_hs_queryset()
+            return self.get_hs_queryset().order_by('start_datetime')
         else:
-            return self.get_ra_queryset()
+            return self.get_ra_queryset().order_by('start_datetime')
 
     def get_context_data(self, *args, **kwargs):
         context = super(HomeView, self).get_context_data(*args, **kwargs)
@@ -246,15 +246,53 @@ class ListExperienceByStatusView(ListView):
     access_level = 'basic'
     context_object_name = 'experiences'
     template_name = 'exdb/list_experiences.html'
+    readable_status = None
+    status_code = ''
+
+    def needs_eval_queryset(self):
+        experience_approvals = ExperienceApproval.objects.filter(
+            approver=self.request.user, experience__status='ad'
+        )
+        Qs = Q(end_datetime__lt=timezone.now()) & Q(status='ad')
+        user_Qs = Q(author=self.request.user) | Q(planners=self.request.user)
+        Qs = Qs & user_Qs
+        if self.request.user.is_hallstaff():
+            hallstaff_Qs = Q(
+                pk__in=experience_approvals.values('experience')) & Q(
+                end_datetime__lt=timezone.now(), status="ad")
+            Qs = Qs | hallstaff_Qs
+        return Experience.objects.filter(Qs).distinct().order_by('start_datetime')
+
+    def upcoming_queryset(self):
+        time_ahead = timezone.now()
+        time_ahead += settings.HALLSTAFF_UPCOMING_TIMEDELTA if self.request.user.is_hallstaff() else settings.RA_UPCOMING_TIMEDELTA
+        Qs = Q(status='ad') & Q(start_datetime__gt=timezone.now()) & Q(start_datetime__lt=time_ahead)
+        user_Qs = Q(author=self.request.user) | Q(planners=self.request.user)
+        if self.request.user.is_hallstaff():
+            user_Qs = user_Qs | Q(recognition__affiliation=self.request.user.affiliation)
+        Qs = Qs & user_Qs
+        return Experience.objects.filter(Qs).distinct().order_by('start_datetime')
+
+    def status_queryset(self):
+        Qs = Q(author=self.request.user) | (Q(planners=self.request.user) & ~Q(status='dr'))
+        Qs = Qs & Q(status=self.status)
+        return Experience.objects.filter(Qs).distinct().order_by('start_datetime')
 
     def get_queryset(self):
-        Qs = Q(author=self.request.user) | Q(planners=self.request.user)
-        Qs = Qs & Q(status=self.kwargs['status'])
-        return Experience.objects.filter(Qs).distinct()
+        if not self.readable_status:
+            for stat in Experience.STATUS_TYPES:
+                if stat[2] == self.kwargs.get('status'):
+                    self.status = stat[0]
+                    self.readable_status = stat[1]
+                    return self.status_queryset()
+
+        if self.readable_status == "Upcoming":
+            return self.upcoming_queryset()
+
+        if self.readable_status == "Needs Evaluation":
+            return self.needs_eval_queryset()
 
     def get_context_data(self, *args, **kwargs):
         context = super(ListExperienceByStatusView, self).get_context_data()
-        for status in Experience.STATUS_TYPES:
-            if status[0] == self.kwargs['status']:
-                context['status'] = status[1]
+        context['status'] = self.readable_status
         return context

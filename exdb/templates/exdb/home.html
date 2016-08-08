@@ -23,8 +23,12 @@
                                 </a>
                             {% endfor %}
                             <!--TODO: link to a list view of relevant experiences -->
-                            {% if status != 'Upcoming' and status != 'Needs Evaluation' %}
-                                <div class="more"><a href="{% url 'status_list' experiences.0.status %}">View More</a></div>
+                            {% if status == 'Upcoming' %}
+                                <div class="more"><a href="{% url 'upcoming_list'%}">View More</a></div>
+                            {% elif status == 'Needs Evaluation' %}
+                                <div class="more"><a href="{% url 'eval_list'%}">View More</a></div>
+                            {% else %}
+                                <div class="more"><a href="{% url 'status_list' status|slugify %}">View More</a></div>
                             {% endif %}
                         </div>
                     </div>

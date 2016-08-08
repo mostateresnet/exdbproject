@@ -26,5 +26,7 @@ urlpatterns = [
     url(r'^edit/(?P<pk>\d+)$', views.EditExperienceView.as_view(), name='edit'),
     url(r'^login$', login, name='login', kwargs={'template_name': 'exdb/login.html'}),
     url(r'^logout$', logout_then_login, name='logout'),
-    url(r'^list/(?P<status>[a-zA-Z]+)$', views.ListExperienceByStatusView.as_view(), name='status_list'),
+    url(r'^list/upcoming$', views.ListExperienceByStatusView.as_view(readable_status="Upcoming"), name="upcoming_list"),
+    url(r'^list/needs-evaluation$', views.ListExperienceByStatusView.as_view(readable_status="Needs Evaluation"), name="eval_list"),
+    url(r'^list/(?P<status>[a-zA-Z\-]+)$', views.ListExperienceByStatusView.as_view(), name='status_list'),
 ]

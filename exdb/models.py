@@ -59,12 +59,12 @@ class Keyword(models.Model):
 
 class Experience(models.Model):
     STATUS_TYPES = (
-        ('de', _('Denied')),
-        ('dr', _('Draft')),
-        ('pe', _('Pending Approval')),
-        ('ad', _('Approved')),
-        ('co', _('Completed')),
-        ('ca', _('Cancelled'))
+        ('de', _('Denied'), 'denied',),
+        ('dr', _('Draft'), 'draft',),
+        ('pe', _('Pending Approval'), 'pending-approval',),
+        ('ad', _('Approved'), 'approved',),
+        ('co', _('Completed'), 'completed',),
+        ('ca', _('Cancelled'), 'cancelled',),
     )
 
     AUDIENCE_TYPES = (
@@ -89,7 +89,11 @@ class Experience(models.Model):
     attendance = models.IntegerField(null=True, blank=True)
     created_datetime = models.DateTimeField(default=now, blank=True)
     recognition = models.ManyToManyField(Section, blank=True)
-    status = models.CharField(max_length=2, choices=STATUS_TYPES, default=STATUS_TYPES[1][0])
+    status = models.CharField(
+        max_length=2,
+        choices=tuple(
+            statuses[:2] for statuses in STATUS_TYPES),
+        default=STATUS_TYPES[1][0])
     next_approver = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True, related_name='approval_queue')
     conclusion = models.TextField(blank=True)
 
