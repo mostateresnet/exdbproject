@@ -804,19 +804,26 @@ class EmailTest(StandardTestCase):
 class ExperienceSearchViewTest(StandardTestCase):
 
     def test_search_gets_experience(self):
-        self.create_experience('pe')
-        response = self.clients['ra'].get(reverse('search_results'), data={'search': 'T'})
-        self.assertEqual(len(response.context['experiences']), 1, "The search should have returned 1 experience.")
+        e = self.create_experience('pe')
+        e.name = 'Cats Pajamas'
+        e.save()
+        response = self.clients['ra'].get(reverse('search_results'), data={'search': e.name.lower()})
+        self.assertIn(e, response.context['experiences'],
+                      'The "%s" experience should be shown in the search results' % e.name)
 
     def test_search_returns_emptyset_if_passed_emptystring(self):
-        self.create_experience('pe')
+        e = self.create_experience('pe')
+        e.name = 'Cats Pajamas'
+        e.save()
         response = self.clients['ra'].get(reverse('search_results'), data={'search': ''})
         self.assertEqual(len(response.context['experiences']), 0, "No experiences should have been returned")
 
     def test_does_not_show_cancelled_experiences(self):
-        self.create_experience('ca')
-        response = self.clients['ra'].get(reverse('search_results'), data={'search': 'T'})
-        self.assertEqual(len(response.context['experiences']), 0, "Search should not return cancelled experiences")
+        e = self.create_experience('ca')
+        e.name = 'Cats Pajamas'
+        e.save()
+        response = self.clients['ra'].get(reverse('search_results'), data={'search': e.name.lower()})
+        self.assertNotIn(e, response.context['experiences'], 'Search should not return cancelled experiences')
 
 
 class LogoutTest(StandardTestCase):
