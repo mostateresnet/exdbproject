@@ -1,18 +1,22 @@
 div.main-menu{
-    background-color: #5E0009;
     color: white;
     position: fixed;
     width: 100%;
 }
+
+.menu-color{
+    background-color: #5E0009;
+}
+
 div.body{
     padding-top: 70px;
 }
 
-div.main-menu span{
+.menu-color span{
     padding-top: 20px;
     background-color: #5E0009;
 }
-div.main-menu li{
+.menu-color li{
     background-color: #5E0009;
 }
 

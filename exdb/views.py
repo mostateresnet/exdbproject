@@ -240,3 +240,21 @@ class EditExperienceView(UpdateView):
             experience.save()
             return HttpResponseRedirect(self.get_success_url())
         return super(EditExperienceView, self).form_valid(form)
+
+
+class ListExperienceByStatusView(ListView):
+    access_level = 'basic'
+    context_object_name = 'experiences'
+    template_name = 'exdb/list_experiences.html'
+
+    def get_queryset(self):
+        Qs = Q(author=self.request.user) | Q(planners=self.request.user)
+        Qs = Qs & Q(status=self.kwargs['status'])
+        return Experience.objects.filter(Qs).distinct()
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(ListExperienceByStatusView, self).get_context_data()
+        for status in Experience.STATUS_TYPES:
+            if status[0] == self.kwargs['status']:
+                context['status'] = status[1]
+        return context

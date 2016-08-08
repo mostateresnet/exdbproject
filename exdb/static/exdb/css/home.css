@@ -5,7 +5,7 @@ div.exp-card {
     border: solid 2px;
     border-radius: 25px;
     text-align: center;
-    min-height: 17em;
+    height: 20em;
     padding: 5px;
 }
 

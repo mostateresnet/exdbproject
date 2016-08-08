@@ -1,0 +1,43 @@
+{% extends "exdb/base.html" %}
+{% load i18n %}
+{% load exdbtags %}
+{% load staticfiles %}
+{% block css %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/list_experience.css' %}"/>
+{% endblock %}
+
+{% block header %}
+    <div class="top-bar clearfix main-menu {{ status|cut:" " }}-background">
+            <h2>{{ status }}</h2>
+            <span class="show-for-medium float-right">
+                <a href="{% url 'home' %}">{% trans "Home" %}</a>
+                <a href="{% url 'create_experience' %}">{% trans 'Create an experience' %}</a>
+                <a href="{% url 'logout' %}">{% trans "Log out" %}</a>
+            </span>
+            <span class="show-for-small-only">
+                <button id="mobile-menu-toggle" class="float-right tiny secondary button">Menu</button>
+            </span>
+            <span class="show-for-small-only">
+                <ul id="mobile-menu" class="menu vertical hide">
+                    <li><a href="{% url 'home' %}">{% trans "Home" %}</a></li>
+                    <li><a href="{% url 'create_experience' %}">{% trans 'Create an experience' %}</a></li>
+                    <li><a href="{% url 'logout' %}">{% trans "Log out" %}</a></li>
+                </ul>
+            </span>
+        </div>
+{% endblock %}
+
+{% block content %}
+    <div class="row {{ status|cut:" " }}-foreground exp-container">
+        {% for experience in experiences %}
+            <div class="large-4 columns end exp-card">
+                <a href="{% experience_url experience user %}">
+                    <div class="{{ status|cut:" " }}-background">
+                        {{ experience.name }} {{ experience.start_datetime|date:"DATE_FORMAT" }}
+                    </div>
+                </a>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}

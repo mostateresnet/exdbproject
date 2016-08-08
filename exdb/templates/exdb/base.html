@@ -24,7 +24,7 @@
     <body>
         {% block body %}
             {% block header %}
-                <div class="top-bar clearfix main-menu">
+                <div class="top-bar clearfix main-menu menu-color">
                     <h2>{% trans 'Hello' %} {{ user.get_short_name }}</h2>
                     <span class="show-for-medium float-right">
                         <a href="{% url 'home' %}">{% trans "Home" %}</a>

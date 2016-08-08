@@ -22,8 +22,9 @@ urlpatterns = [
     url(r'^create$', views.CreateExperienceView.as_view(), name='create_experience'),
     url(r'^approval/(?P<pk>\d+)$', views.ExperienceApprovalView.as_view(), name='approval'),
     url(r'^conclusion/(?P<pk>\d+)$', views.ExperienceConclusionView.as_view(), name='conclusion'),
-    url(r'^view/experience/(?P<pk>\d+)$', views.ViewExperienceView.as_view(), name='view_experience'),
-    url(r'^view/edit/(?P<pk>\d+)$', views.EditExperienceView.as_view(), name='edit'),
+    url(r'^view/(?P<pk>\d+)$', views.ViewExperienceView.as_view(), name='view_experience'),
+    url(r'^edit/(?P<pk>\d+)$', views.EditExperienceView.as_view(), name='edit'),
     url(r'^login$', login, name='login', kwargs={'template_name': 'exdb/login.html'}),
     url(r'^logout$', logout_then_login, name='logout'),
+    url(r'^list/(?P<status>[a-zA-Z]+)$', views.ListExperienceByStatusView.as_view(), name='status_list'),
 ]
