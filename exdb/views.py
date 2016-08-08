@@ -283,6 +283,9 @@ class SearchExperienceResultsView(ListView):
         # AND (column_1 ILIKE '%token_3%' OR column_2 ILIKE '%token_3%')
         queryset = Experience.objects.filter(filter_Qs).exclude(status='ca')
 
+        # get rid of a users drafts for everyone else
+        queryset = queryset.exclude(~Q(author=self.request.user), status='dr')
+
         return queryset.select_related('author', 'type', 'sub_type').prefetch_related(
             'planners',
             'keywords',
