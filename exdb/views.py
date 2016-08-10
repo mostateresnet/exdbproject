@@ -286,9 +286,13 @@ class SearchExperienceResultsView(ListView):
         # get rid of a users drafts for everyone else
         queryset = queryset.exclude(~Q(author=self.request.user), status='dr')
 
-        return queryset.select_related('author', 'type', 'sub_type').prefetch_related(
+        return queryset.select_related('type', 'sub_type').prefetch_related(
             'planners',
             'keywords',
-            'recognition',
-            'recognition__affiliation'
+            'recognition__affiliation',
         ).distinct()
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(SearchExperienceResultsView, self).get_context_data(*args, **kwargs)
+        context['search_query'] = self.request.GET.get('search', '')
+        return context
