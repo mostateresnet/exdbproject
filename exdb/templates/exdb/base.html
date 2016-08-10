@@ -22,8 +22,8 @@
                 <h2>{% trans 'Hello' %} {{ user }}</h2>
                 <div>
                     <form method="GET" action="{% url 'search_results' %}">
-                        <input type="text" name="search" placeholder="Search Experiences" />
-                        <input type="submit" value="Search" />
+                        <input type="text" name="search" placeholder="{% trans 'Search Experiences' %}" />
+                        <input type="submit" value="{% trans 'Search' %}" />
                     </form>
                 </div>
             {% endblock %}

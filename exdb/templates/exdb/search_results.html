@@ -26,6 +26,7 @@
                     <th>{% trans "Subtype" %}</th>
                     <th>{% trans "Building" %}</th>
                     <th>{% trans "Keywords" %}</th>
+                    <th>{% trans "Status" %}</th>
                     <th data-sorter="shortDate">{% trans "Start Time" %}</th>
                 </tr>
             </thead>
@@ -50,6 +51,7 @@
                                 {{ keyword }}{% if not forloop.last %}, {% endif %}
                             {% endfor %}
                         </td>
+                        <td>{{ exp.get_status_display }}</td>
                         <td>{{ exp.start_datetime|date:'N j, o g:i A' }}</td>
                     </tr>
                 {% endfor %}
