@@ -39,8 +39,9 @@ class StandardTestCase(TestCase):
     def create_affiliation(self, name="Test Affiliation"):
         return Affiliation.objects.get_or_create(name=name)[0]
 
-    def create_section(self, name="Test Section"):
-        return Section.objects.get_or_create(name=name, affiliation=self.create_affiliation())[0]
+    def create_section(self, name="Test Section", affiliation=None):
+        a = affiliation or self.create_affiliation()
+        return Section.objects.get_or_create(name=name, affiliation=a)[0]
 
     def create_keyword(self, name="Test Keyword"):
         return Keyword.objects.get_or_create(name=name)[0]
@@ -100,6 +101,10 @@ class ModelCoverageTest(StandardTestCase):
     def test_experience_str_method(self):
         e = self.create_experience('dr')
         self.assertEqual(str(Experience.objects.get(pk=e.pk)), e.name, "Experience object should have been created.")
+
+    def test_affiliation_str_method(self):
+        a = self.create_affiliation()
+        self.assertEqual(str(Affiliation.objects.get(pk=a.pk)), a.name, "Affiliation object should have been created.")
 
     def test_experience_comment_message(self):
         ec = self.create_experience_comment(self.create_experience('de'))
@@ -792,3 +797,67 @@ class LogoutTest(StandardTestCase):
     def test_logout(self):
         response = self.clients['ra'].get(reverse('logout'))
         self.assertFalse(response.wsgi_request.user.is_authenticated(), "User should have been logged out")
+
+
+class ListExperienceByStatusViewTest(StandardTestCase):
+
+    def test_status_list_view(self):
+        e = self.create_experience('pe')
+        ad = self.create_experience('ad')
+        url_arg = ''
+        for status in Experience.STATUS_TYPES:
+            if status[0] == e.status:
+                url_arg = status[2]
+        response = self.clients['ra'].get(reverse('status_list', kwargs={'status': url_arg}))
+        self.assertIn(e, response.context['experiences'], "The view should have returned the pending experience")
+        self.assertNotIn(
+            ad,
+            response.context['experiences'],
+            "The view should have only returned one status of experiences")
+
+    def test_upcoming_list_view(self):
+        upcoming_e = self.create_experience('ad', start=(now() + timedelta(days=1)), end=(now() + timedelta(days=2)))
+        future_e = self.create_experience('ad', start=(now() + timedelta(days=40)), end=(now() + timedelta(days=41)))
+        response = self.clients['ra'].get(reverse('upcoming_list'))
+        self.assertIn(
+            upcoming_e,
+            response.context['experiences'],
+            'This view should have returned the experience coming up in the next week')
+        self.assertNotIn(
+            future_e,
+            response.context['experiences'],
+            'This view should not have returned experiences too far in the future')
+
+    def test_needs_evaluation_list_view(self):
+        needs_eval_e = self.create_experience('ad', start=(now() - timedelta(days=2)), end=(now() - timedelta(days=1)))
+        future_e = self.create_experience('ad', start=(now() + timedelta(days=1)), end=(now() + timedelta(days=2)))
+        response = self.clients['ra'].get(reverse('eval_list'))
+        self.assertIn(needs_eval_e, response.context['experiences'],
+                      'This view should have returned the experience that needs evaluation')
+        self.assertNotIn(future_e, response.context['experiences'],
+                         'This view should not return experiences that have yet to start')
+
+    def test_upcoming_list_hs_view(self):
+        hs_author_e = self.create_experience('ad', start=(now() + timedelta(days=1)), end=(now() + timedelta(days=2)),
+                                             author=self.clients['hs'].user_object)
+        upcoming_affiliation_e = self.create_experience('ad', start=(
+            now() + timedelta(days=1)), end=(now() + timedelta(days=2)))
+
+        a = self.create_affiliation()
+        s = self.create_section(affiliation=a)
+        self.clients['hs'].user_object.affiliation = a
+        self.clients['hs'].user_object.save()
+        upcoming_affiliation_e.recognition.add(s)
+
+        response = self.clients['hs'].get(reverse('upcoming_list'))
+        self.assertIn(hs_author_e, response.context['experiences'],
+                      'This view should have returned the upcoming experience where hs user was the author')
+        self.assertIn(upcoming_affiliation_e, response.context['experiences'],
+                      'The view should have returned upcoming experiences with hs user affiliation')
+
+    def test_needs_evaluation_list_hs_view(self):
+        needs_eval_e = self.create_experience('ad', start=(now() - timedelta(days=2)), end=(now() - timedelta(days=1)))
+        ExperienceApproval.objects.create(experience=needs_eval_e, approver=self.clients['hs'].user_object)
+        response = self.clients['hs'].get(reverse('eval_list'))
+        self.assertIn(needs_eval_e, response.context['experiences'],
+                      'The view should have returned experiences needing evaluation that were approved by the hs user')
