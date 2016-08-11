@@ -58,6 +58,8 @@ class Keyword(models.Model):
 
 
 class Experience(models.Model):
+    # The last index of this tuple is the slug value for the status.
+    # This is used mainly for the ListByStatus View.
     STATUS_TYPES = (
         ('de', _('Denied'), 'denied',),
         ('dr', _('Draft'), 'draft',),

@@ -7,6 +7,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.shortcuts import get_object_or_404
 from django.core.management import call_command
+from django.conf import settings
 
 from exdb.models import Affiliation, Experience, Type, SubType, Section, Keyword, ExperienceComment, ExperienceApproval, EmailTask
 from exdb.forms import ExperienceSubmitForm
@@ -814,6 +815,11 @@ class LogoutTest(StandardTestCase):
 
 class ListExperienceByStatusViewTest(StandardTestCase):
 
+    def setUp(self):
+        super(ListExperienceByStatusViewTest, self).setUp()
+        self.hs_timedelta = settings.HALLSTAFF_UPCOMING_TIMEDELTA
+        self.ra_timedelta = settings.RA_UPCOMING_TIMEDELTA
+
     def test_status_list_view(self):
         e = self.create_experience('pe')
         ad = self.create_experience('ad')
@@ -829,8 +835,10 @@ class ListExperienceByStatusViewTest(StandardTestCase):
             "The view should have only returned one status of experiences")
 
     def test_upcoming_list_view(self):
-        upcoming_e = self.create_experience('ad', start=(now() + timedelta(days=1)), end=(now() + timedelta(days=2)))
-        future_e = self.create_experience('ad', start=(now() + timedelta(days=40)), end=(now() + timedelta(days=41)))
+        upcoming_e = self.create_experience('ad', start=(now() + self.ra_timedelta - timedelta(days=2)),
+                                            end=(now() + self.ra_timedelta - timedelta(days=1)))
+        future_e = self.create_experience('ad', start=(now() + self.ra_timedelta + timedelta(days=1)),
+                                          end=(now() + self.ra_timedelta + timedelta(days=2)))
         response = self.clients['ra'].get(reverse('upcoming_list'))
         self.assertIn(
             upcoming_e,
@@ -851,10 +859,23 @@ class ListExperienceByStatusViewTest(StandardTestCase):
                          'This view should not return experiences that have yet to start')
 
     def test_upcoming_list_hs_view(self):
-        hs_author_e = self.create_experience('ad', start=(now() + timedelta(days=1)), end=(now() + timedelta(days=2)),
-                                             author=self.clients['hs'].user_object)
-        upcoming_affiliation_e = self.create_experience('ad', start=(
-            now() + timedelta(days=1)), end=(now() + timedelta(days=2)))
+        hs_author_e = self.create_experience(
+            'ad',
+            start=(now() + self.hs_timedelta - timedelta(days=2)),
+            end=(now() + self.hs_timedelta - timedelta(days=1)),
+            author=self.clients['hs'].user_object
+        )
+        hs_author_future_e = self.create_experience(
+            'ad',
+            start=(now() + self.hs_timedelta + timedelta(days=1)),
+            end=(now() + self.hs_timedelta + timedelta(days=2)),
+            author=self.clients['hs'].user_object
+        )
+        upcoming_affiliation_e = self.create_experience(
+            'ad',
+            start=(now() + self.hs_timedelta - timedelta(days=2)),
+            end=(now() + self.hs_timedelta - timedelta(days=1))
+        )
 
         a = self.create_affiliation()
         s = self.create_section(affiliation=a)
@@ -867,6 +888,8 @@ class ListExperienceByStatusViewTest(StandardTestCase):
                       'This view should have returned the upcoming experience where hs user was the author')
         self.assertIn(upcoming_affiliation_e, response.context['experiences'],
                       'The view should have returned upcoming experiences with hs user affiliation')
+        self.assertNotIn(hs_author_future_e, response.context['experiences'],
+                         'The view should not have returned experiences that start too far in the future')
 
     def test_needs_evaluation_list_hs_view(self):
         needs_eval_e = self.create_experience('ad', start=(now() - timedelta(days=2)), end=(now() - timedelta(days=1)))
