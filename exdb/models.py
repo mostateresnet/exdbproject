@@ -14,7 +14,9 @@ class EXDBUser(AbstractUser):
     affiliation = models.ForeignKey('Affiliation', null=True)
 
     def approvable_experiences(self):
-        return self.approval_queue.filter(status='pe')
+        if getattr(self, '_approvable_experiences', None) is None:
+            self._approvable_experiences = self.approval_queue.filter(status='pe')
+        return self._approvable_experiences
 
     def is_hallstaff(self):
         return self.groups.filter(name__icontains='hallstaff').exists()
@@ -37,6 +39,9 @@ class Type(models.Model):
 
 class Affiliation(models.Model):
     name = models.CharField(max_length=300)
+
+    def __str__(self):
+        return self.name
 
 
 class Section(models.Model):
@@ -79,7 +84,7 @@ class Experience(models.Model):
     type = models.ForeignKey(Type)
     sub_type = models.ForeignKey(SubType)
     goal = models.TextField(blank=True)
-    keywords = models.ManyToManyField(Keyword, blank=True)
+    keywords = models.ManyToManyField(Keyword, blank=True, related_name='keyword_set')
     audience = models.CharField(max_length=1, choices=AUDIENCE_TYPES, blank=True)
     guest = models.CharField(max_length=300, blank=True)
     guest_office = models.CharField(max_length=300, blank=True)
