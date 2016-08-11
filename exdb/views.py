@@ -244,7 +244,7 @@ class EditExperienceView(UpdateView):
 class SearchExperienceResultsView(ListView):
     access_level = 'basic'
     context_object_name = 'experiences'
-    template_name = 'exdb/search_results.html'
+    template_name = 'exdb/search.html'
     model = Experience
 
     def get_queryset(self):

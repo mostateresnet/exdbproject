@@ -261,7 +261,7 @@ class DefaultLiveServerTestCase(StaticLiveServerTestCase):
         def __init__(self, driver):
             self.driver = driver
 
-        def get(self, url, **kwargs):
+        def get(self, url):
             self.driver.get(CustomRunner.live_server_url + url)
 
         def force_login(self):
