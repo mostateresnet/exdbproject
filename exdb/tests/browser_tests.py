@@ -10,6 +10,9 @@ from unittest import SkipTest
 import selenium
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions
 
 from django.test import Client
 from django.test.runner import DiscoverRunner
@@ -231,15 +234,16 @@ class DefaultLiveServerTestCase(StaticLiveServerTestCase):
     def create_sub_type(self, name="Test Sub Type"):
         return SubType.objects.get_or_create(name=name)[0]
 
-    def create_experience(self, exp_status, user=None, start=None, end=None):
+    def create_experience(self, exp_status, user=None, start=None, end=None, name=None):
         """Creates and returns an experience object with status,
         start_time, end_time and/or name of your choice"""
         start = start or make_aware(datetime(2015, 1, 1, 1, 30), timezone=utc)
         end = end or (make_aware(datetime(2015, 1, 1, 1, 30), timezone=utc) + timedelta(days=1))
         user = user or get_user_model().objects.get(username='user')
+        name = name or 'Test'
         return Experience.objects.get_or_create(
             author=user,
-            name="Test",
+            name=name,
             description="test",
             start_datetime=start,
             end_datetime=end,
@@ -443,3 +447,78 @@ class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
         att_element = self.driver.find_element(By.ID, 'id_attendance')
         visible = att_element.is_displayed() and con_element.is_displayed()
         self.assertTrue(visible, 'Attendance and Conclusion fields should be displayed')
+
+
+class ExperienceSearchBrowserTest(DefaultLiveServerTestCase):
+
+    def test_page_loads(self):
+        self.client.get(reverse('search'))
+        self.assertEqual(self.driver.find_element(By.XPATH, '//h1').text, _('Search Results'))
+
+    def get_name_column_index(self):
+        table_name = 'search-results'
+        column_header = 'Experience Name'
+        xpath_query = '//table[@id="%s"]//th/*[text()="%s"]/../preceding-sibling::th'
+        preceding_elements = self.driver.find_elements(By.XPATH, xpath_query % (table_name, column_header))
+        return len(preceding_elements) + 1
+
+    def get_table_entries_by_name_xpath(self, text_to_find, column_index=None):
+        column_index = column_index or self.get_name_column_index()
+        return '//table[@id="search-results"]//td[position()=%i]/*[text()="%s"]' % (column_index, text_to_find)
+
+    def get_table_entries_by_name(self, text_to_find, column_index=None):
+        xpath_string = self.get_table_entries_by_name_xpath(text_to_find, column_index)
+        return self.driver.find_elements(By.XPATH, xpath_string)
+
+    def search_test_helper(self):
+        text_to_find = 'Found'
+        text_to_not_find = 'Not Present'
+
+        self.create_experience('ad', name=text_to_find)
+        self.create_experience('ad', name=text_to_not_find)
+
+        return text_to_find, text_to_not_find
+
+    def test_name_search_works(self):
+        text_to_find, text_to_not_find = self.search_test_helper()
+
+        self.client.get(reverse('home'))
+        box_xpath = '//form[@action="%s"]//input[@name="search"]' % reverse('search')
+        search_box = self.driver.find_element(By.XPATH, box_xpath)
+        search_box.send_keys(text_to_find)
+        search_box.send_keys(Keys.RETURN)
+
+        # this test should be safe to use on page load even though there is a race condition
+        # due to the careful structure of the search
+        # if it fails randomly start checking here
+        self.assertEqual(1, len(self.get_table_entries_by_name(text_to_find)))
+        self.assertEqual(0, len(self.get_table_entries_by_name(text_to_not_find)))
+
+    def test_name_filter_works(self):
+        text_to_find, text_to_not_find = self.search_test_helper()
+        # o should be in both of the experiences
+        self.client.get(reverse('search') + '?search=' + 'o')
+        name_filter = self.driver.find_element(
+            By.XPATH,
+            '//table[@id="search-results"]//td[position()=%i]//*[@class="tablesorter-filter"]' % self.get_name_column_index()
+        )
+
+        # verify the element is shown
+        self.assertTrue(
+            self.get_table_entries_by_name(text_to_not_find)[0].is_displayed(),
+            'The element should first be displayed to later be hidden.'
+        )
+        name_filter.send_keys(text_to_find)
+        name_filter.send_keys(Keys.RETURN)
+
+        # verify the element is not shown
+        wait = WebDriverWait(self.driver, 1)
+        wait.until(
+            expected_conditions.invisibility_of_element_located(
+                (By.XPATH, self.get_table_entries_by_name_xpath(text_to_not_find))
+            )
+        )
+        self.assertFalse(
+            self.get_table_entries_by_name(text_to_not_find)[0].is_displayed(),
+            'The element should not be visible.'
+        )

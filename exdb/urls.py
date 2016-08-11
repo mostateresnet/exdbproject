@@ -29,4 +29,5 @@ urlpatterns = [
     url(r'^list/upcoming$', views.ListExperienceByStatusView.as_view(readable_status="Upcoming"), name="upcoming_list"),
     url(r'^list/needs-evaluation$', views.ListExperienceByStatusView.as_view(readable_status="Needs Evaluation"), name="eval_list"),
     url(r'^list/(?P<status>[a-zA-Z\-]+)$', views.ListExperienceByStatusView.as_view(), name='status_list'),
+    url(r'^experience/search/$', views.SearchExperienceResultsView.as_view(), name='search')
 ]

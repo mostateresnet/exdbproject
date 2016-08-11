@@ -297,3 +297,60 @@ class ListExperienceByStatusView(ListView):
         context = super(ListExperienceByStatusView, self).get_context_data()
         context['status'] = self.readable_status
         return context
+
+
+class SearchExperienceResultsView(ListView):
+    access_level = 'basic'
+    context_object_name = 'experiences'
+    template_name = 'exdb/search.html'
+    model = Experience
+
+    def get_queryset(self):
+        tokens = self.request.GET.get('search', '').split()
+        if not tokens:
+            return Experience.objects.none()
+
+        search_fields = [
+            'name',
+            'description',
+            'goal',
+            'guest',
+            'guest_office',
+            'conclusion',
+            'keywords__name',
+            'recognition__name',
+            'recognition__affiliation__name',
+            'planners__first_name',
+            'planners__last_name',
+            'author__first_name',
+            'author__last_name',
+            'type__name',
+            'sub_type__name',
+        ]
+
+        filter_Qs = Q()
+        for token in tokens:
+            or_Qs = Q()
+            for field in search_fields:
+                or_Qs |= Q(**{field + '__icontains': token})
+            filter_Qs &= or_Qs
+        # This will look something like:
+        # WHERE
+        #     (column_1 ILIKE '%token_1%' OR column_2 ILIKE '%token_1%')
+        # AND (column_1 ILIKE '%token_2%' OR column_2 ILIKE '%token_2%')
+        # AND (column_1 ILIKE '%token_3%' OR column_2 ILIKE '%token_3%')
+        queryset = Experience.objects.filter(filter_Qs).exclude(status='ca')
+
+        # get rid of a users drafts for everyone else
+        queryset = queryset.exclude(~Q(author=self.request.user), status='dr')
+
+        return queryset.select_related('type', 'sub_type').prefetch_related(
+            'planners',
+            'keywords',
+            'recognition__affiliation',
+        ).distinct()
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(SearchExperienceResultsView, self).get_context_data(*args, **kwargs)
+        context['search_query'] = self.request.GET.get('search', '')
+        return context

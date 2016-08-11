@@ -9,7 +9,7 @@ div.main-menu{
 }
 
 div.body{
-    padding-top: 70px;
+    padding-top: 90px;
 }
 
 .main-menu span{
@@ -39,7 +39,15 @@ div.main-menu span a:hover{
 }
 
 div.main-menu h2{
-    display: inline;
+    float: left;
+}
+
+div.main-menu form{
+    padding-top: 15px;
+}
+div.main-menu input{
+    width: 100%;
+    max-width: none;
 }
 
 .Draft-foreground{

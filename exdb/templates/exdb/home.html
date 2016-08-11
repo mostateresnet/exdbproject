@@ -15,14 +15,12 @@
                         <div class="exp-card {{ status|cut:" " }}-foreground">
                             <h3>{{ status }}</h3>
                             {% for experience in experiences %}
-
                                 <a href="{% experience_url experience user %}">
                                     <div class="{{ status|cut:" " }}-background">
                                         {{ experience.name }} {{ experience.start_datetime|date:"DATE_FORMAT" }}
                                     </div>
                                 </a>
                             {% endfor %}
-                            <!--TODO: link to a list view of relevant experiences -->
                             {% if status == 'Upcoming' %}
                                 <div class="more"><a href="{% url 'upcoming_list'%}">View More</a></div>
                             {% elif status == 'Needs Evaluation' %}

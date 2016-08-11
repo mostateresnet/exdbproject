@@ -31,6 +31,18 @@
                             <a href="{% url 'create_experience' %}">{% trans 'Create an experience' %}</a>
                             <a href="{% url 'logout' %}">{% trans "Log out" %}</a>
                         </span>
+                        <div class="row">
+                                <form method="GET" action="{% url 'search' %}">
+                                    <div class="row collapse">
+                                        <div class="medium-3 columns">
+                                            <input type="text" name="search" placeholder="{% trans 'Search Experiences' %}" value="{{ search_query }}" />
+                                        </div>
+                                        <div class="medium-1 columns end">
+                                            <input class="button postfix" type="submit" value="{% trans 'Search' %}" />
+                                        </div>
+                                    </div>
+                                </form>
+                        </div>
                         <span class="show-for-small-only">
                             <button id="mobile-menu-toggle" class="float-right tiny secondary button">{% trans "Menu" %}</button>
                         </span>
