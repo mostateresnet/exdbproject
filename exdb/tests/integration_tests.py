@@ -379,6 +379,19 @@ class RAHomeViewTest(StandardTestCase):
         self.assertEqual(len(response.context['experiences']), 0,
                          "Cancelled experiences should not appear on any home page")
 
+    def test_gets_drafts_when_author(self):
+        e = self.create_experience('dr', author=self.clients['ra'].user_object)
+        response = self.clients['ra'].get(reverse('home'))
+        self.assertIn(e, response.context['experiences'],
+                      'The home page should list drafts where a user is the author')
+
+    def test_does_not_get_drafts_when_not_author(self):
+        e = self.create_experience('dr', author=self.clients['hs'].user_object)
+        e.planners.add(self.clients['ra'].user_object)
+        response = self.clients['ra'].get(reverse('home'))
+        self.assertNotIn(e, response.context['experiences'],
+                         'The home page should not list drafts where a user is a planner but not an author')
+
     @override_settings(HALLSTAFF_UPCOMING_TIMEDELTA=timedelta(days=0), RA_UPCOMING_TIMEDELTA=timedelta(days=31))
     def test_week_ahead(self):
         self.create_experience('ad')
