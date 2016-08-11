@@ -4,7 +4,7 @@ from django.views.generic.edit import CreateView, UpdateView
 from django.shortcuts import get_object_or_404
 from django.core.urlresolvers import reverse
 from django.contrib import auth
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, Http404
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth import get_user_model
@@ -291,6 +291,7 @@ class ListExperienceByStatusView(ListView):
 
         if self.readable_status == "Needs Evaluation":
             return self.needs_eval_queryset()
+        raise Http404('That status does not exist!')
 
     def get_context_data(self, *args, **kwargs):
         context = super(ListExperienceByStatusView, self).get_context_data()

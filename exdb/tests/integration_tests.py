@@ -897,3 +897,7 @@ class ListExperienceByStatusViewTest(StandardTestCase):
         response = self.clients['hs'].get(reverse('eval_list'))
         self.assertIn(needs_eval_e, response.context['experiences'],
                       'The view should have returned experiences needing evaluation that were approved by the hs user')
+
+    def test_gets_404_when_passed_nonsensical_status(self):
+        response = self.clients['ra'].get(reverse('status_list', kwargs={'status': 'aaaaaaaa'}))
+        self.assertEqual(response.status_code, 404, 'The view should have responded to nonsense with a 404')
