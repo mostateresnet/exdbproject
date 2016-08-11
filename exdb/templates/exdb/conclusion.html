@@ -6,9 +6,9 @@
     <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/conclusion.css' %}"/>
 {% endblock %}
 
-{% block custom_header_color_text %}
-    <div class="top-bar clearfix main-menu NeedsEvaluation-background">
-        <h2>{% trans "Evaluate" %} {{ experience.name }}</h2>
+{% block header_color %} NeedsEvaluation-background{% endblock %}
+{% block header_title %}
+    <h2>{% trans "Evaluate" %} {{ experience.name }}</h2>
 {% endblock %}
 
 {% block content %}

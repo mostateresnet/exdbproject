@@ -7,9 +7,9 @@
     <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/list_experience.css' %}"/>
 {% endblock %}
 
-{% block custom_header_color_text %}
-    <div class="top-bar clearfix main-menu {{ status|cut:" " }}-background">
-        <h2>{{ status }}</h2>
+{% block header_color %} {{ status|cut:" " }}-background{% endblock %}
+{% block header_title %}
+    <h2>{{ status }}</h2>
 {% endblock %}
 
 {% block content %}

@@ -6,8 +6,8 @@
     <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/experience_approval.css' %}" />
 {% endblock %}
 
-{% block custom_header_color_text %}
-    <div class="top-bar clearfix main-menu {{ experience.get_status_display|cut:" " }}-background">
+{% block header_color %} {{ experience.get_status_display|cut:" " }}-background{% endblock %}
+{% block header_title %}
     <h2>{% trans "View" %} {{ experience.name }}</h2>
 {% endblock %}
 

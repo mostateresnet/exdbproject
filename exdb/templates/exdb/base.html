@@ -15,18 +15,17 @@
             <script type="text/javascript" src="{% static 'exdb/js/libraries/jquery.tablesorter.js' %}"></script>
             <script type="text/javascript" src="{% static 'exdb/js/libraries/jquery.tablesorter.widgets.js' %}"></script>
             <script type="text/javascript" src="{% static 'exdb/js/libraries/foundation.min.js' %}"></script>
-            <script type="text/javascript" src="{% static 'exdb/js/libraries/app.js' %}"></script>
             <script type="text/javascript" src="{% static 'exdb/js/base.js' %}"></script>
         {% endblock %}
         <title>{% block title %}Experience Database{% endblock %}</title>
     </head>
     <body>
         {% block body %}
-                    {% block header %}
-                        {% block custom_header_color_text %}
-                            <div class="top-bar clearfix main-menu menu-color">
-                                <h2>{% trans 'Hello' %} {{ user.get_short_name }}</h2>
-                        {% endblock %}
+                {% block header %}
+                    <div class="top-bar clearfix main-menu{% block header_color %} menu-color{% endblock %}">
+                    {% block header_title %}
+                        <h2>{% trans 'Hello' %} {{ user.get_short_name }}</h2>
+                    {% endblock %}
                         <span class="show-for-medium float-right">
                             <a href="{% url 'home' %}">{% trans "Home" %}</a>
                             <a href="{% url 'create_experience' %}">{% trans 'Create an experience' %}</a>
