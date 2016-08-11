@@ -803,27 +803,25 @@ class EmailTest(StandardTestCase):
 
 class ExperienceSearchViewTest(StandardTestCase):
 
-    def test_search_gets_experience(self):
-        e = self.create_experience('pe')
+    def search_view_test_helper(self, status, name=None):
+        e = self.create_experience(status)
         e.name = 'Cats Pajamas'
         e.save()
-        response = self.clients['ra'].get(reverse('search_results'), data={'search': e.name.lower()})
-        self.assertIn(e, response.context['experiences'],
-                      'The "%s" experience should be shown in the search results' % e.name)
+        name = name if name is not None else e.name
+        response = self.clients['ra'].get(reverse('search'), data={'search': name.lower()})
+        return e, response.context['experiences']
+
+    def test_search_gets_experience(self):
+        e, context = self.search_view_test_helper('pe')
+        self.assertIn(e, context, 'The "%s" experience should be shown in the search results' % e.name)
 
     def test_search_returns_emptyset_if_passed_emptystring(self):
-        e = self.create_experience('pe')
-        e.name = 'Cats Pajamas'
-        e.save()
-        response = self.clients['ra'].get(reverse('search_results'), data={'search': ''})
-        self.assertEqual(len(response.context['experiences']), 0, "No experiences should have been returned")
+        _, context = self.search_view_test_helper('pe', '')
+        self.assertEqual(len(context), 0, "No experiences should have been returned")
 
     def test_does_not_show_cancelled_experiences(self):
-        e = self.create_experience('ca')
-        e.name = 'Cats Pajamas'
-        e.save()
-        response = self.clients['ra'].get(reverse('search_results'), data={'search': e.name.lower()})
-        self.assertNotIn(e, response.context['experiences'], 'Search should not return cancelled experiences')
+        e, context = self.search_view_test_helper('ca')
+        self.assertNotIn(e, context, 'Search should not return cancelled experiences')
 
 
 class LogoutTest(StandardTestCase):
