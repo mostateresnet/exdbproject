@@ -12,10 +12,15 @@ div.body{
     padding-top: 70px;
 }
 
+.main-menu span{
+    padding-top: 20px;
+}
+
 .menu-color span{
     padding-top: 20px;
     background-color: #5E0009;
 }
+
 .menu-color li{
     background-color: #5E0009;
 }
@@ -37,11 +42,11 @@ div.main-menu h2{
     display: inline;
 }
 
-.Draft-foreground{
+.Draft-foreground, .dr-foreground{
     color: #F6B418;
 }
 
-.Draft-background{
+.Draft-background, .dr-background{
     background-color: #F6B418;
 }
 
@@ -61,34 +66,34 @@ div.main-menu h2{
     background-color: #AF1685;
 }
 
-.PendingApproval-foreground{
+.PendingApproval-foreground, .pe-foreground{
     color: #0093B2;
 }
 
-.PendingApproval-background{
+.PendingApproval-background, .pe-background{
     background-color: #0093B2;
 }
 
-.Denied-foreground{
+.Denied-foreground, .de-foreground{
     color: #E35205;
 }
 
-.Denied-background{
+.Denied-background, .de-background{
     background-color: #E35205;
 }
 
-.Approved-foreground{
+.Approved-foreground, .ad-foreground{
     color: #A4D65E;
 }
 
-.Approved-background{
+.Approved-background, .ad-background{
     background-color: #A4D65E;
 }
 
-.Completed-foreground{
+.Completed-foreground, .co-foreground{
     color: #5E0009;
 }
 
-.Completed-background{
+.Completed-background, .co-background{
     background-color: #5E0009;
 }

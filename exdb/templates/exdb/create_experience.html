@@ -11,6 +11,12 @@
     <script type="text/javascript" src="{% static 'exdb/js/libraries/foundation-datepicker.js' %}"></script>
     <script type="text/javascript" src="{% static 'exdb/js/experience_form.js' %}"></script>
 {% endblock %}
+
+{% block custom_header_color_text %}
+    <div class="top-bar clearfix main-menu menu-color">
+        <h2>{% trans "Create a New Experience" %}</h2>
+{% endblock %}
+
 {% block content %}
     {{ block.super }}
 
@@ -20,7 +26,6 @@
           <fieldset class="fieldset">
             <div class="row">
                 <div class="medium-6 medium-offset-1 columns">
-                    <h4>{% trans 'Create An Experience' %}</h4>
                     <span class="form-errors">{{ form.non_field_errors }}</span>
                 </div>
             </div>
@@ -37,7 +42,7 @@
             {% endfor %}
 
             <div class="row">
-                <div class="medium-4 columns medium-offset-4">
+                <div class="medium-4 columns medium-offset-4 text-center">
                     <input id="save_experience" type="submit" value="{% trans 'Save as draft' %}" name="save" class="button medium"/>
                     <input id="submit_experience" type="submit" value="{% trans 'Submit' %}" name="submit" class="button medium" />
                 </div>

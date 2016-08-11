@@ -23,26 +23,28 @@
     </head>
     <body>
         {% block body %}
-            {% block header %}
-                <div class="top-bar clearfix main-menu menu-color">
-                    <h2>{% trans 'Hello' %} {{ user.get_short_name }}</h2>
-                    <span class="show-for-medium float-right">
-                        <a href="{% url 'home' %}">{% trans "Home" %}</a>
-                        <a href="{% url 'create_experience' %}">{% trans 'Create an experience' %}</a>
-                        <a href="{% url 'logout' %}">{% trans "Log out" %}</a>
-                    </span>
-                    <span class="show-for-small-only">
-                        <button id="mobile-menu-toggle" class="float-right tiny secondary button">Menu</button>
-                    </span>
-                    <span class="show-for-small-only">
-                        <ul id="mobile-menu" class="menu vertical hide">
-                            <li><a href="{% url 'home' %}">{% trans "Home" %}</a></li>
-                            <li><a href="{% url 'create_experience' %}">{% trans 'Create an experience' %}</a></li>
-                            <li><a href="{% url 'logout' %}">{% trans "Log out" %}</a></li>
-                        </ul>
-                    </span>
-                </div>
-            {% endblock %}
+                    {% block header %}
+                        {% block custom_header_color_text %}
+                            <div class="top-bar clearfix main-menu menu-color">
+                                <h2>{% trans 'Hello' %} {{ user.get_short_name }}</h2>
+                        {% endblock %}
+                        <span class="show-for-medium float-right">
+                            <a href="{% url 'home' %}">{% trans "Home" %}</a>
+                            <a href="{% url 'create_experience' %}">{% trans 'Create an experience' %}</a>
+                            <a href="{% url 'logout' %}">{% trans "Log out" %}</a>
+                        </span>
+                        <span class="show-for-small-only">
+                            <button id="mobile-menu-toggle" class="float-right tiny secondary button">{% trans "Menu" %}</button>
+                        </span>
+                        <span class="show-for-small-only">
+                            <ul id="mobile-menu" class="menu vertical hide">
+                                <li><a href="{% url 'home' %}">{% trans "Home" %}</a></li>
+                                <li><a href="{% url 'create_experience' %}">{% trans 'Create an experience' %}</a></li>
+                                <li><a href="{% url 'logout' %}">{% trans "Log out" %}</a></li>
+                            </ul>
+                        </span>
+                    </div>
+                {% endblock %}
             <div class="clearfix body">
                 {% block content %}
                 {% endblock %}

@@ -1,13 +1,24 @@
 {% extends "exdb/base.html" %}
 {% load i18n %}
 {% load staticfiles %}
+{% block css %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/conclusion.css' %}"/>
+{% endblock %}
+
+{% block custom_header_color_text %}
+    <div class="top-bar clearfix main-menu NeedsEvaluation-background">
+        <h2>{% trans "Evaluate" %} {{ experience.name }}</h2>
+{% endblock %}
+
 {% block content %}
 
     <div class="row">
-        <form method="POST">
-            {% csrf_token %}
-            <h2>{% trans "Evaluate" %}: {{ experience.name }}</h2>
-            <hr/>
+        <h2 class="NeedsEvaluation-foreground text-center">{{ experience.name }}</h2>
+        <hr/>
+    </div>
+    <div class="row NeedsEvaluation-foreground">
+        <div class="large-6 columns">
             <div class="experience-display">
                 <p>
                     <span>{% trans "Author" %}:</span>
@@ -64,7 +75,10 @@
                     </p>
                 {% endif %}
             </div>
-            <div>
+        </div>
+        <div class="large-6 columns">
+            <form method="POST">
+                {% csrf_token %}
                 <fieldset class="fieldset">
                     <span class="form-errors">{{ form.non_field_errors }}</span>
                     {% for field in form %}
@@ -75,12 +89,12 @@
                         </div>
                     {% endfor %}
                     <div class="row">
-                        <div class="large-12 large-centered columns">
-                            <input type="submit" name="submit" class="button expanded"/>
+                        <div class="large-12 large-centered columns text-center">
+                            <input type="submit" name="submit" class="button"/>
                         </div>
                     </div>
                 </fieldset>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
 {% endblock %}
