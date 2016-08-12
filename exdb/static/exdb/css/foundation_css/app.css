@@ -4,7 +4,7 @@ div.main-menu{
     width: 100%;
 }
 
-.menu-color{
+.menu-color, .menu-color .top-bar, .menu-color .title-bar, .menu-color ul, .menu-color li, .menu-color span{
     background-color: #5E0009;
 }
 
@@ -16,30 +16,21 @@ div.body{
     padding-top: 20px;
 }
 
-.menu-color span{
-    padding-top: 20px;
-    background-color: #5E0009;
-}
-
-.menu-color li{
-    background-color: #5E0009;
+.main-menu .top-bar {
+    padding: 0;
 }
 
 a:hover{
     color: #0093B2;
 }
 
-div.main-menu span a{
+div.main-menu a{
     color: white;
     padding: 10px;
 }
 
-div.main-menu span a:hover{
+div.main-menu a:hover{
     color: #0093B2;
-}
-
-div.main-menu h2{
-    float: left;
 }
 
 div.main-menu form{
@@ -54,7 +45,7 @@ div.main-menu input{
     color: #F6B418;
 }
 
-.Draft-background{
+.Draft-background, .Draft-background .top-bar, .Draft-background .title-bar, .Draft-background ul, .Draft-background li, .Draft-background span{
     background-color: #F6B418;
 }
 
@@ -62,7 +53,7 @@ div.main-menu input{
     color: #425563;
 }
 
-.NeedsEvaluation-background{
+.NeedsEvaluation-background, .NeedsEvaluation-background .top-bar, .NeedsEvaluation-background .title-bar, .NeedsEvaluation-background ul, .NeedsEvaluation-background li, .NeedsEvaluation-background span{
     background-color: #425563;
 }
 
@@ -70,7 +61,7 @@ div.main-menu input{
     color: #AF1685;
 }
 
-.Upcoming-background{
+.Upcoming-background, .Upcoming-background .top-bar, .Upcoming-background .title-bar, .Upcoming-background ul, .Upcoming-background li, .Upcoming-background span{
     background-color: #AF1685;
 }
 
@@ -78,7 +69,7 @@ div.main-menu input{
     color: #0093B2;
 }
 
-.PendingApproval-background{
+.PendingApproval-background, .PendingApproval-background .top-bar, .PendingApproval-background .title-bar, .PendingApproval-background ul, .PendingApproval-background li, .PendingApproval-background span{
     background-color: #0093B2;
 }
 
@@ -86,7 +77,7 @@ div.main-menu input{
     color: #E35205;
 }
 
-.Denied-background{
+.Denied-background, .Denied-background .top-bar, .Denied-background .title-bar, .Denied-background ul, .Denied-background li, .Denied-background span{
     background-color: #E35205;
 }
 
@@ -94,7 +85,7 @@ div.main-menu input{
     color: #A4D65E;
 }
 
-.Approved-background{
+.Approved-background, .Approved-background .top-bar, .Approved-background .title-bar, .Approved-background ul, .Approved-background li, .Approved-background span{
     background-color: #A4D65E;
 }
 
@@ -102,6 +93,6 @@ div.main-menu input{
     color: #5E0009;
 }
 
-.Completed-background{
+.Completed-background, .Completed-background .top-bar, .Completed-background .title-bar, .Completed-background ul, .Completed-background li, .Completed-background span{
     background-color: #5E0009;
 }

@@ -21,40 +21,33 @@
     </head>
     <body>
         {% block body %}
-                {% block header %}
-                    <div class="top-bar clearfix main-menu{% block header_color %} menu-color{% endblock %}">
-                    {% block header_title %}
-                        <h2>{% trans 'Hello' %} {{ user.get_short_name }}</h2>
-                    {% endblock %}
-                        <span class="show-for-medium float-right">
-                            <a href="{% url 'home' %}">{% trans "Home" %}</a>
-                            <a href="{% url 'create_experience' %}">{% trans 'Create an experience' %}</a>
-                            <a href="{% url 'logout' %}">{% trans "Log out" %}</a>
-                        </span>
-                        <div class="row">
-                                <form method="GET" action="{% url 'search' %}">
-                                    <div class="row collapse">
-                                        <div class="medium-3 columns">
-                                            <input type="text" name="search" placeholder="{% trans 'Search Experiences' %}" value="{{ search_query }}" />
-                                        </div>
-                                        <div class="medium-1 columns end">
-                                            <input class="button postfix" type="submit" value="{% trans 'Search' %}" />
-                                        </div>
-                                    </div>
-                                </form>
-                        </div>
-                        <span class="show-for-small-only">
-                            <button id="mobile-menu-toggle" class="float-right tiny secondary button">{% trans "Menu" %}</button>
-                        </span>
-                        <span class="show-for-small-only">
-                            <ul id="mobile-menu" class="menu vertical hide">
+            {% block header %}
+                <div class="main-menu {% block header_color %}menu-color{% endblock %}">
+                    <div class="title-bar" data-responsive-toggle="header-menu" data-hide-for="medium">
+                        <button class="menu-icon" type="button" data-toggle></button>
+                        <div class="title-bar-title">Menu</div>
+                    </div>
+
+                    <div class="top-bar" id="header-menu">
+                        <div class="top-bar-left">
+                            <ul class="vertical medium-horizontal menu" data-dropdown-menu>
+                                <li class="menu-text"><h2>{% trans 'Hello,' %} {{ user }}</h2></li>
                                 <li><a href="{% url 'home' %}">{% trans "Home" %}</a></li>
                                 <li><a href="{% url 'create_experience' %}">{% trans 'Create an experience' %}</a></li>
                                 <li><a href="{% url 'logout' %}">{% trans "Log out" %}</a></li>
                             </ul>
-                        </span>
+                        </div>
+                        <div class="top-bar-right">
+                            <form method="GET" action="{% url 'search' %}">
+                                <ul class="menu">
+                                    <li><input type="text" name="search" placeholder="{% trans 'Search Experiences' %}" value="{{ search_query }}" /></li>
+                                    <li><input class="button postfix" type="submit" value="{% trans 'Search' %}" /></li>
+                                </ul>
+                            </form>
+                        </div>
                     </div>
-                {% endblock %}
+                </div>
+            {% endblock %}
             <div class="clearfix body">
                 {% block content %}
                 {% endblock %}
