@@ -20,39 +20,39 @@
             <table id="search-results" class="tablesorter responsive">
                 <thead>
                     <tr>
-                        <th>{% trans "Experience Name" %}</th>
-                        <th>{% trans "Planners" %}</th>
-                        <th>{% trans "Type" %}</th>
-                        <th>{% trans "Subtype" %}</th>
-                        <th>{% trans "Building" %}</th>
-                        <th>{% trans "Keywords" %}</th>
-                        <th>{% trans "Status" %}</th>
-                        <th data-sorter="shortDate">{% trans "Start Time" %}</th>
+                        <th data-placeholder="&#xf002;">{% trans "Experience Name" %}</th>
+                        <th data-placeholder="&#xf002;">{% trans "Planners" %}</th>
+                        <th data-placeholder="&#xf002;">{% trans "Type" %}</th>
+                        <th data-placeholder="&#xf002;">{% trans "Subtype" %}</th>
+                        <th data-placeholder="&#xf002;">{% trans "Building" %}</th>
+                        <th data-placeholder="&#xf002;">{% trans "Keywords" %}</th>
+                        <th data-placeholder="&#xf002;">{% trans "Status" %}</th>
+                        <th data-placeholder="&#xf002;" data-sorter="shortDate">{% trans "Start Time" %}</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for exp in experiences %}
                         <tr>
-                            <td><a href="{% experience_url exp user %}">{{ exp.name }}</a></td>
-                            <td>
+                            <td class="exp-name"><a href="{% experience_url exp user %}">{{ exp.name }}</a></td>
+                            <td class="planners">
                                 {% for planner in exp.planners.all %}
                                     {{ planner }}{% if not forloop.last %}, {% endif %}
                                 {% endfor %}
                             </td>
-                            <td>{{ exp.type }}</td>
-                            <td>{{ exp.sub_type }}</td>
-                            <td>
+                            <td class="type">{{ exp.type }}</td>
+                            <td class="subtype">{{ exp.sub_type }}</td>
+                            <td class="recognition">
                                 {% for rec in exp.recognition.all %}
                                     {{ rec.affiliation }}{% if not forloop.last %}, {% endif %}
                                 {% endfor %}
                             </td>
-                            <td>
+                            <td class="keywords">
                                 {% for keyword in exp.keywords.all %}
                                     {{ keyword }}{% if not forloop.last %}, {% endif %}
                                 {% endfor %}
                             </td>
-                            <td>{{ exp.get_status_display }}</td>
-                            <td>{{ exp.start_datetime|date:'N j, o g:i A' }}</td>
+                            <td class="status">{{ exp.get_status_display }}</td>
+                            <td class="start-time">{{ exp.start_datetime|date:'N j, o g:i A' }}</td>
                         </tr>
                     {% endfor %}
                 </tbody>
