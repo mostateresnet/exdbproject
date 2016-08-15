@@ -338,13 +338,7 @@ class HomeBrowserTest(DefaultLiveServerTestCase):
 
     def test_load(self):
         self.client.get(reverse('home'))
-        self.assertEqual(self.driver.find_element(By.XPATH, '//h2').text, _('Hello User'))
-
-    def test_toggle_mobile_menu(self):
-        self.client.get(reverse('home'))
-        mobile_menu = self.driver.find_element(By.CSS_SELECTOR, 'ul#mobile-menu')
-        self.driver.find_element(By.CSS_SELECTOR, 'button#mobile-menu-toggle').click()
-        self.assertTrue(mobile_menu.is_displayed(), 'Clicking the mobile menu button should show the menu')
+        self.assertEqual(self.driver.find_element(By.XPATH, '//h2').get_attribute('textContent'), _('Hello, user'))
 
 
 class EditExperienceBrowserTest(DefaultLiveServerTestCase):
@@ -500,7 +494,7 @@ class ExperienceSearchBrowserTest(DefaultLiveServerTestCase):
         self.client.get(reverse('search') + '?search=' + 'o')
         name_filter = self.driver.find_element(
             By.XPATH,
-            '//table[@id="search-results"]//td[position()=%i]//*[@class="tablesorter-filter"]' % self.get_name_column_index()
+            '//table[@id="search-results"]//td[position()=%i]//*[@class="tablesorter-filter fa"]' % self.get_name_column_index()
         )
 
         # verify the element is shown
