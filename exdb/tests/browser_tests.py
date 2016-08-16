@@ -260,6 +260,7 @@ class DefaultLiveServerTestCase(StaticLiveServerTestCase):
 
         def __init__(self, driver):
             self.driver = driver
+            self.driver.set_window_size(1920, 1080)
 
         def get(self, url):
             self.driver.get(CustomRunner.live_server_url + url)
@@ -494,7 +495,7 @@ class ExperienceSearchBrowserTest(DefaultLiveServerTestCase):
         self.client.get(reverse('search') + '?search=' + 'o')
         name_filter = self.driver.find_element(
             By.XPATH,
-            '//table[@id="search-results"]//td[position()=%i]//*[@class="tablesorter-filter fa"]' % self.get_name_column_index()
+            '//table[@id="search-results"]//td[position()=%i]//*[contains(@class, "tablesorter-filter")]' % self.get_name_column_index()
         )
 
         # verify the element is shown
