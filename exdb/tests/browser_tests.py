@@ -339,7 +339,9 @@ class HomeBrowserTest(DefaultLiveServerTestCase):
 
     def test_load(self):
         self.client.get(reverse('home'))
-        self.assertEqual(self.driver.find_element(By.XPATH, '//h2').get_attribute('textContent'), _('Hello, user'))
+        user = get_user_model().objects.filter(username='user')[0]
+        self.assertEqual(self.driver.find_element(By.XPATH, '//h2').get_attribute('textContent'),
+                         _('Hello, ' + user.first_name))
 
 
 class EditExperienceBrowserTest(DefaultLiveServerTestCase):

@@ -924,3 +924,22 @@ class ListExperienceByStatusViewTest(StandardTestCase):
     def test_gets_404_when_passed_nonsensical_status(self):
         response = self.clients['ra'].get(reverse('status_list', kwargs={'status': 'aaaaaaaa'}))
         self.assertEqual(response.status_code, 404, 'The view should have responded to nonsense with a 404')
+
+    def test_gets_experiences_where_user_is_next_approver(self):
+        e = self.create_experience('pe')
+        e_not = self.create_experience(
+            'pe',
+            start=(self.test_date + timedelta(days=1)),
+            end=(self.test_date + timedelta(days=2))
+        )
+        e_not.next_approver = self.clients['ra'].user_object
+        e_not.save()
+        status = ''
+        for stat_tuple in Experience.STATUS_TYPES:
+            if stat_tuple[0] == e.status:
+                status = stat_tuple[2]
+        response = self.clients['hs'].get(reverse('status_list', kwargs={'status': status}))
+        self.assertIn(e, response.context['experiences'],
+                      'The view should have returned experiences where the user is the next approver.')
+        self.assertNotIn(e_not, response.context['experiences'],
+                         'The view should not return an experience where the user is not the author, planner or next approver.')

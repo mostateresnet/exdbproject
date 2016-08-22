@@ -274,7 +274,8 @@ class ListExperienceByStatusView(ListView):
         return Experience.objects.filter(Qs).distinct().order_by('start_datetime')
 
     def status_queryset(self):
-        Qs = Q(author=self.request.user) | (Q(planners=self.request.user) & ~Q(status='dr'))
+        Qs = Q(author=self.request.user) | (Q(planners=self.request.user)
+                                            & ~Q(status='dr')) | Q(next_approver=self.request.user)
         Qs = Qs & Q(status=self.status)
         return Experience.objects.filter(Qs).distinct().order_by('start_datetime')
 
