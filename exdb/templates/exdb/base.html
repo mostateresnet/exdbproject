@@ -32,7 +32,11 @@
                     <div class="top-bar" id="header-menu">
                         <div class="top-bar-left">
                             <ul class="vertical medium-horizontal menu" data-dropdown-menu>
-                                <li class="menu-text"><h2>{% trans 'Hello,' %} {{ user.first_name }}</h2></li>
+                                <li class="menu-text">
+                                    {% block header_title %}
+                                        <h2>{% trans 'Hello,' %} {{ user.first_name }}</h2>
+                                    {% endblock %}
+                                </li>
                                 <li><a href="{% url 'home' %}">{% trans "Home" %}</a></li>
                                 <li><a href="{% url 'create_experience' %}">{% trans 'Create an experience' %}</a></li>
                                 <li><a href="{% url 'logout' %}">{% trans "Log out" %}</a></li>
