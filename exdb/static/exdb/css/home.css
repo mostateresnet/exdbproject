@@ -31,3 +31,23 @@ div.more a{
 div.more a:hover{
     color: #0093B2;
 }
+
+.center {
+    text-align: center;
+    padding-top: 1.5em;
+}
+
+.watermark {
+    color: #ccdfe2;
+}
+
+.circle {
+    width: 150px;
+    height: 150px;
+    border-radius: 75px;
+    color:white;
+    line-height: 150px;
+    text-align: center;
+    background: #ccdfe2;
+    font-size: 5em;
+}

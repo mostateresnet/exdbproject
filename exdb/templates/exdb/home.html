@@ -9,28 +9,52 @@
 {% block content %}
     {{ block.super }}
         <div class="row">
-            {% for status, experiences in experience_dict.items %}
-                {% if experiences %}
-                    <div class="large-4 columns card-container end">
-                        <div class="exp-card {{ status|cut:" " }}-foreground">
-                            <h3>{{ status }}</h3>
-                            {% for experience in experiences %}
-                                <a href="{% experience_url experience user %}">
-                                    <div class="{{ status|cut:" " }}-background">
-                                        {{ experience.name }} {{ experience.start_datetime|date:"DATE_FORMAT" }}
-                                    </div>
-                                </a>
-                            {% endfor %}
-                            {% if status == 'Upcoming' %}
-                                <div class="more"><a href="{% url 'upcoming_list'%}">View More</a></div>
-                            {% elif status == 'Needs Evaluation' %}
-                                <div class="more"><a href="{% url 'eval_list'%}">View More</a></div>
-                            {% else %}
-                                <div class="more"><a href="{% url 'status_list' status|slugify %}">View More</a></div>
-                            {% endif %}
+            {% if experiences|length > 0 %}
+                {% for status, experiences in experience_dict.items %}
+                    {% if experiences %}
+                        <div class="large-4 columns card-container end">
+                            <div class="exp-card {{ status|cut:" " }}-foreground">
+                                <h3>{{ status }}</h3>
+                                {% for experience in experiences %}
+                                    <a href="{% experience_url experience user %}">
+                                        <div class="{{ status|cut:" " }}-background">
+                                            {{ experience.name }} {{ experience.start_datetime|date:"DATE_FORMAT" }}
+                                        </div>
+                                    </a>
+                                {% endfor %}
+                                {% if status == 'Upcoming' %}
+                                    <div class="more"><a href="{% url 'upcoming_list'%}">View More</a></div>
+                                {% elif status == 'Needs Evaluation' %}
+                                    <div class="more"><a href="{% url 'eval_list'%}">View More</a></div>
+                                {% else %}
+                                    <div class="more"><a href="{% url 'status_list' status|slugify %}">View More</a></div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            {% else %}
+                <div class="small-12 small-centered columns">
+                    <div class="row">
+                        <div class="small-12 small-centered columns">
+                            <h1 class="center watermark">{% trans 'There is nothing here yet' %}</h1>
                         </div>
                     </div>
-                {% endif %}
-            {% endfor %}
+                    <div class="row">
+                        <div class="small-12 large-centered columns">
+                            <h4 class="center watermark">{% trans 'Create an experience to get started' %}</h4>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="small-10 large-centered columns">
+                            <p class="center">
+                                <i class="fa circle" aria-hidden="true">&#xf040;</i>
+                                <i class="fa circle" aria-hidden="true">&#xf141;</i>
+                                <i class="fa circle" aria-hidden="true">&#xf00c;</i>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
         </div>
 {% endblock %}
