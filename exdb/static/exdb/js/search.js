@@ -4,7 +4,7 @@ $(document).ready(function () {
         widgets: ["saveSort", "columns", "filter"],
         textExtraction: "basic",
         widgetOptions : {
-            filter_cssFilter: 'fa',
+            filter_cssFilter: 'fa round-search-box',
         },
     });
 

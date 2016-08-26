@@ -10,6 +10,7 @@
             <link rel="stylesheet" href="{% static 'exdb/css/foundation_css/foundation.css' %}"/>
             <link rel="stylesheet" href="{% static 'exdb/css/font-awesome-4.6.3/css/font-awesome.min.css' %}"/>
             <link rel="stylesheet" href="{% static 'exdb/css/foundation_css/app.css' %}"/>
+            <link rel="stylesheet" href="{% static 'exdb/css/base.css' %}"/>
         {% endblock %}
         {% block javascript %}
             <script type="text/javascript" src="{% static 'exdb/js/libraries/jquery-2.1.4.min.js' %}"></script>
@@ -45,8 +46,8 @@
                         <div class="top-bar-right">
                             <form method="GET" action="{% url 'search' %}">
                                 <ul class="menu">
-                                    <li><input class="fa" type="text" name="search" placeholder="&#xf002; {% trans 'Search Experiences' %}" value="{{ search_query }}" /></li>
-                                    <li><i class="fa"><input class="button postfix" type="submit" value="&#xf002;" /></i></li>
+                                    <li><input class="fa round-base-search-box" type="text" name="search" placeholder="&#xf002; {% trans 'Search Experiences' %}" value="{{ search_query }}" /></li>
+                                    <li><i class="fa"><input class="button postfix round-search-button" type="submit" value="&#xf002;" /></i></li>
                                 </ul>
                             </form>
                         </div>

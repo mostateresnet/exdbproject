@@ -7,3 +7,15 @@ a {
     text-decoration: none;
     color: black;
 }
+
+.round-base-search-box {
+    border-top-left-radius: 15px;
+    border-bottom-left-radius: 15px;
+    height: 37px;
+}
+
+.round-search-button {
+    border-bottom-right-radius: 15px;
+    border-top-right-radius: 15px;
+    height: 37px;
+}

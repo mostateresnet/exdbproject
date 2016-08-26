@@ -450,7 +450,7 @@ class ExperienceSearchBrowserTest(DefaultLiveServerTestCase):
 
     def test_page_loads(self):
         self.client.get(reverse('search'))
-        self.assertEqual(self.driver.find_element(By.XPATH, '//h1').text, _('Search Results'))
+        self.assertEqual(self.driver.find_element(By.XPATH, '//p').text, _('Your search returned no experiences'))
 
     def get_name_column_index(self):
         table_name = 'search-results'
