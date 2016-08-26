@@ -71,6 +71,7 @@ class HomeView(ListView):
     def get_context_data(self, *args, **kwargs):
         context = super(HomeView, self).get_context_data(*args, **kwargs)
         context['user'] = self.request.user
+        experiences_shown = 3
 
         # This is what experience groups we are showing the user and in what order
         if self.request.user.is_hallstaff():
@@ -88,14 +89,14 @@ class HomeView(ListView):
         for status in status_to_display:
             experience_dict[status] = []
         for experience in context[self.context_object_name]:
-            if experience.needs_evaluation() and len(experience_dict[_('Needs Evaluation')]) < 3:
+            if experience.needs_evaluation() and len(experience_dict[_('Needs Evaluation')]) < experiences_shown:
                 experience_dict[_('Needs Evaluation')].append(experience)
             else:
                 if (experience.get_status_display() in experience_dict) and (
-                        len(experience_dict[experience.get_status_display()]) < 3):
+                        len(experience_dict[experience.get_status_display()]) < experiences_shown):
                     experience_dict[experience.get_status_display()].append(experience)
             if experience.status == 'ad' and experience.start_datetime > timezone.now() and experience.start_datetime < time_ahead\
-                    and len(experience_dict[_('Upcoming')]) < 3 and (experience not in experience_dict[_('Upcoming')]):
+                    and len(experience_dict[_('Upcoming')]) < experiences_shown and (experience not in experience_dict[_('Upcoming')]):
                 experience_dict[_('Upcoming')].append(experience)
         context['experience_dict'] = experience_dict
 
