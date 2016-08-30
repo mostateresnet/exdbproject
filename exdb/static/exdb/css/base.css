@@ -3,9 +3,16 @@
     margin-right: 5em;
 }
 
+body{
+    font-family: 'Trade Gothic', Arial, 'DejaVu Sans', 'Liberation Sans', Freesans, sans-serif;
+}
+
 a {
     text-decoration: none;
     color: black;
+}
+.menu input{
+    font-family: FontAwesome, 'Trade Gothic', Arial, 'DejaVu Sans', 'Liberation Sans', Freesans, sans-serif;
 }
 
 .round-base-search-box {
