@@ -943,3 +943,21 @@ class ListExperienceByStatusViewTest(StandardTestCase):
                       'The view should have returned experiences where the user is the next approver.')
         self.assertNotIn(e_not, response.context['experiences'],
                          'The view should not return an experience where the user is not the author, planner or next approver.')
+
+    def test_does_not_get_next_approver_when_status_not_pending(self):
+        e = self.create_experience('co')
+        for stat_tuple in Experience.STATUS_TYPES:
+            if stat_tuple[0] == e.status:
+                status = stat_tuple[2]
+        response = self.clients['hs'].get(reverse('status_list', kwargs={'status': status}))
+        self.assertNotIn(e, response.context['experiences'],
+                         'When the user is the next approver and the status is not pending, the experience should not be returned.')
+
+    def test_gets_next_approver_when_status_is_pending(self):
+        e = self.create_experience('pe')
+        for stat_tuple in Experience.STATUS_TYPES:
+            if stat_tuple[0] == e.status:
+                status = stat_tuple[2]
+        response = self.clients['hs'].get(reverse('status_list', kwargs={'status': status}))
+        self.assertIn(e, response.context['experiences'],
+                      'When the user is the next approver and the status is pending, the experience should be returned')
