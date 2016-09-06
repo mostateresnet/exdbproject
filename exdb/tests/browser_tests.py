@@ -452,6 +452,15 @@ class ExperienceSearchBrowserTest(DefaultLiveServerTestCase):
         self.client.get(reverse('search'))
         self.assertEqual(self.driver.find_element(By.XPATH, '//p').text, _('Your search returned no experiences'))
 
+    def test_navigates_to_experience_page(self):
+        search_for = 'Test'
+        e = self.create_experience('co', name=search_for)
+        self.client.get(reverse('search') + '?search=' + search_for)
+        row = self.driver.find_element(By.CSS_SELECTOR, 'tr.link:first-of-type')
+        row.click()
+        self.assertIn(reverse('view_experience', args=[e.pk, ]), self.driver.current_url,
+                      'Clicking on a search results row should navigate away from the search page')
+
     def get_name_column_index(self):
         table_name = 'search-results'
         column_header = 'Experience Name'
@@ -461,7 +470,7 @@ class ExperienceSearchBrowserTest(DefaultLiveServerTestCase):
 
     def get_table_entries_by_name_xpath(self, text_to_find, column_index=None):
         column_index = column_index or self.get_name_column_index()
-        return '//table[@id="search-results"]//td[position()=%i]/*[text()="%s"]' % (column_index, text_to_find)
+        return '//table[@id="search-results"]//td[position()=%i and text()="%s"]' % (column_index, text_to_find)
 
     def get_table_entries_by_name(self, text_to_find, column_index=None):
         xpath_string = self.get_table_entries_by_name_xpath(text_to_find, column_index)

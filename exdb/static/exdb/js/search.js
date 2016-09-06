@@ -8,4 +8,8 @@ $(document).ready(function () {
         },
     });
 
+    $('tr.link').click(function () {
+        window.location = $(this).attr('data-url');
+    });
+
 });

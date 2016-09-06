@@ -30,8 +30,8 @@
                 </thead>
                 <tbody>
                     {% for exp in experiences %}
-                        <tr>
-                            <td class="exp-name"><a href="{% experience_url exp user %}">{{ exp.name }}</a></td>
+                        <tr class="link" data-url="{% experience_url exp user %}">
+                            <td class="exp-name">{{ exp.name }}</td>
                             <td class="planners">
                                 {% for planner in exp.planners.all %}
                                     {{ planner }}{% if not forloop.last %}, {% endif %}
