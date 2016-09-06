@@ -125,3 +125,7 @@ div.main-menu input{
 .Completed-background, .Completed-background .top-bar, .Completed-background .title-bar, .Completed-background ul, .Completed-background li, .Completed-background span{
     background-color: #5E0009;
 }
+
+.center {
+    text-align: center;
+}
