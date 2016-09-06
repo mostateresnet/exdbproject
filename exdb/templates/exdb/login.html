@@ -1,5 +1,9 @@
 {% extends 'exdb/base.html' %}
 {% load staticfiles %}
+{% block css %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/login.css' %}"/>
+{% endblock %}
 {% load i18n %}
 {% block header %}
     <div class="top-bar clearfix main-menu menu-color text-center">
@@ -9,6 +13,8 @@
 {% block content %}
     <div class="row text-center">
         <div class="large-4 large-offset-4 columns end">
+	    {% load static %}
+	    <img src="{% static "exdb/bear-pass.png" %}" />
             <form method='post'>
                     <span class="form-errors">{{ form.non_field_errors }}</span>
                     {% for field in form %}
@@ -19,7 +25,7 @@
                         </div>
                     {% endfor %}
                 {% csrf_token %}
-                <input type='submit' value="{% trans "Log in" %}">
+                <input class="login-button" type='submit' value="{% trans "Log in" %}">
             </form>
         </div>
     </div>
