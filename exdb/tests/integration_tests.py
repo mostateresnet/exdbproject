@@ -946,6 +946,7 @@ class ListExperienceByStatusViewTest(StandardTestCase):
 
     def test_does_not_get_next_approver_when_status_not_pending(self):
         e = self.create_experience('co')
+        status = ''
         for stat_tuple in Experience.STATUS_TYPES:
             if stat_tuple[0] == e.status:
                 status = stat_tuple[2]
@@ -961,3 +962,20 @@ class ListExperienceByStatusViewTest(StandardTestCase):
         response = self.clients['hs'].get(reverse('status_list', kwargs={'status': status}))
         self.assertIn(e, response.context['experiences'],
                       'When the user is the next approver and the status is pending, the experience should be returned')
+
+    def test_status_queryset_gets_experiences_user_has_approved(self):
+        e = self.create_experience('ad')
+        e.next_approver = None
+        e.save()
+        status = ''
+        for stat_tuple in Experience.STATUS_TYPES:
+            if stat_tuple[0] == e.status:
+                status = stat_tuple[2]
+        ExperienceApproval.objects.create(
+            experience=e,
+            approver=self.clients['hs'].user_object,
+            timestamp=self.test_date
+        )
+        response = self.clients['hs'].get(reverse('status_list', kwargs={'status': status}))
+        self.assertIn(e, response.context['experiences'],
+                      'When the status is approved, the view should return experiences the user has approved')
