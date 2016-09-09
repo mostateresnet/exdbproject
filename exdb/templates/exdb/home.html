@@ -22,13 +22,17 @@
                                         </div>
                                     </a>
                                 {% endfor %}
+                                <div class="more">
                                 {% if status == 'Upcoming' %}
-                                    <div class="more"><a href="{% url 'upcoming_list'%}">View More</a></div>
+                                    <a href="{% url 'upcoming_list'%}">
                                 {% elif status == 'Needs Evaluation' %}
-                                    <div class="more"><a href="{% url 'eval_list'%}">View More</a></div>
+                                    <a href="{% url 'eval_list'%}">
                                 {% else %}
-                                    <div class="more"><a href="{% url 'status_list' status|slugify %}">View More</a></div>
+                                    <a href="{% url 'status_list' status|slugify %}">
                                 {% endif %}
+                                {% trans 'View All' %} {{ status }} {% trans 'Experiences' %}
+                                </a>
+                                </div>
                             </div>
                         </div>
                     {% endif %}
