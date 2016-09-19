@@ -838,9 +838,6 @@ class LogoutTest(StandardTestCase):
 
 class ListExperienceByStatusViewTest(StandardTestCase):
 
-    def setUp(self):
-        super(ListExperienceByStatusViewTest, self).setUp()
-
     def test_status_list_view(self):
         e = self.create_experience('pe')
         ad = self.create_experience('ad')
