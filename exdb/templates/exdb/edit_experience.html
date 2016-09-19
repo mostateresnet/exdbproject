@@ -28,6 +28,11 @@
                 <fieldset class="fieldset">
 
                     <div class="row">
+                        {% if object.status == 'ad' and not user.is_hallstaff %}
+                            <div class="text-center">
+                                <strong>{% trans "Warning! Editing an approved experience will resubmit it for approval." %}</strong>
+                            </div>
+                        {% endif %}
                         <div class="medium-6 medium-offset-1 columns">
                             <span class="form-errors">{{ form.non_field_errors }}</span>
                         </div>

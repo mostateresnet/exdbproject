@@ -30,7 +30,7 @@
                                 {% else %}
                                     <a href="{% url 'status_list' status|slugify %}">
                                 {% endif %}
-                                {% trans 'View All' %} {{ status }} {% trans 'Experiences' %}
+                                {% blocktrans %}View All {{ status }} Experiences{% endblocktrans %}
                                 </a>
                                 </div>
                             </div>

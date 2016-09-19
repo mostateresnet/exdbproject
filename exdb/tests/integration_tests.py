@@ -840,8 +840,6 @@ class ListExperienceByStatusViewTest(StandardTestCase):
 
     def setUp(self):
         super(ListExperienceByStatusViewTest, self).setUp()
-        self.hs_timedelta = settings.HALLSTAFF_UPCOMING_TIMEDELTA
-        self.ra_timedelta = settings.RA_UPCOMING_TIMEDELTA
 
     def test_status_list_view(self):
         e = self.create_experience('pe')
@@ -857,11 +855,13 @@ class ListExperienceByStatusViewTest(StandardTestCase):
             response.context['experiences'],
             "The view should have only returned one status of experiences")
 
+    @override_settings(RA_UPCOMING_TIMEDELTA=timedelta(days=7))
     def test_upcoming_list_view(self):
-        upcoming_e = self.create_experience('ad', start=(now() + self.ra_timedelta - timedelta(days=2)),
-                                            end=(now() + self.ra_timedelta - timedelta(days=1)))
-        future_e = self.create_experience('ad', start=(now() + self.ra_timedelta + timedelta(days=1)),
-                                          end=(now() + self.ra_timedelta + timedelta(days=2)))
+        ra_timedelta = timedelta(days=7)
+        upcoming_e = self.create_experience('ad', start=(now() + ra_timedelta - timedelta(days=2)),
+                                            end=(now() + ra_timedelta - timedelta(days=1)))
+        future_e = self.create_experience('ad', start=(now() + ra_timedelta + timedelta(days=1)),
+                                          end=(now() + ra_timedelta + timedelta(days=2)))
         response = self.clients['ra'].get(reverse('upcoming_list'))
         self.assertIn(
             upcoming_e,
@@ -881,23 +881,25 @@ class ListExperienceByStatusViewTest(StandardTestCase):
         self.assertNotIn(future_e, response.context['experiences'],
                          'This view should not return experiences that have yet to start')
 
+    @override_settings(HALLSTAFF_UPCOMING_TIMEDELTA=timedelta(days=30))
     def test_upcoming_list_hs_view(self):
+        hs_timedelta = timedelta(days=30)
         hs_author_e = self.create_experience(
             'ad',
-            start=(now() + self.hs_timedelta - timedelta(days=2)),
-            end=(now() + self.hs_timedelta - timedelta(days=1)),
+            start=(now() + hs_timedelta - timedelta(days=2)),
+            end=(now() + hs_timedelta - timedelta(days=1)),
             author=self.clients['hs'].user_object
         )
         hs_author_future_e = self.create_experience(
             'ad',
-            start=(now() + self.hs_timedelta + timedelta(days=1)),
-            end=(now() + self.hs_timedelta + timedelta(days=2)),
+            start=(now() + hs_timedelta + timedelta(days=1)),
+            end=(now() + hs_timedelta + timedelta(days=2)),
             author=self.clients['hs'].user_object
         )
         upcoming_affiliation_e = self.create_experience(
             'ad',
-            start=(now() + self.hs_timedelta - timedelta(days=2)),
-            end=(now() + self.hs_timedelta - timedelta(days=1))
+            start=(now() + hs_timedelta - timedelta(days=2)),
+            end=(now() + hs_timedelta - timedelta(days=1))
         )
 
         a = self.create_affiliation()

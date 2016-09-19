@@ -13,17 +13,17 @@
 {% block content %}
     <div class="row text-center">
         <div class="large-4 large-offset-4 columns end">
-	    {% load static %}
-	    <img src="{% static "exdb/bear-pass.png" %}" />
+            {% load static %}
+            <img src="{% static "exdb/bear-pass.png" %}" />
             <form method='post'>
-                    <span class="form-errors">{{ form.non_field_errors }}</span>
-                    {% for field in form %}
-                        <p>{{ field.errors }}</p>
-                        <div class="text-left">
-                            {{ field.label }}
-                            {{ field }}
-                        </div>
-                    {% endfor %}
+                <span class="form-errors">{{ form.non_field_errors }}</span>
+                {% for field in form %}
+                    <p>{{ field.errors }}</p>
+                    <div class="text-left">
+                        {{ field.label }}
+                        {{ field }}
+                    </div>
+                {% endfor %}
                 {% csrf_token %}
                 <input class="login-button" type='submit' value="{% trans "Log in" %}">
             </form>
