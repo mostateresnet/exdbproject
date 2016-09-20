@@ -8,43 +8,57 @@
 {% endblock %}
 {% block content %}
     {{ block.super }}
-    <p><a href="{% url 'create_experience' %}">{% trans 'Create an experience' %}</a></p>
-    <hr class="break" />
-    <div class="experience-panel">
-        {% for status, experiences in experience_dict.items %}
-            {% if experiences %}
-                <div class='experience-div'>
-                    <h1 class="status">{{ status }}</h1>
-                    {% for ex in experiences %}
-                        <div class="experience">
-                            <a href="{% experience_url ex user %}">
-                                <div class="experience-name">{{ ex.name }}</div>
-                                <div>
-                                    <span class="experience-times">{% trans 'Start time' %}: {{ ex.start_datetime }}</span>
-                                    <span class="experience-times">{% trans 'End time' %}: {{ ex.end_datetime }}</span>
+        <div class="row">
+            {% if experiences|length > 0 %}
+                {% for status, experiences in experience_dict.items %}
+                    {% if experiences %}
+                        <div class="large-4 columns card-container end">
+                            <div class="exp-card {{ status|cut:" " }}-foreground">
+                                <h3>{{ status }}</h3>
+                                {% for experience in experiences %}
+                                    <a href="{% experience_url experience user %}">
+                                        <div class="{{ status|cut:" " }}-background">
+                                            {{ experience.name }} {{ experience.start_datetime|date:"DATE_FORMAT" }}
+                                        </div>
+                                    </a>
+                                {% endfor %}
+                                <div class="more">
+				    {% if status == 'Upcoming' %}
+					<a href="{% url 'upcoming_list'%}">
+				    {% elif status == 'Needs Evaluation' %}
+					<a href="{% url 'eval_list'%}">
+				    {% else %}
+					<a href="{% url 'status_list' status|slugify %}">
+				    {% endif %}
+				    {% blocktrans %}View All {{ status }} Experiences{% endblocktrans %}
+				    </a>
                                 </div>
-                                <div class="experience-footer">
-                                    {% trans 'Created on' %}: {{ ex.created_datetime }}
-                                </div>
-                            </a>
+                            </div>
                         </div>
-                    {% endfor %}
-                    <hr class="break" />
+                    {% endif %}
+                {% endfor %}
+            {% else %}
+                <div class="small-12 small-centered columns">
+                    <div class="row">
+                        <div class="small-12 small-centered columns">
+                            <h1 class="text-center watermark">{% trans 'There is nothing here yet' %}</h1>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="small-12 large-centered columns">
+                            <h4 class="text-center watermark">{% trans 'Create an experience to get started' %}</h4>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="small-10 large-centered columns">
+                            <p class="text-center">
+                                <i class="fa circle" aria-hidden="true">&#xf040;</i>
+                                <i class="fa circle" aria-hidden="true">&#xf141;</i>
+                                <i class="fa circle" aria-hidden="true">&#xf00c;</i>
+                            </p>
+                        </div>
+                    </div>
                 </div>
             {% endif %}
-        {% endfor %}
-    </div>
-    <div class="week-ahead">
-        <h1 class="status">{% trans 'Upcoming' %}</h1>
-        {% if upcoming %}
-            <div class='experience-div'>
-                {% for experience in upcoming %}
-                    <div class="experience"><a href="{% experience_url experience user %}">
-                        <p>{% trans 'Name' %}: {{ experience.name }}</p>
-                        <p>{% trans 'Start Time' %}: {{ experience.start_datetime }}</p>
-                    </a></div>
-                {% endfor %}
-            </div>
-        {% endif %}
-    </div>
+        </div>
 {% endblock %}

@@ -4,7 +4,7 @@ from django.views.generic.edit import CreateView, UpdateView
 from django.shortcuts import get_object_or_404
 from django.core.urlresolvers import reverse
 from django.contrib import auth
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, Http404
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth import get_user_model
@@ -64,13 +64,14 @@ class HomeView(ListView):
 
     def get_queryset(self):
         if self.request.user.is_hallstaff():
-            return self.get_hs_queryset()
+            return self.get_hs_queryset().order_by('start_datetime')
         else:
-            return self.get_ra_queryset()
+            return self.get_ra_queryset().order_by('start_datetime')
 
     def get_context_data(self, *args, **kwargs):
         context = super(HomeView, self).get_context_data(*args, **kwargs)
         context['user'] = self.request.user
+        experiences_shown = 3
 
         # This is what experience groups we are showing the user and in what order
         if self.request.user.is_hallstaff():
@@ -79,26 +80,26 @@ class HomeView(ListView):
         else:
             status_to_display = [_('Needs Evaluation')] + [x[1] for x in Experience.STATUS_TYPES]
 
+        status_to_display.insert(status_to_display.index(_('Pending Approval')), _('Upcoming'))
+
         # Grouping of experiences for display
         experience_dict = OrderedDict()
+        time_ahead = timezone.now()
+        time_ahead += settings.HALLSTAFF_UPCOMING_TIMEDELTA if self.request.user.is_hallstaff() else settings.RA_UPCOMING_TIMEDELTA
         for status in status_to_display:
             experience_dict[status] = []
         for experience in context[self.context_object_name]:
-            if experience.needs_evaluation():
+            if experience.needs_evaluation() and len(experience_dict[_('Needs Evaluation')]) < experiences_shown:
                 experience_dict[_('Needs Evaluation')].append(experience)
             else:
-                if experience.get_status_display() in experience_dict:
+                if (experience.get_status_display() in experience_dict) and (
+                        len(experience_dict[experience.get_status_display()]) < experiences_shown):
                     experience_dict[experience.get_status_display()].append(experience)
+            if experience.status == 'ad' and experience.start_datetime > timezone.now() and experience.start_datetime < time_ahead\
+                    and len(experience_dict[_('Upcoming')]) < experiences_shown and (experience not in experience_dict[_('Upcoming')]):
+                experience_dict[_('Upcoming')].append(experience)
         context['experience_dict'] = experience_dict
 
-        # Which experiences are coming up soon enough that we want to show them
-        time_ahead = timezone.now()
-        time_ahead += settings.HALLSTAFF_UPCOMING_TIMEDELTA if self.request.user.is_hallstaff() else settings.RA_UPCOMING_TIMEDELTA
-        upcoming = []
-        for experience in context['experience_dict'][_('Approved')]:
-            if experience.start_datetime > timezone.now() and experience.start_datetime < time_ahead:
-                upcoming.append(experience)
-        context['upcoming'] = upcoming
         return context
 
 
@@ -229,7 +230,8 @@ class EditExperienceView(UpdateView):
         return Experience.objects.filter(editable_experience).prefetch_related('comment_set').distinct()
 
     def form_valid(self, form):
-        if self.request.POST.get('submit') and not self.request.user.is_hallstaff():
+        if self.request.POST.get('submit') and (not self.request.user.is_hallstaff()
+                                                or self.request.user == form.instance.author):
             form.instance.status = 'pe'
         experience = self.get_object()
         if self.request.POST.get('delete') and experience.status == 'dr':
@@ -239,6 +241,70 @@ class EditExperienceView(UpdateView):
             experience.save()
             return HttpResponseRedirect(self.get_success_url())
         return super(EditExperienceView, self).form_valid(form)
+
+
+class ListExperienceByStatusView(ListView):
+    access_level = 'basic'
+    context_object_name = 'experiences'
+    template_name = 'exdb/list_experiences.html'
+    readable_status = None
+    status_code = ''
+
+    def needs_eval_queryset(self):
+        experience_approvals = ExperienceApproval.objects.filter(
+            approver=self.request.user, experience__status='ad'
+        )
+        Qs = Q(end_datetime__lt=timezone.now()) & Q(status='ad')
+        user_Qs = Q(author=self.request.user) | Q(planners=self.request.user)
+        Qs = Qs & user_Qs
+        if self.request.user.is_hallstaff():
+            hallstaff_Qs = Q(
+                pk__in=experience_approvals.values('experience')) & Q(
+                end_datetime__lt=timezone.now(), status="ad")
+            Qs = Qs | hallstaff_Qs
+        return Experience.objects.filter(Qs).distinct().order_by('start_datetime')
+
+    def upcoming_queryset(self):
+        time_ahead = timezone.now()
+        time_ahead += settings.HALLSTAFF_UPCOMING_TIMEDELTA if self.request.user.is_hallstaff() else settings.RA_UPCOMING_TIMEDELTA
+        Qs = Q(status='ad') & Q(start_datetime__gt=timezone.now()) & Q(start_datetime__lt=time_ahead)
+        user_Qs = Q(author=self.request.user) | Q(planners=self.request.user)
+        if self.request.user.is_hallstaff():
+            user_Qs = user_Qs | Q(recognition__affiliation=self.request.user.affiliation)
+        Qs = Qs & user_Qs
+        return Experience.objects.filter(Qs).distinct().order_by('start_datetime')
+
+    def status_queryset(self):
+        Qs = Q(author=self.request.user) | (Q(planners=self.request.user)
+                                            & ~Q(status='dr')) | Q(next_approver=self.request.user, status='pe')
+        Qs = Qs & Q(status=self.status)
+        if self.request.user.is_hallstaff() and self.status == 'ad':
+            experience_approvals = ExperienceApproval.objects.filter(
+                approver=self.request.user, experience__status='ad'
+            )
+            Qs |= Q(pk__in=experience_approvals.values('experience'))
+
+        return Experience.objects.filter(Qs).distinct().order_by('start_datetime')
+
+    def get_queryset(self):
+        if not self.readable_status:
+            for stat in Experience.STATUS_TYPES:
+                if stat[2] == self.kwargs.get('status'):
+                    self.status = stat[0]
+                    self.readable_status = stat[1]
+                    return self.status_queryset()
+
+        if self.readable_status == "Upcoming":
+            return self.upcoming_queryset()
+
+        if self.readable_status == "Needs Evaluation":
+            return self.needs_eval_queryset()
+        raise Http404('That status does not exist!')
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(ListExperienceByStatusView, self).get_context_data()
+        context['status'] = self.readable_status
+        return context
 
 
 class SearchExperienceResultsView(ListView):

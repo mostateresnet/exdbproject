@@ -1,36 +1,62 @@
 {% load staticfiles %}
 {% load i18n %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="no-js" dir="ltr">
     <head>
         <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         {% block css %}
             <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/tablesorter_themes.css' %}"/>
-            <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/base.css' %}"/>
+            <link rel="stylesheet" href="{% static 'exdb/css/foundation_css/foundation.css' %}"/>
+            <link rel="stylesheet" href="{% static 'exdb/css/font-awesome-4.6.3/css/font-awesome.min.css' %}"/>
+            <link rel="stylesheet" href="{% static 'exdb/css/base.css' %}"/>
         {% endblock %}
         {% block javascript %}
             <script type="text/javascript" src="{% static 'exdb/js/libraries/jquery-2.1.4.min.js' %}"></script>
             <script type="text/javascript" src="{% static 'exdb/js/libraries/jquery.tablesorter.js' %}"></script>
             <script type="text/javascript" src="{% static 'exdb/js/libraries/jquery.tablesorter.widgets.js' %}"></script>
+            <script type="text/javascript" src="{% static 'exdb/js/libraries/foundation.min.js' %}"></script>
+            <script type="text/javascript" src="{% static 'exdb/js/base.js' %}"></script>
         {% endblock %}
         <title>{% block title %}Experience Database{% endblock %}</title>
     </head>
     <body>
         {% block body %}
             {% block header %}
-                <h3 class="log-out"><a href="{% url 'logout' %}">{% trans "Log out" %}</a></h3>
-                <h2>{% trans 'Hello' %} {{ user }}</h2>
-                <div>
-                    <form method="GET" action="{% url 'search' %}">
-                        <input type="text" name="search" placeholder="{% trans 'Search Experiences' %}" value="{{ search_query }}" />
-                        <input type="submit" value="{% trans 'Search' %}" />
-                    </form>
+                <div class="main-menu {% block header_color %}menu-color{% endblock %}">
+                    <div class="title-bar" data-responsive-toggle="header-menu" data-hide-for="medium">
+                        <button class="menu-icon" type="button" data-toggle></button>
+                        <div class="title-bar-title">{% trans 'Menu' %}</div>
+                    </div>
+
+                    <div class="top-bar" id="header-menu">
+                        <div class="top-bar-left">
+                            <ul class="vertical medium-horizontal menu" data-dropdown-menu>
+                                <li class="menu-text">
+                                    {% block header_title %}
+                                        <h2>{% trans 'Hello,' %} {{ user.first_name }}</h2>
+                                    {% endblock %}
+                                </li>
+                                <li><a href="{% url 'home' %}">{% trans "Home" %}</a></li>
+                                <li><a href="{% url 'create_experience' %}">{% trans 'Create an experience' %}</a></li>
+                                <li><a href="{% url 'logout' %}">{% trans "Log out" %}</a></li>
+                            </ul>
+                        </div>
+                        <div class="top-bar-right">
+                            <form method="GET" action="{% url 'search' %}">
+                                <ul class="menu">
+                                    <li><input class="fa round-base-search-box" type="text" name="search" placeholder="&#xf002; {% trans 'Search Experiences' %}" value="{{ search_query }}" /></li>
+                                    <li><i class="fa"><input class="button postfix round-search-button" type="submit" value="&#xf002;" /></i></li>
+                                </ul>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             {% endblock %}
-            {% block content %}
-                {% get_current_language as CODE %}
-                <!-- Current language: {{ CODE }} -->
-            {% endblock %}
+            <div class="clearfix body">
+                {% block content %}
+                {% endblock %}
+            </div>
         {% endblock %}
     </body>
 </html>

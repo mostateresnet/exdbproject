@@ -7,6 +7,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.shortcuts import get_object_or_404
 from django.core.management import call_command
+from django.conf import settings
 
 from exdb.models import Affiliation, Experience, Type, SubType, Section, Keyword, ExperienceComment, ExperienceApproval, EmailTask
 from exdb.forms import ExperienceSubmitForm
@@ -39,8 +40,9 @@ class StandardTestCase(TestCase):
     def create_affiliation(self, name="Test Affiliation"):
         return Affiliation.objects.get_or_create(name=name)[0]
 
-    def create_section(self, name="Test Section"):
-        return Section.objects.get_or_create(name=name, affiliation=self.create_affiliation())[0]
+    def create_section(self, name="Test Section", affiliation=None):
+        a = affiliation or self.create_affiliation()
+        return Section.objects.get_or_create(name=name, affiliation=a)[0]
 
     def create_keyword(self, name="Test Keyword"):
         return Keyword.objects.get_or_create(name=name)[0]
@@ -272,12 +274,8 @@ class ExperienceCreationViewTest(StandardTestCase):
         self.test_keyword = self.create_keyword()
 
     def get_post_data(self, start, end, action='submit'):
-        return {'start_datetime_month': start.month,
-                'start_datetime_day': start.day,
-                'start_datetime_year': start.year,
-                'end_datetime_month': end.month,
-                'end_datetime_day': end.day,
-                'end_datetime_year': end.year,
+        return {'start_datetime': start.strftime("%Y-%m-%d %H:%M:%S"),
+                'end_datetime': end.strftime("%Y-%m-%d %H:%M"),
                 'name': 'test',
                 'description': 'test',
                 'type': self.test_type.pk,
@@ -409,7 +407,8 @@ class RAHomeViewTest(StandardTestCase):
                                          status="ad",
                                          attendance=3)
         response = self.clients['ra'].get(reverse('home'))
-        self.assertEqual(len(response.context["upcoming"]), 1, "There should be 1 experience in the next month")
+        self.assertEqual(len(response.context["experience_dict"]["Upcoming"]),
+                         1, "There should be 1 experience in the next month")
 
 
 class ExperienceApprovalViewTest(StandardTestCase):
@@ -423,12 +422,8 @@ class ExperienceApprovalViewTest(StandardTestCase):
         self.clients['hs'].post(reverse('approval', args=[e.pk]), {
             'name': e.name,
             'description': description,
-            'start_datetime_month': e.start_datetime.month,
-            'start_datetime_day': e.start_datetime.day,
-            'start_datetime_year': e.start_datetime.year,
-            'end_datetime_year': e.end_datetime.year,
-            'end_datetime_day': e.end_datetime.day,
-            'end_datetime_month': e.end_datetime.month,
+            'start_datetime': e.start_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+            'end_datetime': e.end_datetime.strftime("%Y-%m-%d %H:%M:%S"),
             'type': e.type.pk,
             'sub_type': e.sub_type.pk,
             'audience': e.audience,
@@ -549,7 +544,8 @@ class HallStaffDashboardViewTest(StandardTestCase):
         ExperienceApproval.objects.create(experience=e1, approver=self.clients['hs'].user_object)
         ExperienceApproval.objects.create(experience=e2, approver=self.clients['hs'].user_object)
         response = self.clients['hs'].get(reverse('home'))
-        self.assertEqual(len(response.context["upcoming"]), 1, "There should be 1 experience in the next week")
+        self.assertEqual(len(response.context["experience_dict"]["Upcoming"]),
+                         1, "There should be 1 experience in the next week")
 
 
 class EditExperienceViewTest(StandardTestCase):
@@ -569,12 +565,8 @@ class EditExperienceViewTest(StandardTestCase):
         client.post(reverse('edit', args=[e.pk]), {
             'name': e.name,
             'description': description,
-            'start_datetime_month': e.start_datetime.month,
-            'start_datetime_day': e.start_datetime.day,
-            'start_datetime_year': e.start_datetime.year,
-            'end_datetime_year': e.end_datetime.year,
-            'end_datetime_day': e.end_datetime.day,
-            'end_datetime_month': e.end_datetime.month,
+            'start_datetime': e.start_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+            'end_datetime': e.end_datetime.strftime("%Y-%m-%d %H:%M:%S"),
             'type': e.type.pk,
             'sub_type': e.sub_type.pk,
             'audience': e.audience,
@@ -842,3 +834,147 @@ class LogoutTest(StandardTestCase):
     def test_logout(self):
         response = self.clients['ra'].get(reverse('logout'))
         self.assertFalse(response.wsgi_request.user.is_authenticated(), "User should have been logged out")
+
+
+class ListExperienceByStatusViewTest(StandardTestCase):
+
+    def test_status_list_view(self):
+        e = self.create_experience('pe')
+        ad = self.create_experience('ad')
+        url_arg = ''
+        for status in Experience.STATUS_TYPES:
+            if status[0] == e.status:
+                url_arg = status[2]
+        response = self.clients['ra'].get(reverse('status_list', kwargs={'status': url_arg}))
+        self.assertIn(e, response.context['experiences'], "The view should have returned the pending experience")
+        self.assertNotIn(
+            ad,
+            response.context['experiences'],
+            "The view should have only returned one status of experiences")
+
+    @override_settings(RA_UPCOMING_TIMEDELTA=timedelta(days=7))
+    def test_upcoming_list_view(self):
+        ra_timedelta = timedelta(days=7)
+        upcoming_e = self.create_experience('ad', start=(now() + ra_timedelta - timedelta(days=2)),
+                                            end=(now() + ra_timedelta - timedelta(days=1)))
+        future_e = self.create_experience('ad', start=(now() + ra_timedelta + timedelta(days=1)),
+                                          end=(now() + ra_timedelta + timedelta(days=2)))
+        response = self.clients['ra'].get(reverse('upcoming_list'))
+        self.assertIn(
+            upcoming_e,
+            response.context['experiences'],
+            'This view should have returned the experience coming up in the next week')
+        self.assertNotIn(
+            future_e,
+            response.context['experiences'],
+            'This view should not have returned experiences too far in the future')
+
+    def test_needs_evaluation_list_view(self):
+        needs_eval_e = self.create_experience('ad', start=(now() - timedelta(days=2)), end=(now() - timedelta(days=1)))
+        future_e = self.create_experience('ad', start=(now() + timedelta(days=1)), end=(now() + timedelta(days=2)))
+        response = self.clients['ra'].get(reverse('eval_list'))
+        self.assertIn(needs_eval_e, response.context['experiences'],
+                      'This view should have returned the experience that needs evaluation')
+        self.assertNotIn(future_e, response.context['experiences'],
+                         'This view should not return experiences that have yet to start')
+
+    @override_settings(HALLSTAFF_UPCOMING_TIMEDELTA=timedelta(days=30))
+    def test_upcoming_list_hs_view(self):
+        hs_timedelta = timedelta(days=30)
+        hs_author_e = self.create_experience(
+            'ad',
+            start=(now() + hs_timedelta - timedelta(days=2)),
+            end=(now() + hs_timedelta - timedelta(days=1)),
+            author=self.clients['hs'].user_object
+        )
+        hs_author_future_e = self.create_experience(
+            'ad',
+            start=(now() + hs_timedelta + timedelta(days=1)),
+            end=(now() + hs_timedelta + timedelta(days=2)),
+            author=self.clients['hs'].user_object
+        )
+        upcoming_affiliation_e = self.create_experience(
+            'ad',
+            start=(now() + hs_timedelta - timedelta(days=2)),
+            end=(now() + hs_timedelta - timedelta(days=1))
+        )
+
+        a = self.create_affiliation()
+        s = self.create_section(affiliation=a)
+        self.clients['hs'].user_object.affiliation = a
+        self.clients['hs'].user_object.save()
+        upcoming_affiliation_e.recognition.add(s)
+
+        response = self.clients['hs'].get(reverse('upcoming_list'))
+        self.assertIn(hs_author_e, response.context['experiences'],
+                      'This view should have returned the upcoming experience where hs user was the author')
+        self.assertIn(upcoming_affiliation_e, response.context['experiences'],
+                      'The view should have returned upcoming experiences with hs user affiliation')
+        self.assertNotIn(hs_author_future_e, response.context['experiences'],
+                         'The view should not have returned experiences that start too far in the future')
+
+    def test_needs_evaluation_list_hs_view(self):
+        needs_eval_e = self.create_experience('ad', start=(now() - timedelta(days=2)), end=(now() - timedelta(days=1)))
+        ExperienceApproval.objects.create(experience=needs_eval_e, approver=self.clients['hs'].user_object)
+        response = self.clients['hs'].get(reverse('eval_list'))
+        self.assertIn(needs_eval_e, response.context['experiences'],
+                      'The view should have returned experiences needing evaluation that were approved by the hs user')
+
+    def test_gets_404_when_passed_nonsensical_status(self):
+        response = self.clients['ra'].get(reverse('status_list', kwargs={'status': 'aaaaaaaa'}))
+        self.assertEqual(response.status_code, 404, 'The view should have responded to nonsense with a 404')
+
+    def test_gets_experiences_where_user_is_next_approver(self):
+        e = self.create_experience('pe')
+        e_not = self.create_experience(
+            'pe',
+            start=(self.test_date + timedelta(days=1)),
+            end=(self.test_date + timedelta(days=2))
+        )
+        e_not.next_approver = self.clients['ra'].user_object
+        e_not.save()
+        status = ''
+        for stat_tuple in Experience.STATUS_TYPES:
+            if stat_tuple[0] == e.status:
+                status = stat_tuple[2]
+        response = self.clients['hs'].get(reverse('status_list', kwargs={'status': status}))
+        self.assertIn(e, response.context['experiences'],
+                      'The view should have returned experiences where the user is the next approver.')
+        self.assertNotIn(e_not, response.context['experiences'],
+                         'The view should not return an experience where the user is not the author, planner or next approver.')
+
+    def test_does_not_get_next_approver_when_status_not_pending(self):
+        e = self.create_experience('co')
+        status = ''
+        for stat_tuple in Experience.STATUS_TYPES:
+            if stat_tuple[0] == e.status:
+                status = stat_tuple[2]
+        response = self.clients['hs'].get(reverse('status_list', kwargs={'status': status}))
+        self.assertNotIn(e, response.context['experiences'],
+                         'When the user is the next approver and the status is not pending, the experience should not be returned.')
+
+    def test_gets_next_approver_when_status_is_pending(self):
+        e = self.create_experience('pe')
+        for stat_tuple in Experience.STATUS_TYPES:
+            if stat_tuple[0] == e.status:
+                status = stat_tuple[2]
+        response = self.clients['hs'].get(reverse('status_list', kwargs={'status': status}))
+        self.assertIn(e, response.context['experiences'],
+                      'When the user is the next approver and the status is pending, the experience should be returned')
+
+    def test_status_queryset_gets_experiences_user_has_approved(self):
+        e = self.create_experience('ad')
+        e.next_approver = None
+        e.save()
+        status = ''
+        for stat_tuple in Experience.STATUS_TYPES:
+            if stat_tuple[0] == e.status:
+                status = stat_tuple[2]
+        ExperienceApproval.objects.create(
+            experience=e,
+            approver=self.clients['hs'].user_object,
+            timestamp=self.test_date
+        )
+        response = self.clients['hs'].get(reverse('status_list', kwargs={'status': status}))
+        self.assertIn(e, response.context['experiences'],
+                      'When the status is approved, the view should return experiences the user has approved')

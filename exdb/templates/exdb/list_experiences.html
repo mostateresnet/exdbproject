@@ -1,0 +1,27 @@
+{% extends "exdb/base.html" %}
+{% load i18n %}
+{% load exdbtags %}
+{% load staticfiles %}
+{% block css %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/list_experience.css' %}"/>
+{% endblock %}
+
+{% block header_color %} {{ status|cut:" " }}-background{% endblock %}
+{% block header_title %}
+    <h2>{{ status }}</h2>
+{% endblock %}
+
+{% block content %}
+    <div class="row {{ status|cut:" " }}-foreground exp-container">
+        {% for experience in experiences %}
+            <div class="large-4 columns end exp-card">
+                <a href="{% experience_url experience user %}">
+                    <div class="{{ status|cut:" " }}-background">
+                        {{ experience.name }} {{ experience.start_datetime|date:"DATE_FORMAT" }}
+                    </div>
+                </a>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}

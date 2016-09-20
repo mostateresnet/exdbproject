@@ -1,11 +1,32 @@
 {% extends 'exdb/base.html' %}
 {% load staticfiles %}
+{% block css %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/login.css' %}"/>
+{% endblock %}
 {% load i18n %}
-{% block body %}
-    <h1>{% trans 'Login' %}</h1>
-    <form method='post'>
-        {{ form }}
-        {% csrf_token %}
-        <input type='submit' value={% trans 'Submit' %}>
-    </form>
+{% block header %}
+    <div class="top-bar clearfix main-menu menu-color text-center">
+        <h2>ResLife Experience Database</h2>
+    </div>
+{% endblock %}
+{% block content %}
+    <div class="row text-center">
+        <div class="large-4 large-offset-4 columns end">
+            {% load static %}
+            <img src="{% static "exdb/bear-pass.png" %}" />
+            <form method='post'>
+                <span class="form-errors">{{ form.non_field_errors }}</span>
+                {% for field in form %}
+                    <p>{{ field.errors }}</p>
+                    <div class="text-left">
+                        {{ field.label }}
+                        {{ field }}
+                    </div>
+                {% endfor %}
+                {% csrf_token %}
+                <input class="login-button" type='submit' value="{% trans "Log in" %}">
+            </form>
+        </div>
+    </div>
 {% endblock %}

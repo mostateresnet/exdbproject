@@ -4,54 +4,87 @@
 {% block css %}
     {{ block.super }}
     <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/edit_experience.css' %}" />
+    <link href="{% static 'exdb/css/foundation_css/foundation-datepicker.css' %}" rel="stylesheet">
 {% endblock %}
 {% block javascript %}
     {{ block.super }}
     <script type="text/javascript" src="{% static 'exdb/js/experience_form.js' %}"></script>
+    <script type="text/javascript" src="{% static 'exdb/js/libraries/foundation-datepicker.js' %}"></script>
 {% endblock %}
+
+
+{% block header_color %} {{ object.get_status_display|cut:" " }}-background{% endblock %}
+{% block header_title %}
+    <h2>{% trans "Edit" %} {{ object.name }}</h2>
+{% endblock %}
+
 {% block content %}
     {{ block.super }}
-    <h1>{% trans "Edit Experience" %}</h1>
-    <p><a href="{% url 'home' %}">{% trans "Back to Home" %}</a></p>
-    {% if object.status == 'ad' and not user.is_hallstaff %}
-        <p class="warning">{% trans "Warning! Editing an approved experience will resubmit it for approval." %}</p>
-    {% endif %}
-    <div class="errors">{{ form.non_field_errors }}</div>
-    <div class="errors">{{ new_comment_form.non_field_errors }}</div>
-    <hr />
-    <form method="POST">
-        {% csrf_token %}
-        {% for field in form %}
-            <div>
-                <p class="errors">{{ field.errors }}</p>
-                {{ field.label_tag }}
-                {{ field }}
-                <span class="help">{{ field.help_text }}</span>
+
+    <div class="row">
+        <div class="medium-7 columns">
+            <form method="POST">
+                {% csrf_token %}
+                <fieldset class="fieldset">
+
+                    <div class="row">
+                        {% if object.status == 'ad' and not user.is_hallstaff %}
+                            <div class="text-center">
+                                <strong>{% trans "Warning! Editing an approved experience will resubmit it for approval." %}</strong>
+                            </div>
+                        {% endif %}
+                        <div class="medium-6 medium-offset-1 columns">
+                            <span class="form-errors">{{ form.non_field_errors }}</span>
+                        </div>
+                    </div>
+
+                    {% for field in form %}
+                        <div class="row">
+                            <div class="large-9 large-centered columns">
+                                <span class="field-error">{{ field.errors }}</span>
+                                {{ field.label }}
+                                {{ field }}
+                                <span class="help">{{ field.help_text }}</span>
+                            </div>
+                        </div>
+                    {% endfor %}
+
+                    <div class="row">
+                        <div class="large-12 large-centered columns text-center">
+                            {% if object.status != 'ad' %}
+                                <input type="submit" value="{% trans "Save Changes" %}" name="save" class="button medium"/>
+                            {% endif %}
+                            {% if object.status != 'pe' %}
+                                <input
+                                    type="submit"
+                                    value=
+                                        {% if object.status != 'dr' %}
+                                            {% trans "Re-Submit" %}
+                                        {% else %}
+                                            {% trans "Submit" %}
+                                        {% endif %}
+                                        name="submit"
+                                        class="button medium"
+                                    />
+                            {% endif %}
+                            {% if object.status == 'dr' %}
+                                <input type="submit" id="delete" value="{% trans 'Delete' %}" name="delete" class="button medium" />
+                            {% endif %}
+                        </div>
+                    </div>
+                </fieldset>
+
             </div>
-        {% endfor %}
-        <hr />
-        {% for comment in object.comment_set.all %}
-            <p>{{ comment.message }}</p>
-        {% empty %}
-            <p>{% trans "No Comments" %}</p>
-        {% endfor %}
-        {% if object.status != 'ad' %}
-            <input type="submit" value="{% trans "Save Changes" %}" name="save" />
-        {% endif %}
-        {% if object.status != 'pe' %}
-            <input
-                type="submit"
-                value=
-                    "{% if object.status != 'dr' %}
-                        {% trans "Re-Submit" %}
-                    {% else %}
-                        {% trans "Submit" %}
-                    {% endif %}"
-                name="submit"
-            />
-        {% endif %}
-        {% if object.status == 'dr' %}
-            <input type="submit" id="delete" value="{% trans "Delete" %}" name="delete" />
-        {% endif %}
-    </form>
+            <div class="medium-5 columns">
+                <fieldset class="fieldset">
+                    {% for comment in object.comment_set.all %}
+                        <p>{{ comment.message }}<p>
+                    {% empty %}
+                        <p>{% trans 'No Comments' %}</p>
+                    {% endfor %}
+                </fieldset>
+            </div>
+        </form>
+    </div>
+
 {% endblock %}

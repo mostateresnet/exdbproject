@@ -18,4 +18,14 @@ $(document).ready(function () {
     $('#delete').click(function () {
         return confirm("Are you sure you want to delete this experience?");
     });
+
+    $('#id_start_datetime').fdatepicker({
+        format: 'mm/dd/yyyy hh:ii',
+        pickTime: true
+    });
+
+    $('#id_end_datetime').fdatepicker({
+        format: 'mm/dd/yyyy hh:ii',
+        pickTime: true
+    });
 });

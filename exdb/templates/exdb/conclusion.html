@@ -1,79 +1,100 @@
 {% extends "exdb/base.html" %}
 {% load i18n %}
 {% load staticfiles %}
+{% block css %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/conclusion.css' %}"/>
+{% endblock %}
+
+{% block header_color %} NeedsEvaluation-background{% endblock %}
+{% block header_title %}
+    <h2>{% trans "Evaluate" %} {{ experience.name }}</h2>
+{% endblock %}
+
 {% block content %}
-    <form method="POST">
-        {% csrf_token %}
-        <h1>{% trans "Evaluation" %}</h1>
-        <h2>{% trans "Experience" %}: {{ experience.name }}</h2>
-        <p><a href="{% url 'home' %}">{% trans "Return Home" %}</a></p>
-        <span class="form-errors">{{ form.non_field_errors }}</span>
+
+    <div class="row">
+        <h2 class="NeedsEvaluation-foreground text-center">{{ experience.name }}</h2>
         <hr/>
-        <div class="experience-display">
-            <p>
-                <span>{% trans "Author" %}:</span>
-                {{ experience.author }}
-            </p>
-            <p>
-                <span>{% trans "Planners" %}:</span>
-                {% for p in experience.planners.all %}
-                    {{ p }}{% if not forloop.last %}, {% endif %}
-                {% endfor %}
-            </p>
-            <p>
-                <span>{% trans "Credited" %}:</span>
-                {% for org in experience.recognition.all %}
-                    {{ org }}{% if not forloop.last %}, {% endif %}
-                {% endfor %}
-            </p>
-            <p>
-                <span>{% trans "Created" %}:</span>
-                {{ experience.created_datetime }}
-            </p>
-            <p>
-                <span>{% trans "Type/Sub-Type" %}:</span>
-                {{ experience.type }}/{{ experience.sub_type }}
-            </p>
-            <p>
-                <span>{% trans "Start/End" %}:</span>
-                {{ experience.start_datetime }}/{{ experience.end_datetime }}
-            </p>
-            <p>
-                <span>{% trans "Description" %}:</span>
-                {{ experience.description }}
-            </p>
-            <p>
-                <span>{% trans "Goals" %}:</span>
-                {{ experience.goal }}
-            </p>
-            <p>
-                <span>{% trans "Keywords" %}:</span>
-                {% for kwd in experience.keywords.all %}
-                    {{ kwd }}{% if not forloop.last %}, {% endif %}
-                {% empty %}
-                    None
-                {% endfor %}
-            </p>
-            {% if experience.guest %}
+    </div>
+    <div class="row NeedsEvaluation-foreground">
+        <div class="large-6 columns">
+            <div class="experience-display">
                 <p>
-                    <span>{% trans "Guest" %}:</span>
-                    {{ experience.guest }}
+                    <span>{% trans "Author" %}:</span>
+                    {{ experience.author }}
                 </p>
                 <p>
-                    <span>{% trans "Guest Office" %}:</span>
-                    {{ experience.guest_office }}
+                    <span>{% trans "Planners" %}:</span>
+                    {% for p in experience.planners.all %}
+                        {{ p }}{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
                 </p>
-            {% endif %}
+                <p>
+                    <span>{% trans "Credited" %}:</span>
+                    {% for org in experience.recognition.all %}
+                        {{ org }}{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                </p>
+                <p>
+                    <span>{% trans "Created" %}:</span>
+                    {{ experience.created_datetime }}
+                </p>
+                <p>
+                    <span>{% trans "Type/Sub-Type" %}:</span>
+                    {{ experience.type }}/{{ experience.sub_type }}
+                </p>
+                <p>
+                    <span>{% trans "Start/End" %}:</span>
+                    {{ experience.start_datetime }}/{{ experience.end_datetime }}
+                </p>
+                <p>
+                    <span>{% trans "Description" %}:</span>
+                    {{ experience.description }}
+                </p>
+                <p>
+                    <span>{% trans "Goals" %}:</span>
+                    {{ experience.goal }}
+                </p>
+                <p>
+                    <span>{% trans "Keywords" %}:</span>
+                    {% for kwd in experience.keywords.all %}
+                        {{ kwd }}{% if not forloop.last %}, {% endif %}
+                    {% empty %}
+                        None
+                    {% endfor %}
+                </p>
+                {% if experience.guest %}
+                    <p>
+                        <span>{% trans "Guest" %}:</span>
+                        {{ experience.guest }}
+                    </p>
+                    <p>
+                        <span>{% trans "Guest Office" %}:</span>
+                        {{ experience.guest_office }}
+                    </p>
+                {% endif %}
+            </div>
         </div>
-        <hr/>
-        <div>
-            {% for field in form %}
-                <p>{{ field.errors }}</p>
-                <div>
-                    {{ field.label }}
-                    {{ field }}
-                </div>
-            {% endfor %}
+        <div class="large-6 columns">
+            <form method="POST">
+                {% csrf_token %}
+                <fieldset class="fieldset">
+                    <span class="form-errors">{{ form.non_field_errors }}</span>
+                    {% for field in form %}
+                        <p>{{ field.errors }}</p>
+                        <div>
+                            {{ field.label }}
+                            {{ field }}
+                        </div>
+                    {% endfor %}
+                    <div class="row">
+                        <div class="large-12 large-centered columns text-center">
+                            <input type="submit" name="submit" class="button"/>
+                        </div>
+                    </div>
+                </fieldset>
+            </form>
         </div>
-        <input type="submit" name="submit" />
+    </div>
 {% endblock %}

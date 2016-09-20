@@ -260,6 +260,7 @@ class DefaultLiveServerTestCase(StaticLiveServerTestCase):
 
         def __init__(self, driver):
             self.driver = driver
+            self.driver.set_window_size(1920, 1080)
 
         def get(self, url):
             self.driver.get(CustomRunner.live_server_url + url)
@@ -268,7 +269,7 @@ class DefaultLiveServerTestCase(StaticLiveServerTestCase):
             'Login a browser without visiting the login page'
             c = Client()
             # avoid setting the password and force_login for speed
-            user_object = get_user_model().objects.create(username='user')
+            user_object = get_user_model().objects.create(username='user', first_name="User")
             c.force_login(user_object)
             if CustomRunner.live_server_url not in self.driver.current_url:
                 # if we would be trying to set a cross domain cookie change the domain
@@ -334,11 +335,13 @@ class LiveLoginViewTest(DefaultLiveServerTestCase):
         self.assertTrue(is_logged_in)
 
 
-class HallStaffDashboardBrowserTest(DefaultLiveServerTestCase):
+class HomeBrowserTest(DefaultLiveServerTestCase):
 
     def test_load(self):
         self.client.get(reverse('home'))
-        self.assertEqual(self.driver.find_element(By.XPATH, '//h2').text, _('Hello user'))
+        user = get_user_model().objects.filter(username='user')[0]
+        self.assertEqual(self.driver.find_element(By.XPATH, '//h2').get_attribute('textContent'),
+                         _('Hello, ' + user.first_name))
 
 
 class EditExperienceBrowserTest(DefaultLiveServerTestCase):
@@ -412,7 +415,7 @@ class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
     def test_attendance_hidden(self):
         self.client.get(reverse('create_experience'))
         attnd_element = self.driver.find_element(By.ID, 'id_attendance')
-        self.assertFalse(attnd_element.find_element(By.XPATH, '..').is_displayed(),
+        self.assertFalse(attnd_element.is_displayed(),
                          'Attendance field should be hidden on load.')
 
     def test_shows_attendance_field(self):
@@ -420,7 +423,7 @@ class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
         type_element = self.driver.find_element(By.ID, 'id_type')
         type_element.find_element_by_class_name('no-verification').click()
         attnd_element = self.driver.find_element(By.ID, 'id_attendance')
-        self.assertTrue(attnd_element.find_element(By.XPATH, '..').is_displayed(),
+        self.assertTrue(attnd_element.is_displayed(),
                         'Attendance field should not be hidden when spontaneous is selected.')
 
     def test_rehides_attendance_field(self):
@@ -429,7 +432,7 @@ class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
         type_element.find_element_by_class_name('no-verification').click()
         type_element.find_elements_by_tag_name('option')[0].click()
         attnd_element = self.driver.find_element(By.ID, 'id_attendance')
-        self.assertFalse(attnd_element.find_element(By.XPATH, '..').is_displayed(),
+        self.assertFalse(attnd_element.is_displayed(),
                          'Attendance field should be hidden when spontaneous is not selected.')
 
     def test_attendance_conclusion_not_hidden_if_no_verify(self):
@@ -447,7 +450,16 @@ class ExperienceSearchBrowserTest(DefaultLiveServerTestCase):
 
     def test_page_loads(self):
         self.client.get(reverse('search'))
-        self.assertEqual(self.driver.find_element(By.XPATH, '//h1').text, _('Search Results'))
+        self.assertEqual(self.driver.find_element(By.XPATH, '//p').text, _('Your search returned no experiences'))
+
+    def test_navigates_to_experience_page(self):
+        search_for = 'Test'
+        e = self.create_experience('co', name=search_for)
+        self.client.get(reverse('search') + '?search=' + search_for)
+        row = self.driver.find_element(By.CSS_SELECTOR, 'tr.link:first-of-type')
+        row.click()
+        self.assertIn(reverse('view_experience', args=[e.pk, ]), self.driver.current_url,
+                      'Clicking on a search results row should navigate away from the search page')
 
     def get_name_column_index(self):
         table_name = 'search-results'
@@ -458,7 +470,7 @@ class ExperienceSearchBrowserTest(DefaultLiveServerTestCase):
 
     def get_table_entries_by_name_xpath(self, text_to_find, column_index=None):
         column_index = column_index or self.get_name_column_index()
-        return '//table[@id="search-results"]//td[position()=%i]/*[text()="%s"]' % (column_index, text_to_find)
+        return '//table[@id="search-results"]//td[position()=%i and text()="%s"]' % (column_index, text_to_find)
 
     def get_table_entries_by_name(self, text_to_find, column_index=None):
         xpath_string = self.get_table_entries_by_name_xpath(text_to_find, column_index)
@@ -477,7 +489,7 @@ class ExperienceSearchBrowserTest(DefaultLiveServerTestCase):
         text_to_find, text_to_not_find = self.search_test_helper()
 
         self.client.get(reverse('home'))
-        box_xpath = '//form[@action="%s"]/input[@name="search"]' % reverse('search')
+        box_xpath = '//form[@action="%s"]//input[@name="search"]' % reverse('search')
         search_box = self.driver.find_element(By.XPATH, box_xpath)
         search_box.send_keys(text_to_find)
         search_box.send_keys(Keys.RETURN)
@@ -494,7 +506,7 @@ class ExperienceSearchBrowserTest(DefaultLiveServerTestCase):
         self.client.get(reverse('search') + '?search=' + 'o')
         name_filter = self.driver.find_element(
             By.XPATH,
-            '//table[@id="search-results"]//td[position()=%i]//*[@class="tablesorter-filter"]' % self.get_name_column_index()
+            '//table[@id="search-results"]//td[position()=%i]//*[contains(@class, "tablesorter-filter")]' % self.get_name_column_index()
         )
 
         # verify the element is shown
