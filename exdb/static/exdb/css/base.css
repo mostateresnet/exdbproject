@@ -1,0 +1,127 @@
+.log-out {
+    float: right;
+    margin-right: 5em;
+}
+
+body{
+    font-family: 'Trade Gothic', Arial, 'DejaVu Sans', 'Liberation Sans', Freesans, sans-serif;
+}
+
+a {
+    text-decoration: none;
+    color: black;
+}
+.menu input{
+    font-family: FontAwesome, 'Trade Gothic', Arial, 'DejaVu Sans', 'Liberation Sans', Freesans, sans-serif;
+}
+
+.round-base-search-box {
+    border-top-left-radius: 15px;
+    border-bottom-left-radius: 15px;
+    height: 37px;
+}
+
+.round-search-button {
+    border-bottom-right-radius: 15px;
+    border-top-right-radius: 15px;
+    height: 37px;
+}
+
+div.main-menu{
+    color: white;
+    position: fixed;
+    width: 100%;
+}
+
+.menu-color, .menu-color .top-bar, .menu-color .title-bar, .menu-color ul, .menu-color li, .menu-color span{
+    background-color: #5E0009;
+}
+
+div.body{
+    padding-top: 90px;
+}
+
+.main-menu span{
+    padding-top: 20px;
+}
+
+.main-menu .top-bar {
+    padding: 0;
+}
+
+a:hover{
+    color: #0093B2;
+}
+
+div.main-menu a{
+    color: white;
+    padding: 10px;
+}
+
+div.main-menu a:hover{
+    color: #0093B2;
+}
+
+div.main-menu form{
+    padding-top: 15px;
+}
+div.main-menu input{
+    width: 100%;
+    max-width: none;
+}
+
+.Draft-foreground{
+    color: #F6B418;
+}
+
+.Draft-background, .Draft-background .top-bar, .Draft-background .title-bar, .Draft-background ul, .Draft-background li, .Draft-background span{
+    background-color: #F6B418;
+}
+
+.NeedsEvaluation-foreground{
+    color: #425563;
+}
+
+.NeedsEvaluation-background, .NeedsEvaluation-background .top-bar, .NeedsEvaluation-background .title-bar, .NeedsEvaluation-background ul, .NeedsEvaluation-background li, .NeedsEvaluation-background span{
+    background-color: #425563;
+}
+
+.Upcoming-foreground{
+    color: #AF1685;
+}
+
+.Upcoming-background, .Upcoming-background .top-bar, .Upcoming-background .title-bar, .Upcoming-background ul, .Upcoming-background li, .Upcoming-background span{
+    background-color: #AF1685;
+}
+
+.PendingApproval-foreground{
+    color: #0093B2;
+}
+
+.PendingApproval-background, .PendingApproval-background .top-bar, .PendingApproval-background .title-bar, .PendingApproval-background ul, .PendingApproval-background li, .PendingApproval-background span{
+    background-color: #0093B2;
+}
+
+.Denied-foreground{
+    color: #E35205;
+}
+
+.Denied-background, .Denied-background .top-bar, .Denied-background .title-bar, .Denied-background ul, .Denied-background li, .Denied-background span{
+    background-color: #E35205;
+}
+
+.Approved-foreground{
+    color: #A4D65E;
+}
+
+.Approved-background, .Approved-background .top-bar, .Approved-background .title-bar, .Approved-background ul, .Approved-background li, .Approved-background span{
+    background-color: #A4D65E;
+}
+
+.Completed-foreground{
+    color: #5E0009;
+}
+
+.Completed-background, .Completed-background .top-bar, .Completed-background .title-bar, .Completed-background ul, .Completed-background li, .Completed-background span{
+    background-color: #5E0009;
+}

@@ -4,48 +4,81 @@
 {% block css %}
     {{ block.super }}
     <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/experience_approval.css' %}" />
+    <link href="{% static 'exdb/css/foundation_css/foundation-datepicker.css' %}" rel="stylesheet">
 {% endblock %}
 {% block javascript %}
     {{ block.super }}
     <script type="text/javascript" src="{% static 'exdb/js/experience_form.js' %}"></script>
+    <script type="text/javascript" src="{% static 'exdb/js/libraries/foundation-datepicker.js' %}"></script>
 {% endblock %}
+
+{% block header_color %} {{ object.get_status_display|cut:" " }}-background{% endblock %}
+{% block header_title %}
+    <h2>{% trans "Approve or Deny" %} {{ object.name }}</h2>
+{% endblock %}
+
 {% block content %}
-    <form method="POST">
-        {% csrf_token %}
-        <h1>{% trans "Experience Approval" %}</h1>
-        <p><a href="{% url 'home' %}">{% trans "Return home" %}</a></p>
-        <div class="form-errors">{{ form.non_field_errors }}</div>
-        <div class="form-errors">{{ comment_form.non_field_errors }}</div>
-        <p>{% trans "Note: Set the 'Supervisor' field to the LLC approver if this experience needs LLC approval." %}</p>
-        {% with object.edit_log.all.0 as last_edit %}
-            {% if last_edit %}
-            <p>{% trans "Last edited" %}: {{ last_edit.editor }} <span class="timestamp">{{ last_edit.timestamp }}</span></p>
-            {% endif %}
-        {% endwith %}
-        <hr/>
-        <div class="experience-display">
-            {% for field in form %}
-                <p>{{ field.errors }}</p>
-                <div>
-                    {{ field.label }}
-                    {{ field }}
-                    <span class="help">{{ field.help_text }}</span>
-                </div>
-            {% endfor %}
-        </div>
-        <hr/>
-        <table>
-            <tr><th>{% trans "Comments" %}</th></tr>
-            {% for comment in comments %}
-                <tr><td>{{ comment.message }}</td></tr>
-            {% empty %}
-                <tr><td>{% trans "No comments" %}</td></tr>
-            {% endfor %}
-        </table>
-        <div>{% trans "Add Comment" %}:</div>
-        <div class="form-errors">{{ comment_form.message.errors }}</div>
-        <div>{{ comment_form.message.label }}{{ comment_form.message }}</div>
-        <input type="submit" value="{% trans "deny" %}" name="deny" />
-        <input type="submit" value="{% trans "approve" %}" name="approve" />
-    </form>
+    <div class="row">
+        <div class="medium-7 columns">
+            <form method="POST">
+                {% csrf_token %}
+                <fieldset class="fieldset">
+
+                    <div class="row">
+                        <div class="text-center">
+                            <strong>
+                                {% trans "Set the supervisor field to the appropriate user if this experience needs LLC approval." %}
+                            </strong>
+                        </div>
+                        {% with object.edit_log.all.0 as last_edit %}
+                            {% if last_edit %}
+                                <p class="text-center">{% trans "Last edited" %}: {{ last_edit.editor }} <span class="timestamp">{{ last_edit.timestamp }}</span></p>
+                            {% endif %}
+                        {% endwith %}
+                        <div class="medium-6 medium-offset-1 columns">
+                            <span class="form-errors">{{ form.non_field_errors }}</span>
+                        </div>
+                    </div>
+
+                    {% for field in form %}
+                        <div class="row">
+                            <div class="large-9 large-centered columns">
+                                <span class="field-error">{{ field.errors }}</span>
+                                {{ field.label }}
+                                {{ field }}
+                                <span class="help">{{ field.help_text }}</span>
+                            </div>
+                        </div>
+                    {% endfor %}
+
+                    <div class="row">
+                        <div class="large-6  large-centered columns">
+                            <ul class="button-group radius">
+                                <input type="submit" value="{% trans "Deny" %}" name="deny" class="button"/>
+                                <input type="submit" value="{% trans "Approve" %}" name="approve" class="button"/>
+                                <input type="submit" id="delete" value="{% trans "Delete" %}" name="delete" class="button"/>
+                            </ul>
+                        </div>
+                    </div>
+                </fieldset>
+
+            </div>
+            <div class="medium-5 columns">
+                <fieldset class="fieldset">
+                    <div class="row">
+                        <div class="large-12 large-centered columns">
+                            <p>{% trans 'Add a comment:' %}</p>
+                            <span class="form-errors">{{ comment_form.message.errors }}</span>
+                            {{ comment_form.message.label }}{{ comment_form.message }}
+                        </div>
+                    </div>
+                    {% for comment in object.comment_set.all %}
+                        <p>{{ comment.message }}<p>
+                    {% empty %}
+                        <p>{% trans 'No Comments' %}</p>
+                    {% endfor %}
+                </fieldset>
+            </div>
+        </form>
+    </div>
 {% endblock %}

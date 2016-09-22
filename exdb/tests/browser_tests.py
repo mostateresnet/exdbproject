@@ -10,6 +10,9 @@ from unittest import SkipTest
 import selenium
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions
 
 from django.test import Client
 from django.test.runner import DiscoverRunner
@@ -19,7 +22,9 @@ from django.contrib.sessions.models import Session
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.conf import settings
 from django.core.urlresolvers import reverse
-from exdb.models import Type
+from django.utils.timezone import datetime, timedelta, now, make_aware, utc
+
+from exdb.models import Experience, Type, SubType
 
 
 class CustomRunnerMetaClass(type):
@@ -223,10 +228,39 @@ class DefaultLiveServerTestCase(StaticLiveServerTestCase):
             raise SkipTest('Skipped due to argument')  # pragma: no cover
         super(DefaultLiveServerTestCase, cls).setUpClass()
 
+    def create_type(self, needs_verification=True, name="Test Type"):
+        return Type.objects.get_or_create(name=name, needs_verification=needs_verification)[0]
+
+    def create_sub_type(self, name="Test Sub Type"):
+        return SubType.objects.get_or_create(name=name)[0]
+
+    def create_experience(self, exp_status, user=None, start=None, end=None, name=None):
+        """Creates and returns an experience object with status,
+        start_time, end_time and/or name of your choice"""
+        start = start or make_aware(datetime(2015, 1, 1, 1, 30), timezone=utc)
+        end = end or (make_aware(datetime(2015, 1, 1, 1, 30), timezone=utc) + timedelta(days=1))
+        user = user or get_user_model().objects.get(username='user')
+        name = name or 'Test'
+        return Experience.objects.get_or_create(
+            author=user,
+            name=name,
+            description="test",
+            start_datetime=start,
+            end_datetime=end,
+            type=self.create_type(),
+            sub_type=self.create_sub_type(),
+            goal="Test",
+            audience="c",
+            status=exp_status,
+            attendance=0,
+            next_approver=user,
+        )[0]
+
     class SeleniumClient:
 
         def __init__(self, driver):
             self.driver = driver
+            self.driver.set_window_size(1920, 1080)
 
         def get(self, url):
             self.driver.get(CustomRunner.live_server_url + url)
@@ -235,7 +269,7 @@ class DefaultLiveServerTestCase(StaticLiveServerTestCase):
             'Login a browser without visiting the login page'
             c = Client()
             # avoid setting the password and force_login for speed
-            user_object = get_user_model().objects.create(username='user')
+            user_object = get_user_model().objects.create(username='user', first_name="User")
             c.force_login(user_object)
             if CustomRunner.live_server_url not in self.driver.current_url:
                 # if we would be trying to set a cross domain cookie change the domain
@@ -301,11 +335,75 @@ class LiveLoginViewTest(DefaultLiveServerTestCase):
         self.assertTrue(is_logged_in)
 
 
-class HallStaffDashboardBrowserTest(DefaultLiveServerTestCase):
+class HomeBrowserTest(DefaultLiveServerTestCase):
 
     def test_load(self):
         self.client.get(reverse('home'))
-        self.assertEqual(self.driver.find_element(By.XPATH, '//h2').text, _('Hello user'))
+        user = get_user_model().objects.filter(username='user')[0]
+        self.assertEqual(self.driver.find_element(By.XPATH, '//h2').get_attribute('textContent'),
+                         _('Hello, ' + user.first_name))
+
+
+class EditExperienceBrowserTest(DefaultLiveServerTestCase):
+
+    def delete_confirm(self, confirm):
+        e = self.create_experience('dr',
+                                   start=make_aware(datetime(2020, 1, 1, 1, 30), timezone=utc),
+                                   end=make_aware(datetime(2021, 1, 1, 1, 30), timezone=utc))
+        self.client.get(reverse('edit', args=[e.pk]))
+        starting_url = self.driver.current_url
+        d = self.driver.find_element(By.CSS_SELECTOR, '#delete')
+        confirm_overwrite = 'window.confirm = function() { return %s; }' % ('true' if confirm else 'false')
+        self.driver.execute_script(confirm_overwrite)
+        d.click()
+        ending_url = self.driver.current_url
+
+        urls_equal = starting_url == ending_url
+        exp_cancelled = Experience.objects.get(pk=e.pk).status == 'ca'
+        return urls_equal, exp_cancelled
+
+    def test_confirm_dont_delete(self):
+        urls_equal, exp_cancelled = self.delete_confirm(False)
+
+        self.assertTrue(urls_equal, "The browser should have stayed at the same url.")
+        self.assertFalse(exp_cancelled, "The browser should have aborted the delete.")
+
+    def test_confirm_delete(self):
+        urls_equal, exp_cancelled = self.delete_confirm(True)
+
+        self.assertFalse(urls_equal, "The browser should have went elsewhere.")
+        self.assertTrue(exp_cancelled, "The browser should have continued with the delete.")
+
+
+class ExperienceApprovalBrowserTest(DefaultLiveServerTestCase):
+
+    def delete_confirm(self, confirm):
+        e = self.create_experience('pe',
+                                   start=make_aware(datetime(2020, 1, 1, 1, 30), timezone=utc),
+                                   end=make_aware(datetime(2021, 1, 1, 1, 30), timezone=utc))
+        self.client.get(reverse('approval', args=[e.pk]))
+        starting_url = self.driver.current_url
+        d = self.driver.find_element(By.CSS_SELECTOR, '#delete')
+        confirm_overwrite = 'window.confirm = function() { return %s; }' % ('true' if confirm else 'false')
+        self.driver.execute_script(confirm_overwrite)
+        d.click()
+        ending_url = self.driver.current_url
+
+        urls_equal = starting_url == ending_url
+        exp_cancelled = Experience.objects.get(pk=e.pk).status == 'ca'
+        return urls_equal, exp_cancelled
+
+    def test_confirm_dont_delete(self):
+        urls_equal, exp_cancelled = self.delete_confirm(False)
+
+        self.assertTrue(urls_equal, "The browser should have stayed at the same url.")
+        self.assertFalse(exp_cancelled, "The browser should have aborted the delete.")
+
+    def test_confirm_delete(self):
+        urls_equal, exp_cancelled = self.delete_confirm(True)
+
+        self.assertFalse(urls_equal, "The browser should have went elsewhere.")
+        self.assertTrue(exp_cancelled, "The browser should have continued with the delete.")
 
 
 class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
@@ -317,7 +415,7 @@ class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
     def test_attendance_hidden(self):
         self.client.get(reverse('create_experience'))
         attnd_element = self.driver.find_element(By.ID, 'id_attendance')
-        self.assertFalse(attnd_element.find_element(By.XPATH, '..').is_displayed(),
+        self.assertFalse(attnd_element.is_displayed(),
                          'Attendance field should be hidden on load.')
 
     def test_shows_attendance_field(self):
@@ -325,7 +423,7 @@ class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
         type_element = self.driver.find_element(By.ID, 'id_type')
         type_element.find_element_by_class_name('no-verification').click()
         attnd_element = self.driver.find_element(By.ID, 'id_attendance')
-        self.assertTrue(attnd_element.find_element(By.XPATH, '..').is_displayed(),
+        self.assertTrue(attnd_element.is_displayed(),
                         'Attendance field should not be hidden when spontaneous is selected.')
 
     def test_rehides_attendance_field(self):
@@ -334,7 +432,7 @@ class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
         type_element.find_element_by_class_name('no-verification').click()
         type_element.find_elements_by_tag_name('option')[0].click()
         attnd_element = self.driver.find_element(By.ID, 'id_attendance')
-        self.assertFalse(attnd_element.find_element(By.XPATH, '..').is_displayed(),
+        self.assertFalse(attnd_element.is_displayed(),
                          'Attendance field should be hidden when spontaneous is not selected.')
 
     def test_attendance_conclusion_not_hidden_if_no_verify(self):
@@ -346,3 +444,87 @@ class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
         att_element = self.driver.find_element(By.ID, 'id_attendance')
         visible = att_element.is_displayed() and con_element.is_displayed()
         self.assertTrue(visible, 'Attendance and Conclusion fields should be displayed')
+
+
+class ExperienceSearchBrowserTest(DefaultLiveServerTestCase):
+
+    def test_page_loads(self):
+        self.client.get(reverse('search'))
+        self.assertEqual(self.driver.find_element(By.XPATH, '//p').text, _('Your search returned no experiences'))
+
+    def test_navigates_to_experience_page(self):
+        search_for = 'Test'
+        e = self.create_experience('co', name=search_for)
+        self.client.get(reverse('search') + '?search=' + search_for)
+        row = self.driver.find_element(By.CSS_SELECTOR, 'tr.link:first-of-type')
+        row.click()
+        self.assertIn(reverse('view_experience', args=[e.pk, ]), self.driver.current_url,
+                      'Clicking on a search results row should navigate away from the search page')
+
+    def get_name_column_index(self):
+        table_name = 'search-results'
+        column_header = 'Experience Name'
+        xpath_query = '//table[@id="%s"]//th/*[text()="%s"]/../preceding-sibling::th'
+        preceding_elements = self.driver.find_elements(By.XPATH, xpath_query % (table_name, column_header))
+        return len(preceding_elements) + 1
+
+    def get_table_entries_by_name_xpath(self, text_to_find, column_index=None):
+        column_index = column_index or self.get_name_column_index()
+        return '//table[@id="search-results"]//td[position()=%i and text()="%s"]' % (column_index, text_to_find)
+
+    def get_table_entries_by_name(self, text_to_find, column_index=None):
+        xpath_string = self.get_table_entries_by_name_xpath(text_to_find, column_index)
+        return self.driver.find_elements(By.XPATH, xpath_string)
+
+    def search_test_helper(self):
+        text_to_find = 'Found'
+        text_to_not_find = 'Not Present'
+
+        self.create_experience('ad', name=text_to_find)
+        self.create_experience('ad', name=text_to_not_find)
+
+        return text_to_find, text_to_not_find
+
+    def test_name_search_works(self):
+        text_to_find, text_to_not_find = self.search_test_helper()
+
+        self.client.get(reverse('home'))
+        box_xpath = '//form[@action="%s"]//input[@name="search"]' % reverse('search')
+        search_box = self.driver.find_element(By.XPATH, box_xpath)
+        search_box.send_keys(text_to_find)
+        search_box.send_keys(Keys.RETURN)
+
+        # this test should be safe to use on page load even though there is a race condition
+        # due to the careful structure of the search
+        # if it fails randomly start checking here
+        self.assertEqual(1, len(self.get_table_entries_by_name(text_to_find)))
+        self.assertEqual(0, len(self.get_table_entries_by_name(text_to_not_find)))
+
+    def test_name_filter_works(self):
+        text_to_find, text_to_not_find = self.search_test_helper()
+        # o should be in both of the experiences
+        self.client.get(reverse('search') + '?search=' + 'o')
+        name_filter = self.driver.find_element(
+            By.XPATH,
+            '//table[@id="search-results"]//td[position()=%i]//*[contains(@class, "tablesorter-filter")]' % self.get_name_column_index()
+        )
+
+        # verify the element is shown
+        self.assertTrue(
+            self.get_table_entries_by_name(text_to_not_find)[0].is_displayed(),
+            'The element should first be displayed to later be hidden.'
+        )
+        name_filter.send_keys(text_to_find)
+        name_filter.send_keys(Keys.RETURN)
+
+        # verify the element is not shown
+        wait = WebDriverWait(self.driver, 1)
+        wait.until(
+            expected_conditions.invisibility_of_element_located(
+                (By.XPATH, self.get_table_entries_by_name_xpath(text_to_not_find))
+            )
+        )
+        self.assertFalse(
+            self.get_table_entries_by_name(text_to_not_find)[0].is_displayed(),
+            'The element should not be visible.'
+        )
