@@ -62,7 +62,7 @@ class StandardTestCase(TestCase):
             end_datetime=end,
             type=self.create_type(),
             sub_type=self.create_sub_type(),
-            goal="Test Goal",
+            goals="Test Goal",
             audience="b",
             status=exp_status,
             attendance=attendance,
@@ -158,7 +158,7 @@ class ExperienceCreationFormTest(StandardTestCase):
                 'guest': 'test',
                 'recognition': [self.test_org.pk],
                 'keywords': [self.test_keyword.pk],
-                'goal': 'test',
+                'goals': 'test',
                 'next_approver': self.clients['hs'].user_object.pk}
 
     def test_valid_experience_creation_form(self):
@@ -285,7 +285,7 @@ class ExperienceCreationViewTest(StandardTestCase):
                 'recognition': [self.test_org.pk],
                 'keywords': [self.test_keyword.pk],
                 'next_approver': self.clients['hs'].user_object.pk,
-                'goal': 'test',
+                'goals': 'test',
                 action: action}
 
     def test_gets_create(self):
@@ -402,7 +402,7 @@ class RAHomeViewTest(StandardTestCase):
                                          end_datetime=(now() + timedelta(days=3)),
                                          type=self.create_type(),
                                          sub_type=self.create_sub_type(),
-                                         goal="Test Goal",
+                                         goals="Test Goal",
                                          audience="b",
                                          status="ad",
                                          attendance=3)
@@ -428,7 +428,7 @@ class ExperienceApprovalViewTest(StandardTestCase):
             'sub_type': e.sub_type.pk,
             'audience': e.audience,
             'attendance': 0,
-            'goal': e.goal,
+            'goals': e.goals,
             'guest': e.guest,
             'guest_office': e.guest_office,
             'message': message,
@@ -536,7 +536,7 @@ class HallStaffDashboardViewTest(StandardTestCase):
                                               end_datetime=(now() + timedelta(days=3)),
                                               type=self.create_type(),
                                               sub_type=self.create_sub_type(),
-                                              goal="Test Goal",
+                                              goals="Test Goal",
                                               audience="b",
                                               status="ad",
                                               attendance=None,
@@ -571,7 +571,7 @@ class EditExperienceViewTest(StandardTestCase):
             'sub_type': e.sub_type.pk,
             'audience': e.audience,
             'attendance': 0,
-            'goal': e.goal,
+            'goals': e.goals,
             'guest': e.guest,
             'guest_office': e.guest_office,
             'next_approver': self.clients['hs'].user_object.pk,

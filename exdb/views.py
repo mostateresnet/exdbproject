@@ -321,7 +321,7 @@ class SearchExperienceResultsView(ListView):
         search_fields = [
             'name',
             'description',
-            'goal',
+            'goals',
             'guest',
             'guest_office',
             'conclusion',

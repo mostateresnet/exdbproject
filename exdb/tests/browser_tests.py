@@ -249,7 +249,7 @@ class DefaultLiveServerTestCase(StaticLiveServerTestCase):
             end_datetime=end,
             type=self.create_type(),
             sub_type=self.create_sub_type(),
-            goal="Test",
+            goals="Test",
             audience="c",
             status=exp_status,
             attendance=0,

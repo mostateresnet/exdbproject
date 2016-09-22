@@ -43,23 +43,24 @@ class ExperienceSaveForm(ModelForm):
             'type',
             'sub_type',
             'description',
-            'goal',
+            'goals',
             'planners',
+            'recognition',
             'start_datetime',
             'end_datetime',
-            'recognition',
             'audience',
             'attendance',
             'keywords',
             'next_approver',
             'guest',
             'guest_office',
-            'conclusion'
+            'funds',
+            'conclusion',
         ]
 
         widgets = {
             'description': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
-            'goal': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
+            'goals': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
             'type': TypeSelect(),
             'conclusion': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
         }
@@ -69,7 +70,6 @@ class ExperienceSaveForm(ModelForm):
             'end_datetime': 'End Time',
             'next_approver': 'Supervisor',
             'name': 'Title',
-            'goal': 'Goals'
         }
 
     def __init__(self, *args, **kwargs):
