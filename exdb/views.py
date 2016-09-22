@@ -150,7 +150,7 @@ class ExperienceApprovalView(UpdateView):
             return self.form_invalid(experience_form, comment_form)
 
     def form_valid(self, experience_form, comment_form):
-        if experience_form.changed_data and not self.request.POST.get('delete'):
+        if experience_form.changed_data:
             ExperienceEdit.objects.create(experience=experience_form.instance, editor=self.request.user)
         comment_form.instance.author = self.request.user
         if self.request.POST.get('approve'):

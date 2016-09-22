@@ -418,14 +418,8 @@ class ExperienceApprovalViewTest(StandardTestCase):
     def get_post_data(self, message="", submit="deny", invalid_description=False, llc_approval=False):
         e = self.create_experience(
             'pe',
-            start=(
-                self.test_date +
-                timedelta(
-                    days=1)),
-            end=(
-                self.test_date +
-                timedelta(
-                    days=2)))
+            start=(self.test_date + timedelta(days=1)),
+            end=(self.test_date + timedelta(days=2)))
         description = "" if invalid_description else e.description
         next_approver = self.clients['llc'].user_object.pk if llc_approval else e.next_approver.pk
         data = {
@@ -505,8 +499,29 @@ class ExperienceApprovalViewTest(StandardTestCase):
             self.clients['hs'].user_object,
             "If denied, next approver should be denying user.")
 
-    def test_creates_ExperienceEdit_object(self):
+    def test_creates_ExperienceEdit_object_if_approved(self):
         data = self.get_post_data(submit="approve")
+        data['description'] = 'N/A'
+        e = self.post_data(data)
+        edit = ExperienceEdit.objects.filter(experience=e, editor=self.clients['hs'].user_object)[0]
+        self.assertEqual(edit.experience, e, "An ExperienceEdit object should have been created.")
+
+    def test_does_not_create_ExperienceEdit_object_if_no_change(self):
+        e = self.post_data(self.get_post_data(submit="approve"))
+        edit_objects = ExperienceEdit.objects.filter(experience=e, editor=self.clients['hs'].user_object)
+        self.assertEqual(len(edit_objects), 0,
+                         "There should be no edit objects associated with this object if it was not changed.")
+
+    def test_does_not_create_edit_object_if_deleted(self):
+        data = self.get_post_data(submit="delete")
+        data['description'] = 'N/A'
+        e = self.post_data(data)
+        edit_objects = ExperienceEdit.objects.filter(experience=e, editor=self.clients['hs'].user_object)
+        self.assertEqual(len(edit_objects), 0,
+                         "There should be no edit objects associated with this object if it was 'deleted'.")
+
+    def test_creates_edit_object_if_denied(self):
+        data = self.get_post_data(message="comment")
         data['description'] = 'N/A'
         e = self.post_data(data)
         edit = ExperienceEdit.objects.filter(experience=e, editor=self.clients['hs'].user_object)[0]
@@ -637,12 +652,19 @@ class EditExperienceViewTest(StandardTestCase):
         self.assertEqual(e.status, 'ad', "An invalid experience should not be submitted.")
 
     def test_creates_ExperienceEdit_object(self):
-        # TODO MAKE SURE THIS WORKS
         data = self.get_post_data(status='pe')
         data['description'] = 'Changing the description'
         e = self.post_data(data)
         edit = ExperienceEdit.objects.filter(experience=e, editor=self.clients['ra'].user_object)[0]
         self.assertEqual(e, edit.experience, "An ExperienceEdit object should have been created for this experience.")
+
+    def test_does_not_create_edit_object_if_deleted(self):
+        data = self.get_post_data(status='dr', delete=True)
+        data['description'] = 'Changing the description'
+        e = self.post_data(data)
+        edit_objects = ExperienceEdit.objects.filter(experience=e, editor=self.clients['ra'].user_object)
+        self.assertEqual(0, len(edit_objects),
+                         "An ExperienceEdit object should not be created if it is 'deleted'.")
 
     def test_delete_draft(self):
         e = self.post_data(self.get_post_data(status='dr', delete=True))
