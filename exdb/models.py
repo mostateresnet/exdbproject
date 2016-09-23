@@ -134,6 +134,9 @@ class ExperienceApproval(models.Model):
     class Meta:
         ordering = ['timestamp']
 
+    def __str__(self):
+        return self.approver.username + " approved " + self.experience.name + " on " + str(self.timestamp)
+
 
 class ExperienceComment(models.Model):
     experience = models.ForeignKey(Experience, related_name='comment_set')
@@ -144,6 +147,9 @@ class ExperienceComment(models.Model):
     class Meta:
         ordering = ['timestamp']
 
+    def __str__(self):
+        return self.author.username + "'s comment for " + self.experience.name + " on " + str(self.timestamp)
+
 
 class ExperienceEdit(models.Model):
     experience = models.ForeignKey(Experience, related_name='edit_log')
@@ -152,6 +158,9 @@ class ExperienceEdit(models.Model):
 
     class Meta:
         ordering = ['-timestamp']
+
+    def __str__(self):
+        return self.editor.username + "'s edit for " + self.experience.name + " on " + str(self.timestamp)
 
 
 class EmailTask(models.Model):

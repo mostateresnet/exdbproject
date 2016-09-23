@@ -114,6 +114,27 @@ class ModelCoverageTest(StandardTestCase):
         self.assertEqual(ExperienceComment.objects.get(pk=ec.pk).message, ec.message,
                          "ExperienceComment object should have been created.")
 
+    def test_experience_approval_str_method(self):
+        e = self.create_experience('ad')
+        approval = ExperienceApproval.objects.get_or_create(
+            experience=e,
+            approver=self.clients['hs'].user_object
+        )[0]
+        self.assertIn(e.name, str(approval), 'The experience name should be available in the string method')
+
+    def test_experience_comment_str_method(self):
+        e = self.create_experience('de')
+        ec = self.create_experience_comment(e)
+        self.assertIn(e.name, str(ec), 'The experience name should be available in the string method')
+
+    def test_experience_edit_str_method(self):
+        e = self.create_experience('ad')
+        edit = ExperienceEdit.objects.get_or_create(
+            experience=e,
+            editor=self.clients['hs'].user_object
+        )[0]
+        self.assertIn(e.name, str(edit), 'The experience name should be available in the string method')
+
     def test_experience_needs_evaluation(self):
         e = self.create_experience('ad')
         self.assertTrue(e.needs_evaluation(), "This experience should return true for needs evaluation.")
