@@ -22,14 +22,14 @@ class EXDBUser(AbstractUser):
         return self.groups.filter(name__icontains='hallstaff').exists()
 
 
-class SubType(models.Model):
+class Type(models.Model):
     name = models.CharField(max_length=300)
 
     def __str__(self):
         return self.name
 
 
-class Type(models.Model):
+class Subtype(models.Model):
     name = models.CharField(max_length=300)
     needs_verification = models.BooleanField(default=True)
 
@@ -92,7 +92,7 @@ class Experience(models.Model):
     start_datetime = models.DateTimeField()
     end_datetime = models.DateTimeField()
     type = models.ForeignKey(Type)
-    sub_type = models.ForeignKey(SubType)
+    subtype = models.ForeignKey(Subtype)
     goals = models.TextField(blank=True)
     keywords = models.ManyToManyField(Keyword, blank=True, related_name='keyword_set')
     audience = models.CharField(max_length=1, choices=AUDIENCE_TYPES, blank=True)

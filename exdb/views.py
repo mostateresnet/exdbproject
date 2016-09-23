@@ -27,7 +27,7 @@ class CreateExperienceView(CreateView):
         form.instance.author = self.request.user
 
         if 'submit' in self.request.POST:
-            if form.instance.type.needs_verification:
+            if form.instance.subtype.needs_verification:
                 form.instance.status = 'pe'
             else:
                 form.instance.status = 'co'
@@ -333,7 +333,7 @@ class SearchExperienceResultsView(ListView):
             'author__first_name',
             'author__last_name',
             'type__name',
-            'sub_type__name',
+            'subtype__name',
         ]
 
         filter_Qs = Q()
@@ -352,7 +352,7 @@ class SearchExperienceResultsView(ListView):
         # get rid of a users drafts for everyone else
         queryset = queryset.exclude(~Q(author=self.request.user), status='dr')
 
-        return queryset.select_related('type', 'sub_type').prefetch_related(
+        return queryset.select_related('type', 'subtype').prefetch_related(
             'planners',
             'keywords',
             'recognition__affiliation',

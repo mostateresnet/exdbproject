@@ -11,7 +11,7 @@ from django.utils.timezone import utc
 from exdb.models import Experience, ExperienceComment
 
 
-class TypeSelect(forms.Select):
+class SubtypeSelect(forms.Select):
 
     def render_option(self, selected_choices, option_value, option_label):
         if option_value is None:
@@ -41,7 +41,7 @@ class ExperienceSaveForm(ModelForm):
         fields = [
             'name',
             'type',
-            'sub_type',
+            'subtype',
             'description',
             'goals',
             'planners',
@@ -61,7 +61,7 @@ class ExperienceSaveForm(ModelForm):
         widgets = {
             'description': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
             'goals': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
-            'type': TypeSelect(),
+            'subtype': SubtypeSelect(),
             'conclusion': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
         }
 
@@ -83,9 +83,9 @@ class ExperienceSaveForm(ModelForm):
 class ExperienceSubmitForm(ExperienceSaveForm):
 
     def clean(self):
-        ex_type = self.cleaned_data.get('type')
-        needs_verification = ex_type.needs_verification if ex_type else None
-        name = "" if not ex_type else ex_type.name
+        ex_subtype = self.cleaned_data.get('subtype')
+        needs_verification = ex_subtype.needs_verification if ex_subtype else None
+        name = "" if not ex_subtype else ex_subtype.name
         min_dt = datetime.min.replace(tzinfo=utc)
         max_dt = datetime.max.replace(tzinfo=utc)
 
@@ -94,8 +94,8 @@ class ExperienceSubmitForm(ExperienceSaveForm):
             (not self.cleaned_data.get('description'), ValidationError(_('A description is required'))),
             (not self.cleaned_data.get('end_datetime'), ValidationError(_('An end time is required'))),
             (not self.cleaned_data.get('start_datetime'), ValidationError(_('A start time is required'))),
-            (not self.cleaned_data.get('sub_type'), ValidationError(_('The sub type field is required'))),
-            (not ex_type, ValidationError(_('The type field is required'))),
+            (not self.cleaned_data.get('type'), ValidationError(_('The type field is required'))),
+            (not ex_subtype, ValidationError(_('The subtype field is required'))),
             (needs_verification and not self.approval_form and
                 not self.cleaned_data.get('next_approver'),
              ValidationError(_('Please select the supervisor to review this experience'))),
