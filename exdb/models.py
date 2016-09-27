@@ -106,7 +106,7 @@ class Experience(models.Model):
             statuses[:2] for statuses in STATUS_TYPES),
         default=STATUS_TYPES[1][0])
     next_approver = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True, related_name='approval_queue')
-    funds = models.CharField(max_length=2, choices=FUND_TYPES, blank=True)
+    funds = models.CharField(max_length=2, choices=FUND_TYPES, default='na')
     conclusion = models.TextField(
         blank=True,
         help_text=_('What went well? What would you change about this experience in the future?'),

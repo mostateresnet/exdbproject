@@ -147,18 +147,21 @@ class ExperienceCreationFormTest(StandardTestCase):
         self.test_keyword = self.create_keyword()
 
     def get_post_data(self, start, end):
-        return {'start_datetime': start,
-                'end_datetime': end,
-                'name': 'test',
-                'description': 'test',
-                'type': self.test_type.pk,
-                'subtype': self.test_subtype.pk,
-                'audience': 'c',
-                'guest': 'test',
-                'recognition': [self.test_org.pk],
-                'keywords': [self.test_keyword.pk],
-                'goals': 'test',
-                'next_approver': self.clients['hs'].user_object.pk}
+        return {
+            'start_datetime': start,
+            'end_datetime': end,
+            'name': 'test',
+            'description': 'test',
+            'type': self.test_type.pk,
+            'subtype': self.test_subtype.pk,
+            'audience': 'c',
+            'guest': 'test',
+            'recognition': [self.test_org.pk],
+            'keywords': [self.test_keyword.pk],
+            'goals': 'test',
+            'next_approver': self.clients['hs'].user_object.pk,
+            'funds': Experience.FUND_TYPES[0][0],
+        }
 
     def test_valid_experience_creation_form(self):
         data = self.get_post_data((self.test_date + timedelta(days=1)), (self.test_date + timedelta(days=2)))
@@ -273,19 +276,22 @@ class ExperienceCreationViewTest(StandardTestCase):
         self.test_keyword = self.create_keyword()
 
     def get_post_data(self, start, end, action='submit'):
-        return {'start_datetime': start.strftime("%Y-%m-%d %H:%M:%S"),
-                'end_datetime': end.strftime("%Y-%m-%d %H:%M"),
-                'name': 'test',
-                'description': 'test',
-                'type': self.test_type.pk,
-                'subtype': self.test_subtype.pk,
-                'audience': 'c',
-                'guest': 'test',
-                'recognition': [self.test_org.pk],
-                'keywords': [self.test_keyword.pk],
-                'next_approver': self.clients['hs'].user_object.pk,
-                'goals': 'test',
-                action: action}
+        return {
+            'start_datetime': start.strftime("%Y-%m-%d %H:%M:%S"),
+            'end_datetime': end.strftime("%Y-%m-%d %H:%M"),
+            'name': 'test',
+            'description': 'test',
+            'type': self.test_type.pk,
+            'subtype': self.test_subtype.pk,
+            'audience': 'c',
+            'guest': 'test',
+            'recognition': [self.test_org.pk],
+            'keywords': [self.test_keyword.pk],
+            'next_approver': self.clients['hs'].user_object.pk,
+            'goals': 'test',
+            'funds': Experience.FUND_TYPES[0][0],
+            action: action,
+        }
 
     def test_gets_create(self):
         response = self.clients['ra'].get(reverse('create_experience'))
@@ -432,6 +438,7 @@ class ExperienceApprovalViewTest(StandardTestCase):
             'guest_office': e.guest_office,
             'message': message,
             'next_approver': next_approver,
+            'funds': Experience.FUND_TYPES[0][0],
             submit: submit})
         return get_object_or_404(Experience, pk=e.pk)
 
@@ -574,6 +581,7 @@ class EditExperienceViewTest(StandardTestCase):
             'guest': e.guest,
             'guest_office': e.guest_office,
             'next_approver': self.clients['hs'].user_object.pk,
+            'funds': Experience.FUND_TYPES[0][0],
             submit: submit})
         return get_object_or_404(Experience, pk=e.pk)
 
