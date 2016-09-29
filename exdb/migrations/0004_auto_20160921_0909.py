@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='experience',
             name='funds',
-            field=models.CharField(blank=True, choices=[('na', 'Not necessary'), ('yn', 'Yes, but request not submitted yet'), ('ys', 'Yes, request submitted'), ('ya', 'Yes, request approved')], max_length=2),
+            field=models.CharField(choices=[('na', 'Not necessary'), ('yn', 'Yes, but request not submitted yet'), ('ys', 'Yes, request submitted'), ('ya', 'Yes, request approved')], default='na', max_length=2),
         ),
         migrations.AlterField(
             model_name='experience',

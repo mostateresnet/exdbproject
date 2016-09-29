@@ -67,6 +67,10 @@
                 None
             {% endfor %}
         </p>
+        <p>
+            <span>{% trans "Funds" %}:</span>
+            {{ experience.get_funds_display }}
+        </p>
         {% if experience.guest %}
             <p>
                 <span>{% trans "Guest" %}:</span>
