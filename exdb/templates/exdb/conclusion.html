@@ -57,6 +57,10 @@
                     {{ experience.goals }}
                 </p>
                 <p>
+                    <span>{% trans "Funds" %}:</span>
+                    {{ experience.get_funds_display }}
+                </p>
+                <p>
                     <span>{% trans "Keywords" %}:</span>
                     {% for kwd in experience.keywords.all %}
                         {{ kwd }}{% if not forloop.last %}, {% endif %}
