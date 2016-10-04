@@ -271,7 +271,11 @@ class ListExperienceByStatusView(ListView):
         time_ahead = timezone.now()
         time_ahead += settings.HALLSTAFF_UPCOMING_TIMEDELTA if self.request.user.is_hallstaff() else settings.RA_UPCOMING_TIMEDELTA
         Qs = Q(status='ad') & Q(start_datetime__gt=timezone.now()) & Q(start_datetime__lt=time_ahead)
-        user_Qs = Q(author=self.request.user) | Q(planners=self.request.user) | Q(pk__in=experience_approvals.values('experience'))
+        user_Qs = (
+            Q(author=self.request.user) |
+            Q(planners=self.request.user) |
+            Q(pk__in=experience_approvals.values('experience'))
+        )
         if self.request.user.is_hallstaff():
             user_Qs = user_Qs | Q(recognition__affiliation=self.request.user.affiliation)
         Qs = Qs & user_Qs
