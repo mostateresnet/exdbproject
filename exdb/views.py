@@ -231,8 +231,8 @@ class EditExperienceView(UpdateView):
 
     def form_valid(self, form):
         experience = self.get_object()
-        does_not_need_reapproval = self.request.user.is_hallstaff() and experience.status == 'ad'
-        if self.request.POST.get('submit') and not(does_not_need_reapproval):
+        needs_reapproval = not (self.request.user.is_hallstaff() and experience.status == 'ad')
+        if self.request.POST.get('submit') and needs_reapproval:
             form.instance.status = 'pe'
         if self.request.POST.get('delete') and experience.status == 'dr':
             # An experience can only be 'deleted' from this view if the status of this experience
