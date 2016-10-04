@@ -230,10 +230,10 @@ class EditExperienceView(UpdateView):
         return Experience.objects.filter(editable_experience).prefetch_related('comment_set').distinct()
 
     def form_valid(self, form):
-        if self.request.POST.get('submit') and (not self.request.user.is_hallstaff()
-                                                or self.request.user == form.instance.author):
-            form.instance.status = 'pe'
         experience = self.get_object()
+        does_not_need_reapproval = self.request.user.is_hallstaff() and experience.status == 'ad'
+        if self.request.POST.get('submit') and not(does_not_need_reapproval):
+            form.instance.status = 'pe'
         if self.request.POST.get('delete') and experience.status == 'dr':
             # An experience can only be 'deleted' from this view if the status of this experience
             # in the database is draft.  Only the status is modified, no other field.
