@@ -24,7 +24,7 @@ from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.utils.timezone import datetime, timedelta, now, make_aware, utc
 
-from exdb.models import Experience, Type, SubType
+from exdb.models import Experience, Type, Subtype
 
 
 class CustomRunnerMetaClass(type):
@@ -228,11 +228,11 @@ class DefaultLiveServerTestCase(StaticLiveServerTestCase):
             raise SkipTest('Skipped due to argument')  # pragma: no cover
         super(DefaultLiveServerTestCase, cls).setUpClass()
 
-    def create_type(self, needs_verification=True, name="Test Type"):
-        return Type.objects.get_or_create(name=name, needs_verification=needs_verification)[0]
+    def create_type(self, name="Test Type"):
+        return Type.objects.get_or_create(name=name)[0]
 
-    def create_sub_type(self, name="Test Sub Type"):
-        return SubType.objects.get_or_create(name=name)[0]
+    def create_subtype(self, needs_verification=True, name="Test Subtype"):
+        return Subtype.objects.get_or_create(name=name, needs_verification=needs_verification)[0]
 
     def create_experience(self, exp_status, user=None, start=None, end=None, name=None):
         """Creates and returns an experience object with status,
@@ -248,8 +248,8 @@ class DefaultLiveServerTestCase(StaticLiveServerTestCase):
             start_datetime=start,
             end_datetime=end,
             type=self.create_type(),
-            sub_type=self.create_sub_type(),
-            goal="Test",
+            subtype=self.create_subtype(),
+            goals="Test",
             audience="c",
             status=exp_status,
             attendance=0,
@@ -410,7 +410,7 @@ class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
 
     def setUp(self):
         super(CreateExperienceBrowserTest, self).setUp()
-        Type.objects.create(name="Spontaneous", needs_verification=False)
+        Subtype.objects.create(name="Spontaneous", needs_verification=False)
 
     def test_attendance_hidden(self):
         self.client.get(reverse('create_experience'))
@@ -420,25 +420,25 @@ class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
 
     def test_shows_attendance_field(self):
         self.client.get(reverse('create_experience'))
-        type_element = self.driver.find_element(By.ID, 'id_type')
-        type_element.find_element_by_class_name('no-verification').click()
+        subtype_element = self.driver.find_element(By.ID, 'id_subtype')
+        subtype_element.find_element_by_class_name('no-verification').click()
         attnd_element = self.driver.find_element(By.ID, 'id_attendance')
         self.assertTrue(attnd_element.is_displayed(),
                         'Attendance field should not be hidden when spontaneous is selected.')
 
     def test_rehides_attendance_field(self):
         self.client.get(reverse('create_experience'))
-        type_element = self.driver.find_element(By.ID, 'id_type')
-        type_element.find_element_by_class_name('no-verification').click()
-        type_element.find_elements_by_tag_name('option')[0].click()
+        subtype_element = self.driver.find_element(By.ID, 'id_subtype')
+        subtype_element.find_element_by_class_name('no-verification').click()
+        subtype_element.find_elements_by_tag_name('option')[0].click()
         attnd_element = self.driver.find_element(By.ID, 'id_attendance')
         self.assertFalse(attnd_element.is_displayed(),
                          'Attendance field should be hidden when spontaneous is not selected.')
 
     def test_attendance_conclusion_not_hidden_if_no_verify(self):
         self.client.get(reverse('create_experience'))
-        type_element = self.driver.find_element(By.ID, 'id_type')
-        type_element.find_element_by_class_name('no-verification').click()
+        subtype_element = self.driver.find_element(By.ID, 'id_subtype')
+        subtype_element.find_element_by_class_name('no-verification').click()
         self.driver.find_element(By.ID, 'submit_experience').click()
         con_element = self.driver.find_element(By.ID, 'id_conclusion')
         att_element = self.driver.find_element(By.ID, 'id_attendance')

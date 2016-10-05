@@ -27,7 +27,7 @@ class CreateExperienceView(CreateView):
         form.instance.author = self.request.user
 
         if 'submit' in self.request.POST:
-            if form.instance.type.needs_verification:
+            if form.instance.subtype.needs_verification:
                 form.instance.status = 'pe'
             else:
                 form.instance.status = 'co'
@@ -232,10 +232,10 @@ class EditExperienceView(UpdateView):
         return Experience.objects.filter(editable_experience).prefetch_related('comment_set', 'edit_log').distinct()
 
     def form_valid(self, form):
-        if self.request.POST.get('submit') and (not self.request.user.is_hallstaff()
-                                                or self.request.user == form.instance.author):
-            form.instance.status = 'pe'
         experience = self.get_object()
+        needs_reapproval = not (self.request.user.is_hallstaff() and experience.status == 'ad')
+        if self.request.POST.get('submit') and needs_reapproval:
+            form.instance.status = 'pe'
         if self.request.POST.get('delete') and experience.status == 'dr':
             # An experience can only be 'deleted' from this view if the status of this experience
             # in the database is draft.  Only the status is modified, no other field.
@@ -268,10 +268,17 @@ class ListExperienceByStatusView(ListView):
         return Experience.objects.filter(Qs).distinct().order_by('start_datetime')
 
     def upcoming_queryset(self):
+        experience_approvals = ExperienceApproval.objects.filter(
+            approver=self.request.user, experience__status='ad'
+        )
         time_ahead = timezone.now()
         time_ahead += settings.HALLSTAFF_UPCOMING_TIMEDELTA if self.request.user.is_hallstaff() else settings.RA_UPCOMING_TIMEDELTA
         Qs = Q(status='ad') & Q(start_datetime__gt=timezone.now()) & Q(start_datetime__lt=time_ahead)
-        user_Qs = Q(author=self.request.user) | Q(planners=self.request.user)
+        user_Qs = (
+            Q(author=self.request.user) |
+            Q(planners=self.request.user) |
+            Q(pk__in=experience_approvals.values('experience'))
+        )
         if self.request.user.is_hallstaff():
             user_Qs = user_Qs | Q(recognition__affiliation=self.request.user.affiliation)
         Qs = Qs & user_Qs
@@ -324,7 +331,7 @@ class SearchExperienceResultsView(ListView):
         search_fields = [
             'name',
             'description',
-            'goal',
+            'goals',
             'guest',
             'guest_office',
             'conclusion',
@@ -336,7 +343,7 @@ class SearchExperienceResultsView(ListView):
             'author__first_name',
             'author__last_name',
             'type__name',
-            'sub_type__name',
+            'subtype__name',
         ]
 
         filter_Qs = Q()
@@ -355,7 +362,7 @@ class SearchExperienceResultsView(ListView):
         # get rid of a users drafts for everyone else
         queryset = queryset.exclude(~Q(author=self.request.user), status='dr')
 
-        return queryset.select_related('type', 'sub_type').prefetch_related(
+        return queryset.select_related('type', 'subtype').prefetch_related(
             'planners',
             'keywords',
             'recognition__affiliation',

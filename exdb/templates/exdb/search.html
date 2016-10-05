@@ -38,7 +38,7 @@
                                 {% endfor %}
                             </td>
                             <td class="type">{{ exp.type }}</td>
-                            <td class="subtype">{{ exp.sub_type }}</td>
+                            <td class="subtype">{{ exp.subtype }}</td>
                             <td class="recognition">
                                 {% for rec in exp.recognition.all %}
                                     {{ rec.affiliation }}{% if not forloop.last %}, {% endif %}
