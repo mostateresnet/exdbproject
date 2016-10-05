@@ -135,6 +135,11 @@ class ModelCoverageTest(StandardTestCase):
         self.assertEqual(e.get_url(self.clients['ra'].user_object), reverse('edit', args=[e.pk]),
                          "The url for experience edit should have been returned")
 
+    def test_get_url_for_draft_from_past_returns_edit(self):
+        e = self.create_experience('dr', start=(now() - timedelta(days=2)), end=(now() - timedelta(days=1)))
+        self.assertEqual(e.get_url(self.clients['ra'].user_object), reverse('edit', args=[e.pk]),
+                         "The edit url for draft experience set to the past should have been returned")
+
 
 class ExperienceCreationFormTest(StandardTestCase):
 
