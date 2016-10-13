@@ -1,0 +1,63 @@
+{% extends "exdb/base.html" %}
+{% load i18n %}
+{% load exdbtags %}
+{% load staticfiles %}
+{% block css %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/search.css' %}" />
+{% endblock %}
+{% block javascript %}
+    {{ block.super }}
+    <script type="text/javascript" src="{% static 'exdb/js/search.js' %}"></script>
+{% endblock %}
+{% block content %}
+    {{ block.super }}
+
+    <div class="row">
+        {% if experiences %}
+            <table id="search-results" class="tablesorter responsive">
+                <thead>
+                    <tr>
+                        <th data-placeholder="&#xf002;">{% trans "Experience Name" %}</th>
+                        <th data-placeholder="&#xf002;">{% trans "Planners" %}</th>
+                        <th data-placeholder="&#xf002;">{% trans "Type" %}</th>
+                        <th data-placeholder="&#xf002;">{% trans "Subtype" %}</th>
+                        <th data-placeholder="&#xf002;">{% trans "Building" %}</th>
+                        <th data-placeholder="&#xf002;">{% trans "Keywords" %}</th>
+                        <th data-placeholder="&#xf002;">{% trans "Status" %}</th>
+                        <th data-placeholder="&#xf002;" data-sorter="shortDate">{% trans "Start Time" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for exp in experiences %}
+                        <tr class="link" data-url="{% experience_url exp user %}">
+                            <td class="exp-name">{{ exp.name }}</td>
+                            <td class="planners">
+                                {% for planner in exp.planners.all %}
+                                    {{ planner }}{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                            </td>
+                            <td class="type">{{ exp.type }}</td>
+                            <td class="subtype">{{ exp.subtype }}</td>
+                            <td class="recognition">
+                                {% for rec in exp.recognition.all %}
+                                    {{ rec.affiliation }}{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                            </td>
+                            <td class="keywords">
+                                {% for keyword in exp.keywords.all %}
+                                    {{ keyword }}{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                            </td>
+                            <td class="status">{{ exp.get_status_display }}</td>
+                            <td class="start-time">{{ exp.start_datetime|date:'N j, o g:i A' }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>{% trans "Your search returned no experiences" %}</p>
+        {% endif %}
+    </div>
+
+{% endblock %}

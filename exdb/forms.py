@@ -8,10 +8,11 @@ from django.utils.html import format_html
 from django.utils.translation import ugettext as _
 from django.forms import ModelForm
 from django.utils.timezone import utc
+from django.contrib.auth import get_user_model
 from exdb.models import Experience, ExperienceComment
 
 
-class TypeSelect(forms.Select):
+class SubtypeSelect(forms.Select):
 
     def render_option(self, selected_choices, option_value, option_label):
         if option_value is None:
@@ -40,29 +41,28 @@ class ExperienceSaveForm(ModelForm):
         model = Experience
         fields = [
             'name',
+            'type',
+            'subtype',
             'description',
+            'goals',
             'planners',
+            'recognition',
             'start_datetime',
             'end_datetime',
-            'type',
-            'sub_type',
-            'recognition',
             'audience',
             'attendance',
             'keywords',
             'next_approver',
-            'goal',
             'guest',
             'guest_office',
-            'conclusion'
+            'funds',
+            'conclusion',
         ]
 
         widgets = {
             'description': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
-            'goal': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
-            'start_datetime': forms.SelectDateWidget(),
-            'end_datetime': forms.SelectDateWidget(),
-            'type': TypeSelect(),
+            'goals': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
+            'subtype': SubtypeSelect(),
             'conclusion': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
         }
 
@@ -79,14 +79,15 @@ class ExperienceSaveForm(ModelForm):
         super(ExperienceSaveForm, self).__init__(*args, **kwargs)
         self.when = when
         self.approval_form = submit
+        self.fields['next_approver'].queryset = get_user_model().objects.filter(groups__name__icontains="hallstaff")
 
 
 class ExperienceSubmitForm(ExperienceSaveForm):
 
     def clean(self):
-        ex_type = self.cleaned_data.get('type')
-        needs_verification = ex_type.needs_verification if ex_type else None
-        name = "" if not ex_type else ex_type.name
+        ex_subtype = self.cleaned_data.get('subtype')
+        needs_verification = ex_subtype.needs_verification if ex_subtype else None
+        name = "" if not ex_subtype else ex_subtype.name
         min_dt = datetime.min.replace(tzinfo=utc)
         max_dt = datetime.max.replace(tzinfo=utc)
 
@@ -95,8 +96,8 @@ class ExperienceSubmitForm(ExperienceSaveForm):
             (not self.cleaned_data.get('description'), ValidationError(_('A description is required'))),
             (not self.cleaned_data.get('end_datetime'), ValidationError(_('An end time is required'))),
             (not self.cleaned_data.get('start_datetime'), ValidationError(_('A start time is required'))),
-            (not self.cleaned_data.get('sub_type'), ValidationError(_('The sub type field is required'))),
-            (not ex_type, ValidationError(_('The type field is required'))),
+            (not self.cleaned_data.get('type'), ValidationError(_('The type field is required'))),
+            (not ex_subtype, ValidationError(_('The subtype field is required'))),
             (needs_verification and not self.approval_form and
                 not self.cleaned_data.get('next_approver'),
              ValidationError(_('Please select the supervisor to review this experience'))),
@@ -111,7 +112,8 @@ class ExperienceSubmitForm(ExperienceSaveForm):
              ValidationError(_('%(name)s events must have an audience') % {'name': name})),
             (needs_verification and self.cleaned_data.get('attendance'),
              ValidationError(_('%(name)s events cannot have an attendance') % {'name': name})),
-            (needs_verification and self.cleaned_data.get('start_datetime', min_dt) < self.when,
+            (needs_verification and self.cleaned_data.get('start_datetime', min_dt) < self.when and
+                not self.approval_form,
              ValidationError(_('%(name)s events cannot happen in the past') % {'name': name})),
             (needs_verification and self.cleaned_data.get('next_approver')
                 and not self.cleaned_data.get('next_approver').is_hallstaff(),

@@ -1,0 +1,22 @@
+.exp-container{
+    border: 2px solid;
+    border-radius: 10px;
+    margin-top: 20px;
+    padding: 10px;
+}
+
+div.exp-card{
+    margin-top: 10px;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+div.exp-card div{
+    border-radius: 10px;
+    padding: 10px;
+    color: white;
+}
+
+div.main-menu span.show-for-medium{
+    padding-top: 20px;
+}

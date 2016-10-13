@@ -5,11 +5,18 @@
     {{ block.super }}
     <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/experience_approval.css' %}" />
 {% endblock %}
+
+{% block header_color %} {{ experience.get_status_display|cut:" " }}-background{% endblock %}
+{% block header_title %}
+    <h2>{% trans "View" %} {{ experience.name }}</h2>
+{% endblock %}
+
 {% block content %}
-    <p><a href="{% url 'home' %}">{% trans "Return Home" %}</a></p>
-    <h1>{{ experience.name }}</h1>
-    <hr/>
-    <div class="experience-display">
+    <div class="row">
+        <div class="small-12 small-centered columns">
+            <h1 class="text-center">{{ experience.name }}</h1>
+        </div>
+        <hr />
         <p>
             <span>{% trans "Author" %}:</span>
             {{ experience.author }}
@@ -31,8 +38,8 @@
             {{ experience.created_datetime }}
         </p>
         <p>
-            <span>{% trans "Type/Sub-Type" %}:</span>
-            {{ experience.type }}/{{ experience.sub_type }}
+            <span>{% trans "Type/Subtype" %}:</span>
+            {{ experience.type }}/{{ experience.subtype }}
         </p>
         <p>
             <span>{% trans "Start/End" %}:</span>
@@ -44,7 +51,7 @@
         </p>
         <p>
             <span>{% trans "Goals" %}:</span>
-            {{ experience.goal }}
+            {{ experience.goals }}
         </p>
         {% if experience.attendance %}
             <p>
@@ -59,6 +66,10 @@
             {% empty %}
                 None
             {% endfor %}
+        </p>
+        <p>
+            <span>{% trans "Funds" %}:</span>
+            {{ experience.get_funds_display }}
         </p>
         {% if experience.guest %}
             <p>

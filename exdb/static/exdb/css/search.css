@@ -1,0 +1,38 @@
+table, tr, th, td{
+    border: 1px solid black;
+}
+
+table{
+    border-collapse: collapse;
+    margin-top: 4em;
+}
+
+tr.link:hover{
+    cursor: pointer;
+}
+
+.round-search-box {
+    border-radius: 15px;
+}
+
+tr.tablesorter-headerRow, th.tablesorter-header {
+    border-bottom: 0px;
+    background-color: #0093B2;
+    padding-bottom: 0px;
+    color: white;
+}
+
+tr.tablesorter-filter-row, tr.tablesorter-filter-row td {
+    border-top: 0px;
+    background-color: #0093B2;
+    padding-top: 0px;
+    padding-bottom: 0px;
+}
+
+tr th, tr td {
+    width: 12%;
+}
+
+.row {
+    max-width: 85rem;
+}

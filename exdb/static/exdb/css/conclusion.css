@@ -2,3 +2,8 @@ div.comment-author{
     font-size: 12px;
     padding-left: 20px;
 }
+
+input#id_attendance{
+    max-width:150px;
+}
+

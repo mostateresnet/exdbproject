@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import SubType, Type, Section, Keyword, Experience, ExperienceComment, ExperienceApproval, Affiliation, EmailTask, EXDBUser
+from .models import Type, Subtype, Section, Keyword, Experience, ExperienceComment, ExperienceApproval, Affiliation, EmailTask, EXDBUser
 
 
 class ExperienceAdmin(admin.ModelAdmin):
@@ -9,8 +9,8 @@ class ExperienceAdmin(admin.ModelAdmin):
 class ExperienceApprovalAdmin(admin.ModelAdmin):
     list_display = ('experience', 'approver', 'timestamp')
 
-admin.site.register(SubType)
 admin.site.register(Type)
+admin.site.register(Subtype)
 admin.site.register(Section)
 admin.site.register(Keyword)
 admin.site.register(Experience, ExperienceAdmin)

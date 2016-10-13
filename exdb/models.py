@@ -2,6 +2,7 @@ from importlib import import_module
 from django.db import models
 from django.utils.timezone import now
 from django.conf import settings
+from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext_lazy as _
 from django.core.validators import validate_email
 from django.contrib.contenttypes.models import ContentType
@@ -13,20 +14,22 @@ class EXDBUser(AbstractUser):
     affiliation = models.ForeignKey('Affiliation', null=True)
 
     def approvable_experiences(self):
-        return self.approval_queue.filter(status='pe')
+        if getattr(self, '_approvable_experiences', None) is None:
+            self._approvable_experiences = self.approval_queue.filter(status='pe')
+        return self._approvable_experiences
 
     def is_hallstaff(self):
         return self.groups.filter(name__icontains='hallstaff').exists()
 
 
-class SubType(models.Model):
+class Type(models.Model):
     name = models.CharField(max_length=300)
 
     def __str__(self):
         return self.name
 
 
-class Type(models.Model):
+class Subtype(models.Model):
     name = models.CharField(max_length=300)
     needs_verification = models.BooleanField(default=True)
 
@@ -36,6 +39,9 @@ class Type(models.Model):
 
 class Affiliation(models.Model):
     name = models.CharField(max_length=300)
+
+    def __str__(self):
+        return self.name
 
 
 class Section(models.Model):
@@ -54,13 +60,15 @@ class Keyword(models.Model):
 
 
 class Experience(models.Model):
+    # The last index of this tuple is the slug value for the status.
+    # This is used mainly for the ListByStatus View.
     STATUS_TYPES = (
-        ('de', _('Denied')),
-        ('dr', _('Draft')),
-        ('pe', _('Pending Approval')),
-        ('ad', _('Approved')),
-        ('co', _('Completed')),
-        ('ca', _('Cancelled'))
+        ('de', _('Denied'), 'denied',),
+        ('dr', _('Draft'), 'draft',),
+        ('pe', _('Pending Approval'), 'pending-approval',),
+        ('ad', _('Approved'), 'approved',),
+        ('co', _('Completed'), 'completed',),
+        ('ca', _('Cancelled'), 'cancelled',),
     )
 
     AUDIENCE_TYPES = (
@@ -69,25 +77,40 @@ class Experience(models.Model):
         ('f', _('Floor')),
     )
 
+    FUND_TYPES = (
+        ('na', _('Not necessary')),
+        ('yn', _('Yes, but request not submitted yet')),
+        ('ys', _('Yes, request submitted')),
+        ('ya', _('Yes, request approved')),
+    )
+
     author = models.ForeignKey(settings.AUTH_USER_MODEL)
     planners = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='planner_set', blank=True)
+    recognition = models.ManyToManyField(Section, blank=True)
     name = models.CharField(max_length=300)
     description = models.TextField(blank=True)
     start_datetime = models.DateTimeField()
     end_datetime = models.DateTimeField()
     type = models.ForeignKey(Type)
-    sub_type = models.ForeignKey(SubType)
-    goal = models.TextField(blank=True)
-    keywords = models.ManyToManyField(Keyword, blank=True)
+    subtype = models.ForeignKey(Subtype)
+    goals = models.TextField(blank=True)
+    keywords = models.ManyToManyField(Keyword, blank=True, related_name='keyword_set')
     audience = models.CharField(max_length=1, choices=AUDIENCE_TYPES, blank=True)
     guest = models.CharField(max_length=300, blank=True)
     guest_office = models.CharField(max_length=300, blank=True)
     attendance = models.IntegerField(null=True, blank=True)
     created_datetime = models.DateTimeField(default=now, blank=True)
-    recognition = models.ManyToManyField(Section, blank=True)
-    status = models.CharField(max_length=2, choices=STATUS_TYPES, default=STATUS_TYPES[1][0])
+    status = models.CharField(
+        max_length=2,
+        choices=tuple(
+            statuses[:2] for statuses in STATUS_TYPES),
+        default=STATUS_TYPES[1][0])
     next_approver = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True, related_name='approval_queue')
-    conclusion = models.TextField(blank=True)
+    funds = models.CharField(max_length=2, choices=FUND_TYPES, default='na')
+    conclusion = models.TextField(
+        blank=True,
+        help_text=_('What went well? What would you change about this experience in the future?'),
+    )
 
     # needs_author_email is to signify the author needs to recieve an email
     # after the status has changed to either approved or denied.
@@ -103,6 +126,15 @@ class Experience(models.Model):
 
     def needs_evaluation(self):
         return self.status == 'ad' and self.end_datetime <= now()
+
+    def get_url(self, user):
+        if self.needs_evaluation():
+            return reverse('conclusion', args=[self.pk])
+        if self in user.approvable_experiences() and user.is_hallstaff():
+            return reverse('approval', args=[self.pk])
+        if self.status == 'co':
+            return reverse('view_experience', args=[self.pk])
+        return reverse('edit', args=[self.pk])
 
 
 class ExperienceApproval(models.Model):
