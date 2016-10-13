@@ -191,6 +191,14 @@ class ExperienceCreationFormTest(StandardTestCase):
             'funds': Experience.FUND_TYPES[0][0],
         }
 
+    def test_next_approver_field_only_shows_hallstaff(self):
+        data = self.get_post_data((self.test_date + timedelta(days=1)), (self.test_date + timedelta(days=2)))
+        form = ExperienceSubmitForm(data, when=self.test_date)
+        not_hs_users = get_user_model().objects.exclude(groups__name__icontains="hallstaff").values_list('id', flat=True)
+        for user in form.fields['next_approver'].choices:
+            if user[0]:
+                self.assertNotIn(user[0], not_hs_users)
+
     def test_valid_experience_creation_form(self):
         data = self.get_post_data((self.test_date + timedelta(days=1)), (self.test_date + timedelta(days=2)))
         form = ExperienceSubmitForm(data, when=self.test_date)
