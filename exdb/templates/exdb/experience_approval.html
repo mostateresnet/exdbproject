@@ -70,7 +70,7 @@
                     {% for comment in object.comment_set.all %}
                         <div>
                             <div>{{ comment.message }}</div>
-                            <div class="comment-author">-{{ comment.author }} {% trans "said on" %} {{ comment.timestamp }}</div>
+                            <div class="comment-author">-{% blocktrans %}{{ comment.author }} said on {{ comment.timestamp }}{% endblocktrans %}</div>
                         </div>
                     {% empty %}
                         <p>{% trans 'No Comments' %}</p>

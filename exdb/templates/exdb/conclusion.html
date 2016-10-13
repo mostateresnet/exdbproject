@@ -99,17 +99,17 @@
                     </div>
                 </fieldset>
             </form>
-        </div>
-        <div>
-            <h3 class="text-center">{% trans "Comments" %}</h3>
-            {% for comment in experience.comment_set.all %}
-                <div>
-                    <div>{{ comment.message }}</div>
-                    <div class="comment-author">-{{ comment.author }} {% trans "said on" %} {{ comment.timestamp }}</div>
-                </div>
-            {% empty %}
-                <div class="text-center">{% trans "No comments" %}</div>
-            {% endfor %}
+            <div>
+                <h3 class="text-center">{% trans "Comments" %}</h3>
+                {% for comment in experience.comment_set.all %}
+                    <div>
+                        <div>{{ comment.message }}</div>
+                        <div class="comment-author">-{% blocktrans %}{{ comment.author }} said on {{ comment.timestamp }}{% endblocktrans %}</div>
+                    </div>
+                {% empty %}
+                    <div class="text-center">{% trans "No comments" %}</div>
+                {% endfor %}
+            </div>
         </div>
     </div>
 {% endblock %}
