@@ -8,6 +8,7 @@ from django.utils.html import format_html
 from django.utils.translation import ugettext as _
 from django.forms import ModelForm
 from django.utils.timezone import utc
+from django.contrib.auth import get_user_model
 from exdb.models import Experience, ExperienceComment
 
 
@@ -78,6 +79,7 @@ class ExperienceSaveForm(ModelForm):
         super(ExperienceSaveForm, self).__init__(*args, **kwargs)
         self.when = when
         self.approval_form = submit
+        self.fields['next_approver'].queryset = get_user_model().objects.filter(groups__name__icontains="hallstaff")
 
 
 class ExperienceSubmitForm(ExperienceSaveForm):
