@@ -241,20 +241,21 @@ class DefaultLiveServerTestCase(StaticLiveServerTestCase):
         end = end or (make_aware(datetime(2015, 1, 1, 1, 30), timezone=utc) + timedelta(days=1))
         user = user or get_user_model().objects.get(username='user')
         name = name or 'Test'
-        return Experience.objects.get_or_create(
+        experience = Experience.objects.get_or_create(
             author=user,
             name=name,
             description="test",
             start_datetime=start,
             end_datetime=end,
             type=self.create_type(),
-            subtype=self.create_subtype(),
             goals="Test",
             audience="c",
             status=exp_status,
             attendance=0,
             next_approver=user,
         )[0]
+        experience.subtype.add(self.create_subtype())
+        return experience
 
     class SeleniumClient:
 

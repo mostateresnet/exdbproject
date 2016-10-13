@@ -27,7 +27,12 @@ class CreateExperienceView(CreateView):
         form.instance.author = self.request.user
 
         if 'submit' in self.request.POST:
-            if form.instance.subtype.needs_verification:
+            verification = False
+            for s in form.cleaned_data['subtype']:
+                if s.needs_verification:
+                    verification = True
+                    break
+            if verification:
                 form.instance.status = 'pe'
             else:
                 form.instance.status = 'co'
@@ -359,10 +364,11 @@ class SearchExperienceResultsView(ListView):
         # get rid of a users drafts for everyone else
         queryset = queryset.exclude(~Q(author=self.request.user), status='dr')
 
-        return queryset.select_related('type', 'subtype').prefetch_related(
+        return queryset.select_related('type').prefetch_related(
             'planners',
             'keywords',
             'recognition__affiliation',
+            'subtype'
         ).distinct()
 
     def get_context_data(self, *args, **kwargs):

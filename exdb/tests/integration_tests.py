@@ -54,20 +54,22 @@ class StandardTestCase(TestCase):
         end = end or (self.test_date + timedelta(days=1))
         if author is None:
             author = self.clients['ra'].user_object
-        return Experience.objects.get_or_create(
+        experience =  Experience.objects.get_or_create(
             author=author,
             name="Test Experience",
             description="test description",
             start_datetime=start,
             end_datetime=end,
             type=self.create_type(),
-            subtype=self.create_subtype(),
             goals="Test Goal",
             audience="b",
             status=exp_status,
             attendance=attendance,
             next_approver=self.clients['hs'].user_object,
         )[0]
+        sub = self.create_subtype()
+        experience.subtype.add(sub)
+        return experience
 
     def create_experience_comment(self, exp, message="Test message"):
         """Creates experience comment, must pass an experience"""
@@ -158,7 +160,7 @@ class ExperienceCreationFormTest(StandardTestCase):
             'name': 'test',
             'description': 'test',
             'type': self.test_type.pk,
-            'subtype': self.test_subtype.pk,
+            'subtype': [self.test_subtype.pk],
             'audience': 'c',
             'guest': 'test',
             'recognition': [self.test_org.pk],
@@ -176,7 +178,7 @@ class ExperienceCreationFormTest(StandardTestCase):
     def test_valid_past_experience_creation(self):
         data = self.get_post_data((self.test_date - timedelta(days=2)), (self.test_date - timedelta(days=1)))
         data['attendance'] = 1
-        data['subtype'] = self.test_past_subtype.pk
+        data['subtype'] = [self.test_past_subtype.pk]
         data['conclusion'] = "Test conclusion"
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertTrue(form.is_valid(), "Form should have been valid")
@@ -185,14 +187,14 @@ class ExperienceCreationFormTest(StandardTestCase):
         data = self.get_post_data((self.test_date - timedelta(days=2)), (self.test_date - timedelta(days=1)))
         data.pop('audience', None)
         data['attendance'] = 1
-        data['subtype'] = self.test_past_subtype.pk
+        data['subtype'] = [self.test_past_subtype.pk]
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
 
     def test_past_experience_subtype_with_future_dates(self):
         data = self.get_post_data((self.test_date + timedelta(days=1)), (self.test_date + timedelta(days=2)))
         data['attendance'] = 1
-        data['subtype'] = self.test_past_subtype.pk
+        data['subtype'] = [self.test_past_subtype.pk]
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
 
@@ -208,7 +210,7 @@ class ExperienceCreationFormTest(StandardTestCase):
 
     def test_past_experience_creation_no_attendance(self):
         data = self.get_post_data((self.test_date - timedelta(days=2)), (self.test_date - timedelta(days=1)))
-        data['subtype'] = self.test_past_subtype.pk
+        data['subtype'] = [self.test_past_subtype.pk]
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
 
@@ -221,7 +223,7 @@ class ExperienceCreationFormTest(StandardTestCase):
     def test_past_experience_creation_negative_attendance(self):
         data = self.get_post_data((self.test_date - timedelta(days=2)), (self.test_date - timedelta(days=1)))
         data['attendance'] = -1
-        data['subtype'] = self.test_past_subtype.pk
+        data['subtype'] = [self.test_past_subtype.pk]
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
 
@@ -287,7 +289,7 @@ class ExperienceCreationViewTest(StandardTestCase):
             'name': 'test',
             'description': 'test',
             'type': self.test_type.pk,
-            'subtype': self.test_subtype.pk,
+            'subtype': [self.test_subtype.pk],
             'audience': 'c',
             'guest': 'test',
             'recognition': [self.test_org.pk],
@@ -411,7 +413,6 @@ class RAHomeViewTest(StandardTestCase):
                                          start_datetime=(now() + timedelta(days=2)),
                                          end_datetime=(now() + timedelta(days=3)),
                                          type=self.create_type(),
-                                         subtype=self.create_subtype(),
                                          goals="Test Goal",
                                          audience="b",
                                          status="ad",
@@ -435,9 +436,9 @@ class ExperienceApprovalViewTest(StandardTestCase):
             'start_datetime': e.start_datetime.strftime("%Y-%m-%d %H:%M:%S"),
             'end_datetime': e.end_datetime.strftime("%Y-%m-%d %H:%M:%S"),
             'type': e.type.pk,
-            'subtype': e.subtype.pk,
             'audience': e.audience,
             'attendance': 0,
+            'subtype': [self.create_subtype().pk],
             'goals': e.goals,
             'guest': e.guest,
             'guest_office': e.guest_office,
@@ -546,7 +547,6 @@ class HallStaffDashboardViewTest(StandardTestCase):
                                               start_datetime=(now() + timedelta(days=2)),
                                               end_datetime=(now() + timedelta(days=3)),
                                               type=self.create_type(),
-                                              subtype=self.create_subtype(),
                                               goals="Test Goal",
                                               audience="b",
                                               status="ad",
@@ -579,9 +579,9 @@ class EditExperienceViewTest(StandardTestCase):
             'start_datetime': e.start_datetime.strftime("%Y-%m-%d %H:%M:%S"),
             'end_datetime': e.end_datetime.strftime("%Y-%m-%d %H:%M:%S"),
             'type': e.type.pk,
-            'subtype': e.subtype.pk,
             'audience': e.audience,
             'attendance': 0,
+            'subtype': [self.create_subtype().pk],
             'goals': e.goals,
             'guest': e.guest,
             'guest_office': e.guest_office,

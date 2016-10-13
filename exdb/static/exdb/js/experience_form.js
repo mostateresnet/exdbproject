@@ -4,16 +4,17 @@
 $(document).ready(function () {
 
     function toggle_fields() {
-        //This next line is redundant solely for coverage.
-        //It can be simplified when another branch is added to the project's js.
-        var no_verification = $('#id_subtype option.no-verification:selected').length ? true : false;
-        $('#id_attendance').closest('div').toggle(no_verification);
-        $('#id_conclusion').closest('div').toggle(no_verification);
+        var selected_subtypes = $('#id_subtype option:selected');
+        var needs_verification = $('#id_subtype option.verification:selected').length > 0;
+        var no_verification = $('#id_subtype option.no-verification:selected').length > 0;
+        var show_fields = no_verification && !needs_verification;
+        $('#id_attendance').closest('div').toggle(show_fields);
+        $('#id_conclusion').closest('div').toggle(show_fields);
     }
 
     toggle_fields();
 
-    $('#id_subtype').change(toggle_fields);
+    $('#id_subtype').on('click change', toggle_fields);
 
     $('#delete').click(function () {
         return confirm("Are you sure you want to delete this experience?");

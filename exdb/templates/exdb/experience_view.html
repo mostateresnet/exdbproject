@@ -38,8 +38,14 @@
             {{ experience.created_datetime }}
         </p>
         <p>
-            <span>{% trans "Type/Subtype" %}:</span>
-            {{ experience.type }}/{{ experience.subtype }}
+            <span>{% trans "Type" %}:</span>
+            {{ experience.type }}
+        </p>
+        <p>
+            <span>{% trans "SubType(s)" %}:</span>
+            {% for sub in experience.subtype.all %}
+                {{ sub }}{% if not forloop.last %}, {% endif %}
+            {% endfor %}
         </p>
         <p>
             <span>{% trans "Start/End" %}:</span>
