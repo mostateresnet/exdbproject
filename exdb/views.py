@@ -27,11 +27,7 @@ class CreateExperienceView(CreateView):
         form.instance.author = self.request.user
 
         if 'submit' in self.request.POST:
-            verification = False
-            for s in form.cleaned_data['subtype']:
-                if s.needs_verification:
-                    verification = True
-                    break
+            verification = any(s.needs_verification for s in form.cleaned_data['subtypes'])
             if verification:
                 form.instance.status = 'pe'
             else:
@@ -345,7 +341,6 @@ class SearchExperienceResultsView(ListView):
             'author__first_name',
             'author__last_name',
             'type__name',
-            'subtype__name',
         ]
 
         filter_Qs = Q()
@@ -368,7 +363,6 @@ class SearchExperienceResultsView(ListView):
             'planners',
             'keywords',
             'recognition__affiliation',
-            'subtype'
         ).distinct()
 
     def get_context_data(self, *args, **kwargs):

@@ -19,8 +19,7 @@ class SubtypeSelect(forms.SelectMultiple):
         option_value = force_text(option_value)
         if option_value in selected_choices:
             selected_html = mark_safe(' selected="selected"')
-            if not self.allow_multiple_selected:
-                selected_choices.remove(option_value)
+
         else:
             selected_html = ''
         css_classes = []
@@ -43,7 +42,7 @@ class ExperienceSaveForm(ModelForm):
         fields = [
             'name',
             'type',
-            'subtype',
+            'subtypes',
             'description',
             'goals',
             'planners',
@@ -63,7 +62,7 @@ class ExperienceSaveForm(ModelForm):
         widgets = {
             'description': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
             'goals': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
-            'subtype': SubtypeSelect(),
+            'subtypes': SubtypeSelect(),
             'conclusion': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
         }
 
@@ -85,7 +84,7 @@ class ExperienceSaveForm(ModelForm):
 class ExperienceSubmitForm(ExperienceSaveForm):
 
     def clean(self):
-        ex_subtype = self.cleaned_data.get('subtype')
+        ex_subtype = self.cleaned_data.get('subtypes')
         needs_verification = False
 
         if ex_subtype:

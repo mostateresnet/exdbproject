@@ -92,7 +92,7 @@ class Experience(models.Model):
     start_datetime = models.DateTimeField()
     end_datetime = models.DateTimeField()
     type = models.ForeignKey(Type)
-    subtype = models.ManyToManyField(Subtype, blank=True)
+    subtypes = models.ManyToManyField(Subtype, blank=True, related_name='subtype_set')
     goals = models.TextField(blank=True)
     keywords = models.ManyToManyField(Keyword, blank=True, related_name='keyword_set')
     audience = models.CharField(max_length=1, choices=AUDIENCE_TYPES, blank=True)

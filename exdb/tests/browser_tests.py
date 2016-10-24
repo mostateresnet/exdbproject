@@ -254,7 +254,7 @@ class DefaultLiveServerTestCase(StaticLiveServerTestCase):
             attendance=0,
             next_approver=user,
         )[0]
-        experience.subtype.add(self.create_subtype())
+        experience.subtypes.add(self.create_subtype())
         return experience
 
     class SeleniumClient:
@@ -421,7 +421,7 @@ class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
 
     def test_shows_attendance_field(self):
         self.client.get(reverse('create_experience'))
-        subtype_element = self.driver.find_element(By.ID, 'id_subtype')
+        subtype_element = self.driver.find_element(By.ID, 'id_subtypes')
         subtype_element.find_element_by_class_name('no-verification').click()
         attnd_element = self.driver.find_element(By.ID, 'id_attendance')
         self.assertTrue(attnd_element.is_displayed(),
@@ -429,7 +429,7 @@ class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
 
     def test_rehides_attendance_field(self):
         self.client.get(reverse('create_experience'))
-        subtype_element = self.driver.find_element(By.ID, 'id_subtype')
+        subtype_element = self.driver.find_element(By.ID, 'id_subtypes')
         subtype_element.find_element_by_class_name('no-verification').click()
         subtype_element.find_elements_by_tag_name('option')[0].click()
         attnd_element = self.driver.find_element(By.ID, 'id_attendance')
@@ -438,7 +438,7 @@ class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
 
     def test_attendance_conclusion_not_hidden_if_no_verify(self):
         self.client.get(reverse('create_experience'))
-        subtype_element = self.driver.find_element(By.ID, 'id_subtype')
+        subtype_element = self.driver.find_element(By.ID, 'id_subtypes')
         subtype_element.find_element_by_class_name('no-verification').click()
         self.driver.find_element(By.ID, 'submit_experience').click()
         con_element = self.driver.find_element(By.ID, 'id_conclusion')
