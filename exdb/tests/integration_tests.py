@@ -418,7 +418,6 @@ class RAHomeViewTest(StandardTestCase):
                                              status="ad",
                                              attendance=3)[0]
         e.subtypes.add(self.create_subtype())
-        e.save()
         response = self.clients['ra'].get(reverse('home'))
         self.assertEqual(len(response.context["experience_dict"]["Upcoming"]),
                          1, "There should be 1 experience in the next month")
@@ -555,7 +554,6 @@ class HallStaffDashboardViewTest(StandardTestCase):
                                               attendance=None,
                                               next_approver=self.clients['hs'].user_object)[0]
         e2.subtypes.add(self.create_subtype())
-        e2.save()
         ExperienceApproval.objects.create(experience=e1, approver=self.clients['hs'].user_object)
         ExperienceApproval.objects.create(experience=e2, approver=self.clients['hs'].user_object)
         response = self.clients['hs'].get(reverse('home'))

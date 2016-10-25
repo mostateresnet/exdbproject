@@ -11,7 +11,6 @@ class Migration(migrations.Migration):
         Experience = apps.get_model("exdb", "Experience")
         for experience in Experience.objects.all():
             experience.temp_subtypes.add(experience.subtype)
-            experience.save()
 
     dependencies = [
         ('exdb', '0006_experience_temp_subtypes'),
