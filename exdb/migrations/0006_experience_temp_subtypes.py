@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name='experience',
-            name='temp_subtpyes',
-            field=models.ManyToManyField(blank=True, related_name='subtype_set', to='exdb.Subtype'),
+            name='temp_subtypes',
+            field=models.ManyToManyField(blank=True, related_name='experience_set', to='exdb.Subtype'),
         ),
     ]

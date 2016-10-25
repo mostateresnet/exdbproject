@@ -85,7 +85,7 @@ class ExperienceSubmitForm(ExperienceSaveForm):
 
     def clean(self):
         ex_subtype = self.cleaned_data.get('subtypes')
-        needs_verification = False
+        needs_verification = True
 
         if ex_subtype:
             needs_verification = any(x.needs_verification for x in ex_subtype)

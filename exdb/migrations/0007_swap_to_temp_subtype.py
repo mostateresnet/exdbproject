@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
     def swap_over_subtypes(apps, schema_editor):
         Experience = apps.get_model("exdb", "Experience")
         for experience in Experience.objects.all():
-            experience.temp_subtpyes.add(experience.subtype)
+            experience.temp_subtypes.add(experience.subtype)
             experience.save()
 
     dependencies = [

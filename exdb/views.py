@@ -341,6 +341,7 @@ class SearchExperienceResultsView(ListView):
             'author__first_name',
             'author__last_name',
             'type__name',
+            'subtypes__name',
         ]
 
         filter_Qs = Q()
@@ -363,6 +364,7 @@ class SearchExperienceResultsView(ListView):
             'planners',
             'keywords',
             'recognition__affiliation',
+            'subtypes',
         ).distinct()
 
     def get_context_data(self, *args, **kwargs):

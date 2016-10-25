@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RenameField(
             model_name='experience',
-            old_name='temp_subtpyes',
+            old_name='temp_subtypes',
             new_name='subtypes',
         ),
         migrations.RemoveField(

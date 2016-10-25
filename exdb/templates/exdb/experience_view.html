@@ -42,7 +42,7 @@
             {{ experience.type }}
         </p>
         <p>
-            <span>{% trans "Subtype(s)" %}:</span>
+            <span>{% trans "Subtypes" %}:</span>
             {% for sub in experience.subtypes.all %}
                 {{ sub }}{% if not forloop.last %}, {% endif %}
             {% endfor %}
