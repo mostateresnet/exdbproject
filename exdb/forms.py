@@ -105,7 +105,7 @@ class ExperienceSubmitForm(ExperienceSaveForm):
              ValidationError(_('Please select the supervisor to review this experience'))),
             (needs_verification is False and (self.cleaned_data.get('start_datetime', max_dt) > self.when),
                 ValidationError(_('This experience must have a start date in the past'))),
-            (needs_verification and (self.cleaned_data.get('start_datetime', max_dt) < self.when),
+            (needs_verification and (self.cleaned_data.get('start_datetime', min_dt) < self.when and not self.approval_form),
                 ValidationError(_('This experience must have a start date in the future'))),
             (self.cleaned_data.get('start_datetime', max_dt) >= self.cleaned_data.get('end_datetime', min_dt),
              ValidationError(_('Start time must be before end time'))),
