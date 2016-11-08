@@ -54,20 +54,22 @@ class StandardTestCase(TestCase):
         end = end or (self.test_date + timedelta(days=1))
         if author is None:
             author = self.clients['ra'].user_object
-        return Experience.objects.get_or_create(
+        experience = Experience.objects.get_or_create(
             author=author,
             name="Test Experience",
             description="test description",
             start_datetime=start,
             end_datetime=end,
             type=self.create_type(),
-            subtype=self.create_subtype(),
             goals="Test Goal",
             audience="b",
             status=exp_status,
             attendance=attendance,
             next_approver=self.clients['hs'].user_object,
         )[0]
+        sub = self.create_subtype()
+        experience.subtypes.add(sub)
+        return experience
 
     def create_experience_comment(self, exp, message="Test message"):
         """Creates experience comment, must pass an experience"""
@@ -158,7 +160,7 @@ class ExperienceCreationFormTest(StandardTestCase):
             'name': 'test',
             'description': 'test',
             'type': self.test_type.pk,
-            'subtype': self.test_subtype.pk,
+            'subtypes': [self.test_subtype.pk],
             'audience': 'c',
             'guest': 'test',
             'recognition': [self.test_org.pk],
@@ -184,7 +186,7 @@ class ExperienceCreationFormTest(StandardTestCase):
     def test_valid_past_experience_creation(self):
         data = self.get_post_data((self.test_date - timedelta(days=2)), (self.test_date - timedelta(days=1)))
         data['attendance'] = 1
-        data['subtype'] = self.test_past_subtype.pk
+        data['subtypes'] = [self.test_past_subtype.pk]
         data['conclusion'] = "Test conclusion"
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertTrue(form.is_valid(), "Form should have been valid")
@@ -193,14 +195,14 @@ class ExperienceCreationFormTest(StandardTestCase):
         data = self.get_post_data((self.test_date - timedelta(days=2)), (self.test_date - timedelta(days=1)))
         data.pop('audience', None)
         data['attendance'] = 1
-        data['subtype'] = self.test_past_subtype.pk
+        data['subtypes'] = [self.test_past_subtype.pk]
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
 
     def test_past_experience_subtype_with_future_dates(self):
         data = self.get_post_data((self.test_date + timedelta(days=1)), (self.test_date + timedelta(days=2)))
         data['attendance'] = 1
-        data['subtype'] = self.test_past_subtype.pk
+        data['subtypes'] = [self.test_past_subtype.pk]
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
 
@@ -216,7 +218,7 @@ class ExperienceCreationFormTest(StandardTestCase):
 
     def test_past_experience_creation_no_attendance(self):
         data = self.get_post_data((self.test_date - timedelta(days=2)), (self.test_date - timedelta(days=1)))
-        data['subtype'] = self.test_past_subtype.pk
+        data['subtypes'] = [self.test_past_subtype.pk]
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
 
@@ -229,7 +231,7 @@ class ExperienceCreationFormTest(StandardTestCase):
     def test_past_experience_creation_negative_attendance(self):
         data = self.get_post_data((self.test_date - timedelta(days=2)), (self.test_date - timedelta(days=1)))
         data['attendance'] = -1
-        data['subtype'] = self.test_past_subtype.pk
+        data['subtypes'] = [self.test_past_subtype.pk]
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
 
@@ -253,7 +255,7 @@ class ExperienceCreationFormTest(StandardTestCase):
 
     def test_experience_creation_form_no_subtype(self):
         data = self.get_post_data((self.test_date + timedelta(days=1)), (self.test_date + timedelta(days=2)))
-        data.pop('subtype', None)
+        data.pop('subtypes', None)
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
 
@@ -266,7 +268,7 @@ class ExperienceCreationFormTest(StandardTestCase):
     def test_experience_creation_spontaneous_no_conclusion(self):
         data = self.get_post_data((self.test_date - timedelta(days=2)), (self.test_date - timedelta(days=1)))
         data['attendance'] = 1
-        data['subtype'] = self.test_past_subtype.pk
+        data['subtypes'] = [self.test_past_subtype.pk]
         data['conclusion'] = ""
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should not be valid with no conclusion if it does not need approval")
@@ -295,7 +297,7 @@ class ExperienceCreationViewTest(StandardTestCase):
             'name': 'test',
             'description': 'test',
             'type': self.test_type.pk,
-            'subtype': self.test_subtype.pk,
+            'subtypes': [self.test_subtype.pk],
             'audience': 'c',
             'guest': 'test',
             'recognition': [self.test_org.pk],
@@ -331,7 +333,7 @@ class ExperienceCreationViewTest(StandardTestCase):
         end = now() - timedelta(days=1)
         data = self.get_post_data(start, end)
         data['attendance'] = 1
-        data['subtype'] = self.test_past_subtype.pk
+        data['subtypes'] = [self.test_past_subtype.pk]
         data['conclusion'] = "Test conclusion"
         self.clients['ra'].post(reverse('create_experience'), data)
         self.assertEqual('co', Experience.objects.get(name='test').status,
@@ -414,16 +416,16 @@ class RAHomeViewTest(StandardTestCase):
     @override_settings(HALLSTAFF_UPCOMING_TIMEDELTA=timedelta(days=0), RA_UPCOMING_TIMEDELTA=timedelta(days=31))
     def test_week_ahead(self):
         self.create_experience('ad')
-        Experience.objects.get_or_create(author=self.clients['ra'].user_object,
-                                         name="E1", description="test description",
-                                         start_datetime=(now() + timedelta(days=2)),
-                                         end_datetime=(now() + timedelta(days=3)),
-                                         type=self.create_type(),
-                                         subtype=self.create_subtype(),
-                                         goals="Test Goal",
-                                         audience="b",
-                                         status="ad",
-                                         attendance=3)
+        e = Experience.objects.get_or_create(author=self.clients['ra'].user_object,
+                                             name="E1", description="test description",
+                                             start_datetime=(now() + timedelta(days=2)),
+                                             end_datetime=(now() + timedelta(days=3)),
+                                             type=self.create_type(),
+                                             goals="Test Goal",
+                                             audience="b",
+                                             status="ad",
+                                             attendance=3)[0]
+        e.subtypes.add(self.create_subtype())
         response = self.clients['ra'].get(reverse('home'))
         self.assertEqual(len(response.context["experience_dict"]["Upcoming"]),
                          1, "There should be 1 experience in the next month")
@@ -443,9 +445,9 @@ class ExperienceApprovalViewTest(StandardTestCase):
             'start_datetime': e.start_datetime.strftime("%Y-%m-%d %H:%M:%S"),
             'end_datetime': e.end_datetime.strftime("%Y-%m-%d %H:%M:%S"),
             'type': e.type.pk,
-            'subtype': e.subtype.pk,
             'audience': e.audience,
             'attendance': 0,
+            'subtypes': [st.pk for st in e.subtypes.all()],
             'goals': e.goals,
             'guest': e.guest,
             'guest_office': e.guest_office,
@@ -554,12 +556,12 @@ class HallStaffDashboardViewTest(StandardTestCase):
                                               start_datetime=(now() + timedelta(days=2)),
                                               end_datetime=(now() + timedelta(days=3)),
                                               type=self.create_type(),
-                                              subtype=self.create_subtype(),
                                               goals="Test Goal",
                                               audience="b",
                                               status="ad",
                                               attendance=None,
                                               next_approver=self.clients['hs'].user_object)[0]
+        e2.subtypes.add(self.create_subtype())
         ExperienceApproval.objects.create(experience=e1, approver=self.clients['hs'].user_object)
         ExperienceApproval.objects.create(experience=e2, approver=self.clients['hs'].user_object)
         response = self.clients['hs'].get(reverse('home'))
@@ -587,9 +589,9 @@ class EditExperienceViewTest(StandardTestCase):
             'start_datetime': e.start_datetime.strftime("%Y-%m-%d %H:%M:%S"),
             'end_datetime': e.end_datetime.strftime("%Y-%m-%d %H:%M:%S"),
             'type': e.type.pk,
-            'subtype': e.subtype.pk,
             'audience': e.audience,
             'attendance': 0,
+            'subtypes': [st.pk for st in e.subtypes.all()],
             'goals': e.goals,
             'guest': e.guest,
             'guest_office': e.guest_office,

@@ -12,7 +12,7 @@ from django.contrib.auth import get_user_model
 from exdb.models import Experience, ExperienceComment
 
 
-class SubtypeSelect(forms.Select):
+class SubtypeSelect(forms.SelectMultiple):
 
     def render_option(self, selected_choices, option_value, option_label):
         if option_value is None:
@@ -20,14 +20,15 @@ class SubtypeSelect(forms.Select):
         option_value = force_text(option_value)
         if option_value in selected_choices:
             selected_html = mark_safe(' selected="selected"')
-            if not self.allow_multiple_selected:
-                selected_choices.remove(option_value)
+
         else:
             selected_html = ''
         css_classes = []
         choice_dict = {str(c.pk): c for c in self.choices.queryset}
         if option_value in choice_dict and not choice_dict[option_value].needs_verification:
             css_classes.append('no-verification')
+        else:
+            css_classes.append('verification')
         return format_html('<option class="{}" value="{}"{}>{}</option>',
                            ' '.join(css_classes),
                            option_value,
@@ -42,7 +43,7 @@ class ExperienceSaveForm(ModelForm):
         fields = [
             'name',
             'type',
-            'subtype',
+            'subtypes',
             'description',
             'goals',
             'planners',
@@ -62,7 +63,7 @@ class ExperienceSaveForm(ModelForm):
         widgets = {
             'description': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
             'goals': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
-            'subtype': SubtypeSelect(),
+            'subtypes': SubtypeSelect(),
             'conclusion': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
         }
 
@@ -85,9 +86,12 @@ class ExperienceSaveForm(ModelForm):
 class ExperienceSubmitForm(ExperienceSaveForm):
 
     def clean(self):
-        ex_subtype = self.cleaned_data.get('subtype')
-        needs_verification = ex_subtype.needs_verification if ex_subtype else None
-        name = "" if not ex_subtype else ex_subtype.name
+        ex_subtype = self.cleaned_data.get('subtypes')
+        needs_verification = True
+
+        if ex_subtype:
+            needs_verification = any(x.needs_verification for x in ex_subtype)
+
         min_dt = datetime.min.replace(tzinfo=utc)
         max_dt = datetime.max.replace(tzinfo=utc)
 
@@ -101,25 +105,24 @@ class ExperienceSubmitForm(ExperienceSaveForm):
             (needs_verification and not self.approval_form and
                 not self.cleaned_data.get('next_approver'),
              ValidationError(_('Please select the supervisor to review this experience'))),
+            (needs_verification is False and (self.cleaned_data.get('start_datetime', max_dt) > self.when),
+                ValidationError(_('This experience must have a start date in the past'))),
+            (needs_verification and (self.cleaned_data.get('start_datetime', min_dt) < self.when and not self.approval_form),
+                ValidationError(_('This experience must have a start date in the future'))),
             (self.cleaned_data.get('start_datetime', max_dt) >= self.cleaned_data.get('end_datetime', min_dt),
              ValidationError(_('Start time must be before end time'))),
-            (needs_verification is False and (self.cleaned_data.get('start_datetime', max_dt) > self.when),
-             ValidationError(_('%(name)s experiences must have happened in the past') % {'name': name})),
             (needs_verification is False and (not self.cleaned_data.get(
                 'attendance') or self.cleaned_data.get('attendance') < 1),
-             ValidationError(_('%(name)s events must have an attendance') % {'name': name})),
+             ValidationError(_('An attendance is required'))),
             (needs_verification is False and not self.cleaned_data.get('audience'),
-             ValidationError(_('%(name)s events must have an audience') % {'name': name})),
+             ValidationError(_('An audience is required'))),
             (needs_verification and self.cleaned_data.get('attendance'),
-             ValidationError(_('%(name)s events cannot have an attendance') % {'name': name})),
-            (needs_verification and self.cleaned_data.get('start_datetime', min_dt) < self.when and
-                not self.approval_form,
-             ValidationError(_('%(name)s events cannot happen in the past') % {'name': name})),
+             ValidationError(_('An attendance is not allowed yet'))),
             (needs_verification and self.cleaned_data.get('next_approver')
                 and not self.cleaned_data.get('next_approver').is_hallstaff(),
              ValidationError(_('Supervisor must have permissions to approve and deny experiences'))),
-            (name and needs_verification is False and not self.cleaned_data.get('conclusion'),
-             ValidationError(_('%(name)s events must have a conclusion') % {'name': name})),
+            (needs_verification is False and not self.cleaned_data.get('conclusion'),
+             ValidationError(_('A conclusion is required'))),
         )
 
         validation_errors = []
