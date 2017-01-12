@@ -187,7 +187,19 @@ class ExperienceConclusionView(UpdateView):
         return reverse('home')
 
     def get_queryset(self, **kwargs):
-        return Experience.objects.filter(pk=self.kwargs['pk'])
+        Qs = Q(author=self.request.user) | Q(planners=self.request.user)
+        if self.request.user.is_hallstaff():
+            experience_approvals = ExperienceApproval.objects.filter(
+                approver=self.request.user, experience__status='ad'
+            )
+            Qs |= Q(pk__in=experience_approvals.values('experience'))
+        return Experience.objects.filter(Qs & Q(pk=self.kwargs['pk'])).distinct()
+
+    def get_object(self, **kwargs):
+        experience = super(ExperienceConclusionView, self).get_object()
+        if experience.needs_evaluation():
+            return experience
+        raise Http404
 
     def form_valid(self, form):
         valid_form = super(ExperienceConclusionView, self).form_valid(form)

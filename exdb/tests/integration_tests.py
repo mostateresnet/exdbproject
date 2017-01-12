@@ -384,6 +384,36 @@ class ExperienceConclusionViewTest(StandardTestCase):
         e = self.post_data(conclusion="")
         self.assertEqual(e.status, 'ad', "The experience should not be complete without a conclusion.")
 
+    def test_cannot_access_conclude_if_not_needs_evaluation(self):
+        e = self.create_experience('pe')
+        response = self.clients['ra'].get(reverse('conclusion', args=[e.pk]))
+        self.assertEqual(response.status_code, 404,
+                         "If the experience does not need evaluation, the response status should be a 404")
+
+    def test_author_can_access_conclude_if_needs_evaluation(self):
+        e = self.create_experience('ad', end=now() - timedelta(days=1))
+        response = self.clients['ra'].get(reverse('conclusion', args=[e.pk]))
+        self.assertEqual(response.status_code, 200,
+                         "If the experience needs evaluation, the response status should be a 200")
+
+    def test_planner_can_access_if_needs_evaluation(self):
+        e = self.create_experience('ad', end=now() - timedelta(days=1), author=self.clients['hs'].user_object)
+        e.planners.add(self.clients['ra'].user_object)
+        response = self.clients['ra'].get(reverse('conclusion', args=[e.pk]))
+        self.assertEqual(response.status_code, 200,
+                         "A planner should be able to conclude an experience")
+
+    def test_approver_can_access_if_needs_evaluation(self):
+        e = self.create_experience('ad', end=now() - timedelta(days=1))
+        ExperienceApproval.objects.create(
+            experience=e,
+            approver=self.clients['hs'].user_object,
+            timestamp=now() - timedelta(days=1),
+        )
+        response = self.clients['hs'].get(reverse('conclusion', args=[e.pk]))
+        self.assertEqual(response.status_code, 200,
+                         "An approver should be able to conclude an experience")
+
 
 class RAHomeViewTest(StandardTestCase):
 
