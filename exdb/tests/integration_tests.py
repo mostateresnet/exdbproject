@@ -414,6 +414,12 @@ class ExperienceConclusionViewTest(StandardTestCase):
         self.assertEqual(response.status_code, 200,
                          "An approver should be able to conclude an experience")
 
+    def test_unrelated_user_cannot_conclude_if_needs_evaluation(self):
+        e = self.create_experience('ad', end=now() - timedelta(days=1), author=self.clients['hs'].user_object)
+        response = self.clients['ra'].get(reverse('conclusion', args=[e.pk]))
+        self.assertEqual(response.status_code, 404,
+                         "An unrelated user should not be able to conclude an experience")
+
 
 class RAHomeViewTest(StandardTestCase):
 
