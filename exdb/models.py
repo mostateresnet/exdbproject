@@ -169,3 +169,17 @@ class EmailTask(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Semester(models.Model):
+    start_datetime = models.DateTimeField()
+    end_datetime = models.DateTimeField()
+
+
+class Requirement(models.Model):
+    start_datetime = models.DateTimeField()
+    end_datetime = models.DateTimeField()
+    semester = models.ForeignKey(Semester)
+    affiliation = models.ForeignKey(Affiliation)
+    total_needed = models.IntegerField(default=1)
+    subtype = models.ForeignKey(Subtype)

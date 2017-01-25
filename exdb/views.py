@@ -9,9 +9,9 @@ from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth import get_user_model
 from django.conf import settings
-from django.db.models import Q
+from django.db.models import Q, Prefetch, F
 
-from exdb.models import Experience, ExperienceComment, ExperienceApproval
+from exdb.models import Experience, ExperienceComment, ExperienceApproval, EXDBUser, Subtype, Requirement, Affiliation, Semester
 from .forms import ExperienceSubmitForm, ExperienceSaveForm, ApprovalForm, ExperienceConclusionForm
 
 
@@ -370,4 +370,57 @@ class SearchExperienceResultsView(ListView):
     def get_context_data(self, *args, **kwargs):
         context = super(SearchExperienceResultsView, self).get_context_data(*args, **kwargs)
         context['search_query'] = self.request.GET.get('search', '')
+        return context
+
+
+class CompletionBoardView(TemplateView):
+    access_level = 'basic'
+    template_name = 'exdb/completion_board.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(CompletionBoardView, self).get_context_data()
+
+        affiliation = Affiliation.objects.get(pk=17)
+        current_time = timezone.now()
+        semester = Semester.objects.get(start_datetime__lte=current_time, end_datetime__gte=current_time)
+
+        # Make sure this is correct
+        prefetch = Prefetch('experience_set', queryset=Experience.objects.filter(start_datetime__lte=semester.end_datetime, end_datetime__gte=semester.start_datetime, status='co'))
+
+        sections = affiliation.section_set.prefetch_related(prefetch, 'experience_set__subtypes')
+
+        requirements = Requirement.objects.filter(semester=semester, affiliation=affiliation).annotate(duration=(F('end_datetime') - F('start_datetime'))).order_by('duration')
+
+        requirement_dict = {}
+        for req in requirements:
+            requirement_dict[req.subtype] = requirement_dict.get(req.subtype, []) + [req]
+
+        for section in sections:
+            experiences_grouped_by_subtype = {}
+            for experience in section.experience_set.all():
+                for sub in experience.subtypes.all():
+                    experiences_grouped_by_subtype[sub] = experiences_grouped_by_subtype.get(sub, []) + [experience]
+                    #FIX this, check the experince happened in the correct time
+                    # tmp[sub] = tmp.get(sub, 0) + 1
+
+            total_fulfillment_count = 0
+            total_needed_count = 0
+            for subtype, requirements in requirement_dict.items():
+                for requirement in requirements:
+                    requirement.fulfillment_count = 0
+                    # loop over a copy of the original since we're deleting things from it
+                    for experience in list(experiences_grouped_by_subtype.get(subtype, [])):
+                        # The below if statement might need to be reworked
+                        # We might want to check if the end_datetime is within the requirement datetime range (ask Travis)
+                        if requirement.start_datetime <= experience.start_datetime <= requirement.end_datetime:
+                            experiences_grouped_by_subtype[subtype].remove(experience)
+                            requirement.fulfillment_count += 1
+                            if requirement.fulfillment_count == requirement.total_needed:
+                                break
+                    total_fulfillment_count += requirement.fulfillment_count
+                    total_needed_count += requirement.total_needed
+            section.progress = (float(total_fulfillment_count) / float(total_needed_count))*100
+
+        context['sections'] = sections
+
         return context

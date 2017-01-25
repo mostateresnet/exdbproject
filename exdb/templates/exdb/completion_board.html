@@ -1,0 +1,21 @@
+{% extends "exdb/base.html" %}
+{% load i18n %}
+{% load exdbtags %}
+{% load staticfiles %}
+{% block css %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/completion_board.css' %}"/>
+{% endblock %}
+{% block content %}
+    {{ block.super }}
+        <div class="row">
+            {% for section in sections %}
+                <p>{{section}}</p>
+                <div class="progress large-9 success">
+                    <span class="progress-meter" style="width: {{ section.progress }}%">
+
+                    </span>
+                </div>
+            {% endfor %}
+        </div>
+{% endblock %}
