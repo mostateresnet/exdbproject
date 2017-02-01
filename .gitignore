@@ -1,7 +1,6 @@
 ##### start project specific ignores #####
 *.sqlite3
 settings_local.py
-*.swp
 ##### end project specific ignores #####
 
 
