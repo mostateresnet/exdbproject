@@ -21,7 +21,7 @@
                         <th data-placeholder="&#xf002;">{% trans "Experience Name" %}</th>
                         <th data-placeholder="&#xf002;">{% trans "Planners" %}</th>
                         <th data-placeholder="&#xf002;">{% trans "Type" %}</th>
-                        <th data-placeholder="&#xf002;">{% trans "Subtype" %}</th>
+                        <th data-placeholder="&#xf002;">{% trans "Subtypes" %}</th>
                         <th data-placeholder="&#xf002;">{% trans "Building" %}</th>
                         <th data-placeholder="&#xf002;">{% trans "Keywords" %}</th>
                         <th data-placeholder="&#xf002;">{% trans "Status" %}</th>
@@ -38,7 +38,11 @@
                                 {% endfor %}
                             </td>
                             <td class="type">{{ exp.type }}</td>
-                            <td class="subtype">{{ exp.subtype }}</td>
+                            <td class="subtype">
+                                {% for subtype in exp.subtypes.all %}
+                                    {{ subtype }}{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                            </td>
                             <td class="recognition">
                                 {% for rec in exp.recognition.all %}
                                     {{ rec.affiliation }}{% if not forloop.last %}, {% endif %}

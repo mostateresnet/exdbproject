@@ -241,20 +241,21 @@ class DefaultLiveServerTestCase(StaticLiveServerTestCase):
         end = end or (make_aware(datetime(2015, 1, 1, 1, 30), timezone=utc) + timedelta(days=1))
         user = user or get_user_model().objects.get(username='user')
         name = name or 'Test'
-        return Experience.objects.get_or_create(
+        experience = Experience.objects.get_or_create(
             author=user,
             name=name,
             description="test",
             start_datetime=start,
             end_datetime=end,
             type=self.create_type(),
-            subtype=self.create_subtype(),
             goals="Test",
             audience="c",
             status=exp_status,
             attendance=0,
             next_approver=user,
         )[0]
+        experience.subtypes.add(self.create_subtype())
+        return experience
 
     class SeleniumClient:
 
@@ -420,7 +421,7 @@ class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
 
     def test_shows_attendance_field(self):
         self.client.get(reverse('create_experience'))
-        subtype_element = self.driver.find_element(By.ID, 'id_subtype')
+        subtype_element = self.driver.find_element(By.ID, 'id_subtypes')
         subtype_element.find_element_by_class_name('no-verification').click()
         attnd_element = self.driver.find_element(By.ID, 'id_attendance')
         self.assertTrue(attnd_element.is_displayed(),
@@ -428,7 +429,7 @@ class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
 
     def test_rehides_attendance_field(self):
         self.client.get(reverse('create_experience'))
-        subtype_element = self.driver.find_element(By.ID, 'id_subtype')
+        subtype_element = self.driver.find_element(By.ID, 'id_subtypes')
         subtype_element.find_element_by_class_name('no-verification').click()
         subtype_element.find_elements_by_tag_name('option')[0].click()
         attnd_element = self.driver.find_element(By.ID, 'id_attendance')
@@ -437,7 +438,7 @@ class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
 
     def test_attendance_conclusion_not_hidden_if_no_verify(self):
         self.client.get(reverse('create_experience'))
-        subtype_element = self.driver.find_element(By.ID, 'id_subtype')
+        subtype_element = self.driver.find_element(By.ID, 'id_subtypes')
         subtype_element.find_element_by_class_name('no-verification').click()
         self.driver.find_element(By.ID, 'submit_experience').click()
         con_element = self.driver.find_element(By.ID, 'id_conclusion')
