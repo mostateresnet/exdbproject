@@ -88,6 +88,15 @@
                         <p>{% trans 'No Comments' %}</p>
                     {% endfor %}
                 </fieldset>
+
+                <h4>Edit Log</h4>
+                <div class="log">
+                    <p>
+                        {% for entry in object.edit_log.all %}
+                            {{ entry.timestamp }} made by {{ entry.editor }} <br/>
+                        {% endfor %}
+                    </p>
+                </div>
             </div>
         </form>
     </div>

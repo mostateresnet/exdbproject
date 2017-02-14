@@ -12,3 +12,12 @@ span.errors ul{
     list-style-type: None;
 }
 
+.log {
+    border: 0.5px solid #cccccc;
+}
+
+.log p {
+  padding: 10px;
+  padding-left: 15px;
+  padding-bottom: 0px;
+}
