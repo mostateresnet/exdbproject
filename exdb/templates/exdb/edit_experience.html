@@ -93,7 +93,7 @@
                 <div class="log">
                     <p>
                         {% for entry in object.edit_log.all %}
-                            {{ entry.timestamp }} made by {{ entry.editor }} <br/>
+                            {{ entry.timestamp }} {% trans 'made by' %} {{ entry.editor }} <br/>
                         {% endfor %}
                     </p>
                 </div>
