@@ -18,7 +18,7 @@
                                 {% for experience in experiences %}
                                     <a href="{% experience_url experience user %}">
                                         <div class="{{ status|cut:" " }}-background">
-                                            {{ experience.name }} {{ experience.start_datetime|date:"DATE_FORMAT" }}
+                                            <span class="exp-name">{{ experience.name }}</span> <br/> {{ experience.start_datetime|date:"DATE_FORMAT" }}
                                         </div>
                                     </a>
                                 {% endfor %}
