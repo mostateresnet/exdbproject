@@ -111,8 +111,9 @@ class ExperienceSubmitForm(ExperienceSaveForm):
                 ValidationError(_('This experience must have a start date in the future'))),
             (self.cleaned_data.get('start_datetime', max_dt) >= self.cleaned_data.get('end_datetime', min_dt),
              ValidationError(_('Start time must be before end time'))),
-            (needs_verification is False and (not self.cleaned_data.get(
-                'attendance') or self.cleaned_data.get('attendance') < 1),
+            (needs_verification is False and ((not self.cleaned_data.get(
+                'attendance') and self.cleaned_data.get('attendance', -1) != 0)
+             or self.cleaned_data.get('attendance') < 0),
              ValidationError(_('An attendance is required'))),
             (needs_verification is False and not self.cleaned_data.get('audience'),
              ValidationError(_('An audience is required'))),
@@ -152,7 +153,8 @@ class ExperienceConclusionForm(ModelForm):
 
     def clean(self):
         conditions = (
-            (not self.cleaned_data.get('attendance'), ValidationError(_('There must be an attendance'))),
+            (not self.cleaned_data.get('attendance') and self.cleaned_data.get('attendance', -1) != 0,
+             ValidationError(_('There must be an attendance'))),
             (self.cleaned_data.get('attendance') and self.cleaned_data.get('attendance') < 0,
              ValidationError(_('There cannot be a negative attendance'))),
             (not self.cleaned_data.get('conclusion'), ValidationError(_('Please enter a conclusion'))),

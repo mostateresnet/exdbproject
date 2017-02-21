@@ -216,11 +216,20 @@ class ExperienceCreationFormTest(StandardTestCase):
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
 
-    def test_past_experience_creation_no_attendance(self):
+    def test_past_experience_creation_no_attendance_submitted(self):
         data = self.get_post_data((self.test_date - timedelta(days=2)), (self.test_date - timedelta(days=1)))
         data['subtypes'] = [self.test_past_subtype.pk]
+        data['conclusion'] = 'Test conclusion'
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
+
+    def test_past_experience_creation_zero_attendance(self):
+        data = self.get_post_data((self.test_date - timedelta(days=2)), (self.test_date - timedelta(days=1)))
+        data['subtypes'] = [self.test_past_subtype.pk]
+        data['attendance'] = 0
+        data['conclusion'] = 'Test conclusion'
+        form = ExperienceSubmitForm(data, when=self.test_date)
+        self.assertTrue(form.is_valid(), "Form should have been valid")
 
     def test_experience_creation_with_attendance(self):
         data = self.get_post_data((self.test_date + timedelta(days=1)), (self.test_date + timedelta(days=2)))
@@ -231,6 +240,7 @@ class ExperienceCreationFormTest(StandardTestCase):
     def test_past_experience_creation_negative_attendance(self):
         data = self.get_post_data((self.test_date - timedelta(days=2)), (self.test_date - timedelta(days=1)))
         data['attendance'] = -1
+        data['conclusion'] = 'Test conclusion'
         data['subtypes'] = [self.test_past_subtype.pk]
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
@@ -374,7 +384,7 @@ class ExperienceConclusionViewTest(StandardTestCase):
 
     def test_no_attendance(self):
         e = self.post_data(attendance=0)
-        self.assertEqual(e.status, 'ad', "The experience should not be complete without an attendance.")
+        self.assertEqual(e.status, 'co', "Experiences should be allowed to be completed with a '0' attendance.")
 
     def test_negative_attendance(self):
         e = self.post_data(attendance=-1)
