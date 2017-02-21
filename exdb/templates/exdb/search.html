@@ -14,6 +14,7 @@
     {{ block.super }}
 
     <div class="row">
+        <button id="export" class="button" data-url="{% url 'search_report' %}">Export as CSV</button>
         {% if experiences %}
             <table id="search-results" class="tablesorter responsive">
                 <thead>
@@ -30,7 +31,7 @@
                 </thead>
                 <tbody>
                     {% for exp in experiences %}
-                        <tr class="link" data-url="{% experience_url exp user %}">
+                        <tr class="link" data-url="{% experience_url exp user %}" data-pk="{{ exp.pk }}">
                             <td class="exp-name">{{ exp.name }}</td>
                             <td class="planners">
                                 {% for planner in exp.planners.all %}

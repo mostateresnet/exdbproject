@@ -1,10 +1,11 @@
+import csv, json
 from collections import OrderedDict
 from django.views.generic import TemplateView, ListView, RedirectView
 from django.views.generic.edit import CreateView, UpdateView
 from django.shortcuts import get_object_or_404
 from django.core.urlresolvers import reverse
 from django.contrib import auth
-from django.http import HttpResponseRedirect, Http404
+from django.http import HttpResponseRedirect, Http404, HttpResponse
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth import get_user_model
@@ -383,3 +384,69 @@ class SearchExperienceResultsView(ListView):
         context = super(SearchExperienceResultsView, self).get_context_data(*args, **kwargs)
         context['search_query'] = self.request.GET.get('search', '')
         return context
+
+
+class SearchExperienceReport(CreateView):
+    access_level = 'basic'
+
+    def get(self, *args, **kwargs):
+        print(self.request.GET)
+        pks = json.loads(self.request.GET.get('experiences'))
+        if not pks:
+            # TODO: FIX
+            response = HttpResponse()
+            response.status_code = 404
+            return response
+        experiences = Experience.objects.filter(pk__in=pks).prefetch_related(
+            'planners',
+            'recognition',
+            'subtypes',
+            'keywords',
+        )
+        response = HttpResponse(content_type="text/csv")
+        response['Content-Disposition'] = 'attachment; filename="experiences.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow(['Experience Name', 'Status', 'Author', 'Planners', 'Recognition', 'Start Datetime',
+            'End Datetime', 'Type', 'Subtypes', 'Description', 'Goals', 'Keywords', 'Audience',
+            'Guest', 'Guest Office', 'Created At', 'Next Approver', 'Funds', 'Conclusion',
+        ])
+
+        for experience in experiences:
+            row = []
+            row.append(experience.name)
+            row.append(experience.get_status_display())
+            row.append(str(experience.author))
+            planners = ''
+            for planner in experience.planners.all():
+                planners += str(planner) + " "
+            row.append(planners)
+            recognition = ''
+            for section in experience.recognition.all():
+                recognition += section.name + " "
+            row.append(recognition)
+            row.append(experience.start_datetime.strftime("%Y-%m-%d %H:%M"))
+            row.append(experience.end_datetime.strftime("%Y-%m-%d %H:%M"))
+            row.append(experience.type.name)
+            subtypes = ''
+            for subtype in experience.subtypes.all():
+                subtypes += subtype.name + " "
+            row.append(subtypes)
+            row.append(experience.description)
+            row.append(experience.goals)
+            keywords = ''
+            for keyword in experience.keywords.all():
+                keywords += keyword.name + " "
+            row.append(keywords)
+            row.append(experience.get_audience_display())
+            row.append(experience.guest or "None")
+            row.append(experience.guest_office or "None")
+            row.append(experience.attendance or "None")
+            row.append(experience.created_datetime.strftime("%Y-%m-%d %H:%M"))
+            row.append(str(experience.next_approver) if experience.next_approver else "None")
+            row.append(experience.get_funds_display())
+            row.append(experience.conclusion or "None")
+            writer.writerow(row)
+
+        return response
+
