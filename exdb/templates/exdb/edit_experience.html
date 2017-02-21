@@ -15,7 +15,7 @@
 
 {% block header_color %} {{ object.get_status_display|cut:" " }}-background{% endblock %}
 {% block header_title %}
-    <h2>{% trans "Edit" %} {{ object.name }}</h2>
+    <div><span class = "header">{% trans "Edit" %} {{ object.name }}</span></div>
 {% endblock %}
 
 {% block content %}

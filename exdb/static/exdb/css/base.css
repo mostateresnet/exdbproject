@@ -11,6 +11,7 @@ a {
     text-decoration: none;
     color: black;
 }
+
 .menu input{
     font-family: FontAwesome, 'Trade Gothic', Arial, 'DejaVu Sans', 'Liberation Sans', Freesans, sans-serif;
 }
@@ -41,10 +42,6 @@ div.body{
     padding-top: 90px;
 }
 
-.main-menu span{
-    padding-top: 20px;
-}
-
 .main-menu .top-bar {
     padding: 0;
 }
@@ -65,9 +62,29 @@ div.main-menu a:hover{
 div.main-menu form{
     padding-top: 15px;
 }
+
 div.main-menu input{
     width: 100%;
     max-width: none;
+}
+
+.top-bar-left {
+    max-width: 65%;
+    padding-top: 5px;
+}
+
+.top-bar-right {
+    max-width: 35%;
+}
+
+.top-bar-left span {
+    max-width:400px;
+    display:block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 200%;
+    padding-bottom: 5px;
 }
 
 .Draft-foreground{
