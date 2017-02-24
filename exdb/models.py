@@ -175,6 +175,8 @@ class Semester(models.Model):
     start_datetime = models.DateTimeField()
     end_datetime = models.DateTimeField()
 
+    def __str__(self):
+        return str(self.start_datetime.strftime("%B %d, %Y") + " - " + self.end_datetime.strftime("%B %d, %Y"))
 
 class Requirement(models.Model):
     start_datetime = models.DateTimeField()
@@ -183,3 +185,6 @@ class Requirement(models.Model):
     affiliation = models.ForeignKey(Affiliation)
     total_needed = models.IntegerField(default=1)
     subtype = models.ForeignKey(Subtype)
+
+    def __str__(self):
+        return str(self.start_datetime.strftime("%b %d") + " - " + self.end_datetime.strftime("%b %d"))

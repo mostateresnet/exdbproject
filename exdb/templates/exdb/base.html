@@ -39,7 +39,8 @@
                                 </li>
                                 <li><a href="{% url 'home' %}">{% trans "Home" %}</a></li>
                                 <li><a href="{% url 'create_experience' %}">{% trans 'Create an experience' %}</a></li>
-                                <li><a href="{% url 'completion_board' %}">{% trans "Completion Board" %}</a></li>
+                                <li><a href="{% url 'completion_board' pk=1%}">{% trans "Completion Board" %}</a></li>
+                                <li><a href="{% url 'requirement-admin' %}">{% trans "Admin" %}</a></li>
                                 <li><a href="{% url 'logout' %}">{% trans "Log out" %}</a></li>
                             </ul>
                         </div>

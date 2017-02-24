@@ -1,0 +1,74 @@
+{% extends "exdb/base.html" %}
+{% load i18n %}
+{% load exdbtags %}
+{% load staticfiles %}
+{% block css %}
+    {{ block.super }}
+{% endblock %}
+{% block content %}
+    {{ block.super }}
+        <div class="row">
+            <a href="#" class="button">Add Semester</a>
+            <a href="#" class="button">Add Requirement</a>
+        </div>
+
+        <div class="row">
+            <form>
+                <fieldset>
+                    <legend>Pick Semester and Affiliation</legend>
+                    <select name="semester">
+                        {% for semester in semesters %}
+                            <option value="{{ semester.pk }}">{{ semester }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <select name="affiliation">
+                        {% for affiliation in affiliations %}
+                            <option value="{{ affiliation.pk }}">{{ affiliation }}</option>
+                        {% endfor %}
+                    </select>
+                </fieldset>
+            </form>
+        </div>
+
+        <div class="row">
+            <h2>Requirements:</h2>
+            <table>
+                <tr>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Total Required</th>
+                </tr>
+                {% for requirement in requirements %}
+                    <tr>
+                        <td>{{ requirement.start_datetime }}</td>
+                        <td>{{ requirement.end_datetime }}</td>
+                        <td>{{ requirement.total_needed }}</td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
+        <div class="row">
+            <hr />
+        </div>
+        <div class="row">
+            <table>
+                <tr>
+                    <th>Subtype</th>
+                    <th>How many?</th>
+                    <th>Start datetime</th>
+                    <th>End datetime</th>
+                    <th>Add</th>
+                </tr>
+                {% for sub in subtypes %}
+                    <tr>
+                        <td>{{ sub }}</td>
+                        <td><input type="text"/></td>
+                        <td><input type="text"/></td>
+                        <td><input type="text"/></td>
+                        <td>+</td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
+{% endblock %}

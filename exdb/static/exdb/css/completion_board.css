@@ -1,0 +1,27 @@
+td, th{
+    border: 1px solid black;
+    text-align: center;
+}
+
+.cell {
+    visibility: hidden;
+}
+
+td:hover .cell {
+    visibility: visible;
+}
+
+.requirement-header{
+    /*-ms-transform: rotate(-90deg);
+    -webkit-transform: rotate(-90deg);
+    transform: rotate(-90deg);*/
+    /*height: 5em;
+    width: 5em;*/
+    display: block;
+    font-family: monospace;
+}
+
+.requirement-head {
+    width: 10em;
+    height: 10em;
+}

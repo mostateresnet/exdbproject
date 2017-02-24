@@ -9,13 +9,69 @@
 {% block content %}
     {{ block.super }}
         <div class="row">
-            {% for section in sections %}
-                <p>{{section}}</p>
-                <div class="progress large-9 success">
-                    <span class="progress-meter" style="width: {{ section.progress }}%">
+            <div class="small-6 columns">
+                <select id="sel">
+                    {% for a in affiliations %}
+                        <option value="{{ a.pk }}">{{ a }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="small-4 columns">
+                <a id="s" href="{% url 'completion_board' pk=1 %}" class="button expand">Submit</a>
+            </div>
+        </div>
 
-                    </span>
-                </div>
-            {% endfor %}
+        <script>
+            url = "{% url 'completion_board' pk=1 %}";
+            $( "#s" ).click(function( event ) {
+                event.preventDefault();
+                $("#s").attr("href", $("#sel option:selected").val());
+                $("#s").attr("href", $("#sel option:selected").val());
+                // $(this).click();
+                window.location.href = $("#s").attr("href");
+                console.log($("#s").attr("href"));
+            });
+        </script>
+        <div class="row expanded">
+            <table class="fixed_headers">
+                <thead>
+                    <tr>
+                        <th>Subtype</th>
+                        {% for sub, reqs in requirements.items %}
+                            <th colspan="{{ reqs|length }}">{{ sub }}</th>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <td>Requirement</td>
+                        {% for sub, reqs in requirements.items %}
+                            {% for req in reqs %}
+                                <td class="requirement-head"><span class="requirement-header">{{ req }}</span></td>
+                            {% endfor %}
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for section in sections %}
+                        <tr>
+                            <td>{{ section }}</td>
+                            {% for sub, reqs in requirements.items %}
+                                {% for req in reqs %}
+                                    {% for key, value in section.requirements.items %}
+                                        {% if key == req.pk %}
+                                            <td style="background-color: {% if value.0 < 1 %}
+                                                    rgba(128, 0, 0, 0.0)
+                                                {% elif value.0 < value.1 %}
+                                                    rgba(128, 0, 0, 0.5)
+                                                {% else %}
+                                                    rgba(128, 0, 0, 1.0)
+                                                {% endif %};"><span class="cell">{{ value.0 }} of {{ value.1 }}</span></td>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endfor %}
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
 {% endblock %}
