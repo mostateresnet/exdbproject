@@ -15,6 +15,7 @@
 
     <div class="row">
         <button id="export" class="button" data-url="{% url 'search_report' %}">Export as CSV</button>
+        <div id="no-experience-warning" class="hide">No experiences to export!</div>
         {% if experiences %}
             <table id="search-results" class="tablesorter responsive">
                 <thead>

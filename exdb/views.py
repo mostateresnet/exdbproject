@@ -1,4 +1,5 @@
-import csv, json
+import csv
+import json
 from collections import OrderedDict
 from django.views.generic import TemplateView, ListView, RedirectView
 from django.views.generic.edit import CreateView, UpdateView
@@ -390,13 +391,11 @@ class SearchExperienceReport(CreateView):
     access_level = 'basic'
 
     def get(self, *args, **kwargs):
-        print(self.request.GET)
+        if not self.request.GET.get('experiences'):
+            raise Http404
         pks = json.loads(self.request.GET.get('experiences'))
         if not pks:
-            # TODO: FIX
-            response = HttpResponse()
-            response.status_code = 404
-            return response
+            raise Http404
         experiences = Experience.objects.filter(pk__in=pks).prefetch_related(
             'planners',
             'recognition',
@@ -408,45 +407,11 @@ class SearchExperienceReport(CreateView):
 
         writer = csv.writer(response)
         writer.writerow(['Experience Name', 'Status', 'Author', 'Planners', 'Recognition', 'Start Datetime',
-            'End Datetime', 'Type', 'Subtypes', 'Description', 'Goals', 'Keywords', 'Audience',
-            'Guest', 'Guest Office', 'Created At', 'Next Approver', 'Funds', 'Conclusion',
-        ])
+                         'End Datetime', 'Type', 'Subtypes', 'Description', 'Goals', 'Keywords', 'Audience',
+                         'Guest', 'Guest Office', 'Attendance', 'Created At', 'Next Approver', 'Funds', 'Conclusion',
+                         ])
 
         for experience in experiences:
-            row = []
-            row.append(experience.name)
-            row.append(experience.get_status_display())
-            row.append(str(experience.author))
-            planners = ''
-            for planner in experience.planners.all():
-                planners += str(planner) + " "
-            row.append(planners)
-            recognition = ''
-            for section in experience.recognition.all():
-                recognition += section.name + " "
-            row.append(recognition)
-            row.append(experience.start_datetime.strftime("%Y-%m-%d %H:%M"))
-            row.append(experience.end_datetime.strftime("%Y-%m-%d %H:%M"))
-            row.append(experience.type.name)
-            subtypes = ''
-            for subtype in experience.subtypes.all():
-                subtypes += subtype.name + " "
-            row.append(subtypes)
-            row.append(experience.description)
-            row.append(experience.goals)
-            keywords = ''
-            for keyword in experience.keywords.all():
-                keywords += keyword.name + " "
-            row.append(keywords)
-            row.append(experience.get_audience_display())
-            row.append(experience.guest or "None")
-            row.append(experience.guest_office or "None")
-            row.append(experience.attendance or "None")
-            row.append(experience.created_datetime.strftime("%Y-%m-%d %H:%M"))
-            row.append(str(experience.next_approver) if experience.next_approver else "None")
-            row.append(experience.get_funds_display())
-            row.append(experience.conclusion or "None")
-            writer.writerow(row)
+            writer.writerow(experience.get_csv_row())
 
         return response
-
