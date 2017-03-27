@@ -1,7 +1,7 @@
 import csv
 import json
 from collections import OrderedDict
-from django.views.generic import TemplateView, ListView, RedirectView
+from django.views.generic import View, TemplateView, ListView, RedirectView
 from django.views.generic.edit import CreateView, UpdateView
 from django.shortcuts import get_object_or_404
 from django.core.urlresolvers import reverse
@@ -387,7 +387,7 @@ class SearchExperienceResultsView(ListView):
         return context
 
 
-class SearchExperienceReport(CreateView):
+class SearchExperienceReport(View):
     access_level = 'basic'
     keys = [
         'name', 'status', 'author', 'planners', 'recognition', 'start_datetime',
@@ -408,6 +408,10 @@ class SearchExperienceReport(CreateView):
             'subtypes',
             'keywords',
         )
+        # Filter out canceled experiences and drafts not authored by the current user.
+        experiences = experiences.exclude(status='ca')
+        experiences = experiences.exclude(~Q(author=self.request.user), status='dr')
+
         response = HttpResponse(content_type="text/csv")
         response['Content-Disposition'] = 'attachment; filename="experiences.csv"'
 

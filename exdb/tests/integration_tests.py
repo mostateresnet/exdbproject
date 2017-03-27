@@ -1070,3 +1070,27 @@ class SearchExperienceReportTest(StandardTestCase):
         row = ','.join([experience_dict[key] for key in keys])
         response = self.clients['hs'].get(reverse('search_report') + "?experiences=[" + str(e.pk) + "]")
         self.assertIn(row, str(response.content), "The experience should be returned in a csv download")
+
+    def test_does_not_get_cancelled_experiences(self):
+        e = self.create_experience('ca')
+        e.planners.add(self.clients['ra'].user_object)
+        e.recognition.add(self.create_section())
+        e.keywords.add(self.create_keyword())
+        keys = SearchExperienceReport.keys
+        experience_dict = e.convert_to_dict(keys)
+        row = ','.join([experience_dict[key] for key in keys])
+        response = self.clients['hs'].get(reverse('search_report') + "?experiences=[" + str(e.pk) + "]")
+        self.assertNotIn(row, str(response.content),
+                         "The cancelled experience should not be returned in a csv download")
+
+    def test_does_not_return_draft_with_different_author(self):
+        e = self.create_experience('dr', author=self.clients['ra'].user_object)
+        e.planners.add(self.clients['ra'].user_object)
+        e.recognition.add(self.create_section())
+        e.keywords.add(self.create_keyword())
+        keys = SearchExperienceReport.keys
+        experience_dict = e.convert_to_dict(keys)
+        row = ','.join([experience_dict[key] for key in keys])
+        response = self.clients['hs'].get(reverse('search_report') + "?experiences=[" + str(e.pk) + "]")
+        self.assertNotIn(row, str(response.content),
+                         "The draft experience with a different author should not be returned in a csv download")
