@@ -389,6 +389,12 @@ class SearchExperienceResultsView(ListView):
 
 class SearchExperienceReport(CreateView):
     access_level = 'basic'
+    keys = [
+        'name', 'status', 'author', 'planners', 'recognition', 'start_datetime',
+        'end_datetime', 'type', 'subtypes', 'description', 'goals', 'keywords',
+        'audience', 'guest', 'guest_office', 'attendance', 'created_datetime',
+        'next_approver', 'funds', 'conclusion',
+    ]
 
     def get(self, *args, **kwargs):
         if not self.request.GET.get('experiences'):
@@ -405,13 +411,10 @@ class SearchExperienceReport(CreateView):
         response = HttpResponse(content_type="text/csv")
         response['Content-Disposition'] = 'attachment; filename="experiences.csv"'
 
-        writer = csv.writer(response)
-        writer.writerow(['Experience Name', 'Status', 'Author', 'Planners', 'Recognition', 'Start Datetime',
-                         'End Datetime', 'Type', 'Subtypes', 'Description', 'Goals', 'Keywords', 'Audience',
-                         'Guest', 'Guest Office', 'Attendance', 'Created At', 'Next Approver', 'Funds', 'Conclusion',
-                         ])
+        writer = csv.DictWriter(response, fieldnames=self.keys)
+        writer.writeheader()
 
         for experience in experiences:
-            writer.writerow(experience.get_csv_row())
+            writer.writerow(experience.convert_to_dict(self.keys))
 
         return response

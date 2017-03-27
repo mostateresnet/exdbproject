@@ -11,6 +11,7 @@ from django.conf import settings
 
 from exdb.models import Affiliation, Experience, Type, Subtype, Section, Keyword, ExperienceComment, ExperienceApproval, EmailTask
 from exdb.forms import ExperienceSubmitForm
+from exdb.views import SearchExperienceReport
 
 
 class StandardTestCase(TestCase):
@@ -1064,6 +1065,8 @@ class SearchExperienceReportTest(StandardTestCase):
         e.planners.add(self.clients['ra'].user_object)
         e.recognition.add(self.create_section())
         e.keywords.add(self.create_keyword())
-        row = ','.join(e.get_csv_row())
+        keys = SearchExperienceReport.keys
+        experience_dict = e.convert_to_dict(keys)
+        row = ','.join([experience_dict[key] for key in keys])
         response = self.clients['hs'].get(reverse('search_report') + "?experiences=[" + str(e.pk) + "]")
         self.assertIn(row, str(response.content), "The experience should be returned in a csv download")

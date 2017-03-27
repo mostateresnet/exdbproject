@@ -8,6 +8,7 @@ from django.core.validators import validate_email
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.auth.models import AbstractUser
+from django.forms.models import model_to_dict
 
 
 class EXDBUser(AbstractUser):
@@ -136,40 +137,20 @@ class Experience(models.Model):
             return reverse('view_experience', args=[self.pk])
         return reverse('edit', args=[self.pk])
 
-    def get_csv_row(self):
-        row = []
-        row.append(self.name)
-        row.append(self.get_status_display())
-        row.append(str(self.author))
-        planners = ''
-        for planner in self.planners.all():
-            planners += str(planner) + " "
-        row.append(planners)
-        recognition = ''
-        for section in self.recognition.all():
-            recognition += section.name + " "
-        row.append(recognition)
-        row.append(self.start_datetime.strftime("%Y-%m-%d %H:%M"))
-        row.append(self.end_datetime.strftime("%Y-%m-%d %H:%M"))
-        row.append(self.type.name)
-        subtypes = ''
-        for subtype in self.subtypes.all():
-            subtypes += subtype.name + " "
-        row.append(subtypes)
-        row.append(self.description)
-        row.append(self.goals)
-        keywords = ''
-        for keyword in self.keywords.all():
-            keywords += keyword.name + " "
-        row.append(keywords)
-        row.append(self.get_audience_display())
-        row.append(self.guest or "None")
-        row.append(self.guest_office or "None")
-        row.append(self.attendance or "None")
-        row.append(self.created_datetime.strftime("%Y-%m-%d %H:%M"))
-        row.append(str(self.next_approver) if self.next_approver else "None")
-        row.append(self.get_funds_display())
-        row.append(self.conclusion or "None")
+    def convert_to_dict(self, keys):
+        row = model_to_dict(self, fields=keys)
+        for key in row:
+            if isinstance(row[key], list):
+                if row[key]:
+                    row[key] = ', '.join([str(a) for a in getattr(self, key).all()])
+                else:
+                    row[key] = "None"
+            elif hasattr(self, 'get_' + key + '_display') and callable(getattr(self, 'get_' + key + '_display')):
+                get_status_display = getattr(self, 'get_' + key + '_display', None)
+                if get_status_display:
+                    row[key] = get_status_display()
+            elif not isinstance(row[key], str):
+                row[key] = str(getattr(self, key))
         return row
 
 
