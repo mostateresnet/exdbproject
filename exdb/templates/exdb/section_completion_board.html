@@ -1,0 +1,47 @@
+{% extends "exdb/base.html" %}
+{% load i18n %}
+{% load exdbtags %}
+{% load staticfiles %}
+{% block css %}
+    {{ block.super }}
+
+{% endblock %}
+{% block content %}
+    {{ block.super }}
+
+    <div class="row">
+        <h1>{{ section }}</h1>
+    </div>
+    <hr />
+
+    <div class="row">
+        {% for sub ,requirements in requirement_dict.items %}
+            <h2>{{ sub }}</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date range</th>
+                        <th>Completed</th>
+                        <th>Required</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in requirements %}
+                        <tr>
+                            <td><a href="{% url 'view_requirement' pk=req.pk %}">{{ req }}</a></td>
+                            {% for key, value in section.requirements.items %}
+                                {% if key == req.pk %}
+                                    <td style="background-color: {% if value.0 < req.total_needed %}
+                                                    pink
+                                                {% endif %};">{{ value.0 }}
+                                    </td>
+                                {% endif %}
+                            {% endfor %}
+                            <td>{{ req.total_needed }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endfor %}
+    </div>
+{% endblock %}

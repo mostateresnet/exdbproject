@@ -14,8 +14,8 @@ td:hover .cell {
 .requirement-header{
     /*-ms-transform: rotate(-90deg);
     -webkit-transform: rotate(-90deg);
-    transform: rotate(-90deg);*/
-    /*height: 5em;
+    transform: rotate(-90deg);
+    height: 5em;
     width: 5em;*/
     display: block;
     font-family: monospace;

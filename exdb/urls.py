@@ -17,7 +17,9 @@ from django.conf.urls import url
 from django.contrib.auth.views import login, logout_then_login
 from exdb import views
 
+
 urlpatterns = [
+
     url(r'^$', views.HomeView.as_view(), name='home'),
     url(r'^create$', views.CreateExperienceView.as_view(), name='create_experience'),
     url(r'^approval/(?P<pk>\d+)$', views.ExperienceApprovalView.as_view(), name='approval'),
@@ -30,5 +32,8 @@ urlpatterns = [
     url(r'^list/needs-evaluation$', views.ListExperienceByStatusView.as_view(readable_status="Needs Evaluation"), name="eval_list"),
     url(r'^list/(?P<status>[a-zA-Z\-]+)$', views.ListExperienceByStatusView.as_view(), name='status_list'),
     url(r'^experience/search/$', views.SearchExperienceResultsView.as_view(), name='search'),
-    url(r'^complete$', views.CompletionBoardView.as_view(), name='completion_board')
+    url(r'^complete/(?P<pk>\d+)$', views.CompletionBoardView.as_view(), name='completion_board'),
+    url(r'^requirement-admin$', views.RequirementAdminView.as_view(), name='requirement-admin'),
+    url(r'^rview/(?P<pk>\d+)$', views.ViewRequirementView.as_view(), name='view_requirement'),
+    url(r'^section/complete/(?P<pk>\d+)$', views.SectionCompletionBoardView.as_view(), name='section_completion_board'),
 ]

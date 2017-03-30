@@ -178,6 +178,7 @@ class Semester(models.Model):
     def __str__(self):
         return str(self.start_datetime.strftime("%B %d, %Y") + " - " + self.end_datetime.strftime("%B %d, %Y"))
 
+
 class Requirement(models.Model):
     start_datetime = models.DateTimeField()
     end_datetime = models.DateTimeField()

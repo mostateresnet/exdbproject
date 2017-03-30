@@ -11,7 +11,7 @@ from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.db.models import Q, Prefetch, F
 
-from exdb.models import Experience, ExperienceComment, ExperienceApproval, EXDBUser, Subtype, Requirement, Affiliation, Semester
+from exdb.models import Experience, ExperienceComment, ExperienceApproval, EXDBUser, Subtype, Requirement, Affiliation, Semester, Section
 from .forms import ExperienceSubmitForm, ExperienceSaveForm, ApprovalForm, ExperienceConclusionForm
 
 
@@ -386,11 +386,17 @@ class CompletionBoardView(TemplateView):
         semester = Semester.objects.all()[0]
 
         # Make sure this is correct
-        prefetch = Prefetch('experience_set', queryset=Experience.objects.filter(start_datetime__lte=semester.end_datetime, end_datetime__gte=semester.start_datetime, status='co'))
+        prefetch = Prefetch(
+            'experience_set',
+            queryset=Experience.objects.filter(
+                start_datetime__lte=semester.end_datetime,
+                end_datetime__gte=semester.start_datetime,
+                status='co'))
 
         sections = affiliation.section_set.prefetch_related(prefetch, 'experience_set__subtypes')
 
-        requirements = Requirement.objects.filter(semester=semester, affiliation=affiliation).order_by('start_datetime')
+        requirements = Requirement.objects.filter(
+            semester=semester, affiliation=affiliation).select_related('subtype').order_by('start_datetime')
 
         requirement_dict = {}
         for req in requirements:
@@ -402,9 +408,8 @@ class CompletionBoardView(TemplateView):
             for experience in section.experience_set.all():
                 for sub in experience.subtypes.all():
                     experiences_grouped_by_subtype[sub] = experiences_grouped_by_subtype.get(sub, []) + [experience]
-                    #FIX this, check the experince happened in the correct time
+                    # FIX this, check the experince happened in the correct time
                     # tmp[sub] = tmp.get(sub, 0) + 1
-
 
             for subtype, requirements in requirement_dict.items():
                 for requirement in requirements:
@@ -412,17 +417,17 @@ class CompletionBoardView(TemplateView):
                     # loop over a copy of the original since we're deleting things from it
                     for experience in list(experiences_grouped_by_subtype.get(subtype, [])):
                         # The below if statement might need to be reworked
-                        # We might want to check if the end_datetime is within the requirement datetime range (ask Travis)
+                        # We might want to check if the end_datetime is within the requirement
+                        # datetime range (ask Travis)
                         if requirement.start_datetime <= experience.start_datetime <= requirement.end_datetime:
 
                             experiences_grouped_by_subtype[subtype].remove(experience)
                             fulfillment_count += 1
                     section.requirements[requirement.pk] = (fulfillment_count, requirement.total_needed)
-
-
         context['sections'] = sections
         context['requirements'] = requirement_dict
         context['affiliations'] = Affiliation.objects.all()
+        context['current_affiliation'] = int(self.kwargs.get('pk').strip())
 
         return context
 
@@ -433,6 +438,42 @@ class SectionCompletionBoardView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(SectionCompletionBoardView, self).get_context_data()
+
+        semester = Semester.objects.all()[0]
+        section = Section.objects.filter(pk=self.kwargs.get('pk'))[0]
+
+        requirements = Requirement.objects.filter(affiliation=section.affiliation).order_by('start_datetime')
+
+        requirement_dict = {}
+        for req in requirements:
+            requirement_dict[req.subtype] = requirement_dict.get(req.subtype, []) + [req]
+
+        section.requirements = {}
+        experiences_grouped_by_subtype = {}
+        for experience in section.experience_set.all():
+            for sub in experience.subtypes.all():
+                experiences_grouped_by_subtype[sub] = experiences_grouped_by_subtype.get(sub, []) + [experience]
+                # FIX this, check the experince happened in the correct time
+                # tmp[sub] = tmp.get(sub, 0) + 1
+
+        for subtype, requirements in requirement_dict.items():
+            for requirement in requirements:
+                fulfillment_count = 0
+                # loop over a copy of the original since we're deleting things from it
+                for experience in list(experiences_grouped_by_subtype.get(subtype, [])):
+                    # The below if statement might need to be reworked
+                    # We might want to check if the end_datetime is within the requirement
+                    # datetime range (ask Travis)
+                    if requirement.start_datetime <= experience.start_datetime <= requirement.end_datetime:
+
+                        experiences_grouped_by_subtype[subtype].remove(experience)
+                        fulfillment_count += 1
+                section.requirements[requirement.pk] = (fulfillment_count, requirement.total_needed)
+
+        context['requirements'] = requirements
+        context['requirement_dict'] = requirement_dict
+        context['section'] = section
+
         return context
 
 
@@ -442,8 +483,18 @@ class RequirementAdminView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(RequirementAdminView, self).get_context_data()
-        context['requirements'] = Requirement.objects.all()
+        context['requirements'] = Requirement.objects.all()[:20]
         context['semesters'] = Semester.objects.all()
         context['affiliations'] = Affiliation.objects.all()
         context['subtypes'] = Subtype.objects.all()
+        return context
+
+
+class ViewRequirementView(TemplateView):
+    access_level = 'basic'
+    template_name = 'exdb/requirement_view.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(ViewRequirementView, self).get_context_data()
+        context['requirement'] = get_object_or_404(Requirement, pk=self.kwargs['pk'])
         return context

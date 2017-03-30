@@ -1,0 +1,33 @@
+{% extends "exdb/base.html" %}
+{% load i18n %}
+{% load staticfiles %}
+{% block css %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/experience_approval.css' %}" />
+{% endblock %}
+
+{% block header_title %}
+    <h2>{% trans "View Requirement" %}</h2>
+{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="small-12 small-centered columns">
+            <h1 class="text-center">{{ requirement.subtype }}</h1>
+        </div>
+        <hr />
+        <p>
+            <span>{% trans "Start" %}:</span>
+            {{ requirement.start_datetime }}
+        </p>
+        <p>
+            <span>{% trans "End" %}:</span>
+            {{ requirement.end_datetime }}
+        </p>
+        <p>
+            <span>{% trans "Total Required" %}:</span>
+            {{ requirement.total_needed }}
+        </p>
+
+    </div>
+{% endblock %}
