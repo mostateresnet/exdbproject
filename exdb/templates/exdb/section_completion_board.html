@@ -4,40 +4,104 @@
 {% load staticfiles %}
 {% block css %}
     {{ block.super }}
-
+    <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/completion_board.css' %}"/>
+{% endblock %}
+{% block javascript %}
+    {{ block.super }}
+    <script type="text/javascript" src="{% static 'exdb/js/completion_board.js' %}"></script>
 {% endblock %}
 {% block content %}
     {{ block.super }}
-
-    <div class="row">
+    <div class="row text-center">
         <h1>{{ section }}</h1>
     </div>
     <hr />
+    <div class="row expanded">
+        <table>
+            <thead>
+                <tr>
+                    <th>{% trans 'Subtype' %}</th>
+                    {% for sub, reqs in requirement_dict.items %}
+                        <th colspan="{{ reqs|length }}"><a href="#{{ sub }}">{{ sub }}</a></th>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <td>{% trans 'Requirement' %}</td>
+                    {% for sub, reqs in requirement_dict.items %}
+                        {% for req in reqs %}
+                            <td class="requirement-head"><a href="{% url 'view_requirement' pk=req.pk %}" class="requirement-header">{{ req }}</a></td>
+                        {% endfor %}
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{{ section }}</td>
+                    {% for sub, reqs in requirement_dict.items %}
+                        {% for req in reqs %}
+                            {% for key, value in section.requirements.items %}
+                                {% if key == req.pk %}
+                                    <td style="background-color: {% if value.0|length < 1 %}
+                                            rgba(128, 0, 0, 0.0)
+                                        {% elif value.0|length < value.1 %}
+                                            rgba(128, 0, 0, 0.5)
+                                        {% else %}
+                                            rgba(128, 0, 0, 1.0)
+                                        {% endif %};">
+                                            <span class="cell">
+                                                {{ value.0|length }} of {{ value.1 }}
 
+                                                <div class="hidden requirement-experience-list">
+                                                    {% for e in value.0 %}
+                                                        <a href="{% url 'view_experience' pk=e.pk %}">{{ e }}</a>
+                                                        <hr />
+                                                    {% endfor %}
+                                                </div>
+                                            </span>
+                                    </td>
+                                {% endif %}
+                            {% endfor %}
+                        {% endfor %}
+                    {% endfor %}
+                </tr>
+
+            </tbody>
+        </table>
+    </div>
+    <hr />
     <div class="row">
         {% for sub ,requirements in requirement_dict.items %}
-            <h2>{{ sub }}</h2>
+            <h2 id="{{ sub }}">{{ sub }}</h2>
             <table>
                 <thead>
                     <tr>
                         <th>Date range</th>
-                        <th>Completed</th>
-                        <th>Required</th>
+                        <th class="text-center completed-column">Completed</th>
+                        <th class="text-center">Todo</th>
+                        <th class="text-center">Required</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for req in requirements %}
                         <tr>
-                            <td><a href="{% url 'view_requirement' pk=req.pk %}">{{ req }}</a></td>
+                            <td><a href="{% url 'view_requirement' pk=req.pk %}">
+                                <span {% if req.current %}class="current-requirement"{% endif %}>{{ req }}</span>
+                            </a></td>
                             {% for key, value in section.requirements.items %}
                                 {% if key == req.pk %}
-                                    <td style="background-color: {% if value.0 < req.total_needed %}
-                                                    pink
-                                                {% endif %};">{{ value.0 }}
+                                    <td class="text-center completed-column">
+                                        {% if value.0|length > 0 %}
+                                            {% for e in value.0 %}
+                                                <a href="{% url 'view_experience' pk=e.pk %}">
+                                                    <i class="fa experience-icon" aria-hidden="true" title="{{ e }}">&#xf0f6;</i>
+                                                </a>
+                                            {% endfor %}
+                                        {% endif %}
                                     </td>
+                                    <td class="text-center">{{ value.2 }}</td>
                                 {% endif %}
                             {% endfor %}
-                            <td>{{ req.total_needed }}</td>
+                            <td class="text-center">{{ req.total_needed }}</td>
                         </tr>
                     {% endfor %}
                 </tbody>

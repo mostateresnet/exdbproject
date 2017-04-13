@@ -394,8 +394,7 @@ class CompletionBoardView(TemplateView):
 
         affiliation = Affiliation.objects.get(pk=self.kwargs.get('pk'))
         current_time = timezone.now()
-        #semester = Semester.objects.get(start_datetime__lte=current_time, end_datetime__gte=current_time)
-        semester = Semester.objects.all()[0]
+        semester = Semester.objects.get(start_datetime__lte=current_time, end_datetime__gte=current_time)
 
         # Make sure this is correct
         prefetch = Prefetch(
@@ -407,37 +406,11 @@ class CompletionBoardView(TemplateView):
 
         sections = affiliation.section_set.prefetch_related(prefetch, 'experience_set__subtypes')
 
-        requirements = Requirement.objects.filter(
-            semester=semester, affiliation=affiliation).select_related('subtype').order_by('start_datetime')
-
-        requirement_dict = {}
-        for req in requirements:
-            requirement_dict[req.subtype] = requirement_dict.get(req.subtype, []) + [req]
-
         for section in sections:
-            section.requirements = {}
-            experiences_grouped_by_subtype = {}
-            for experience in section.experience_set.all():
-                for sub in experience.subtypes.all():
-                    experiences_grouped_by_subtype[sub] = experiences_grouped_by_subtype.get(sub, []) + [experience]
-                    # FIX this, check the experince happened in the correct time
-                    # tmp[sub] = tmp.get(sub, 0) + 1
+            section.completion_board_stuff()
 
-            for subtype, requirements in requirement_dict.items():
-                for requirement in requirements:
-                    fulfillment_count = 0
-                    # loop over a copy of the original since we're deleting things from it
-                    for experience in list(experiences_grouped_by_subtype.get(subtype, [])):
-                        # The below if statement might need to be reworked
-                        # We might want to check if the end_datetime is within the requirement
-                        # datetime range (ask Travis)
-                        if requirement.start_datetime <= experience.start_datetime <= requirement.end_datetime:
-
-                            experiences_grouped_by_subtype[subtype].remove(experience)
-                            fulfillment_count += 1
-                    section.requirements[requirement.pk] = (fulfillment_count, requirement.total_needed)
         context['sections'] = sections
-        context['requirements'] = requirement_dict
+        context['requirements'] = sections[0].requirement_dict
         context['affiliations'] = Affiliation.objects.all()
         context['current_affiliation'] = int(self.kwargs.get('pk').strip())
 
@@ -451,39 +424,10 @@ class SectionCompletionBoardView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super(SectionCompletionBoardView, self).get_context_data()
 
-        semester = Semester.objects.all()[0]
-        section = Section.objects.filter(pk=self.kwargs.get('pk'))[0]
+        section = Section.objects.get(pk=self.kwargs.get('pk'))
+        section.completion_board_stuff()
 
-        requirements = Requirement.objects.filter(affiliation=section.affiliation).order_by('start_datetime')
-
-        requirement_dict = {}
-        for req in requirements:
-            requirement_dict[req.subtype] = requirement_dict.get(req.subtype, []) + [req]
-
-        section.requirements = {}
-        experiences_grouped_by_subtype = {}
-        for experience in section.experience_set.all():
-            for sub in experience.subtypes.all():
-                experiences_grouped_by_subtype[sub] = experiences_grouped_by_subtype.get(sub, []) + [experience]
-                # FIX this, check the experince happened in the correct time
-                # tmp[sub] = tmp.get(sub, 0) + 1
-
-        for subtype, requirements in requirement_dict.items():
-            for requirement in requirements:
-                fulfillment_count = 0
-                # loop over a copy of the original since we're deleting things from it
-                for experience in list(experiences_grouped_by_subtype.get(subtype, [])):
-                    # The below if statement might need to be reworked
-                    # We might want to check if the end_datetime is within the requirement
-                    # datetime range (ask Travis)
-                    if requirement.start_datetime <= experience.start_datetime <= requirement.end_datetime:
-
-                        experiences_grouped_by_subtype[subtype].remove(experience)
-                        fulfillment_count += 1
-                section.requirements[requirement.pk] = (fulfillment_count, requirement.total_needed)
-
-        context['requirements'] = requirements
-        context['requirement_dict'] = requirement_dict
+        context['requirement_dict'] = section.requirement_dict
         context['section'] = section
 
         return context

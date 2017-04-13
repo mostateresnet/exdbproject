@@ -51,6 +51,47 @@ class Section(models.Model):
     def __str__(self):
         return self.name
 
+    def completion_board_stuff(self):
+        semester = Semester.objects.filter(start_datetime__gte=now(), end_datetime__lte=now())
+        requirements = Requirement.objects.filter(affiliation=self.affiliation).order_by(
+            'start_datetime').select_related('subtype')
+
+        requirement_dict = {}
+        for req in requirements:
+            requirement_dict[req.subtype] = requirement_dict.get(req.subtype, []) + [req]
+
+        self.requirement_dict = requirement_dict
+        self.requirements = {}
+        experiences_grouped_by_subtype = {}
+        for experience in self.experience_set.all():
+            for sub in experience.subtypes.all():
+                experiences_grouped_by_subtype[sub] = experiences_grouped_by_subtype.get(sub, []) + [experience]
+                # FIX this, check the experince happened in the correct time
+                # tmp[sub] = tmp.get(sub, 0) + 1
+
+        for subtype, requirements in requirement_dict.items():
+            for requirement in requirements:
+                a = requirement.start_datetime < now()
+                b = requirement.end_datetime > now()
+                if a and b:
+                    requirement.current = True
+                else:
+                    requirement.current = False
+
+                e = []
+                # loop over a copy of the original since we're deleting things from it
+                for experience in list(experiences_grouped_by_subtype.get(subtype, [])):
+                    # The below if statement might need to be reworked
+                    # We might want to check if the end_datetime is within the requirement
+                    # datetime range (ask Travis)
+                    if requirement.start_datetime <= experience.start_datetime <= requirement.end_datetime:
+                        experiences_grouped_by_subtype[subtype].remove(experience)
+                        e.append(experience)
+                needed = requirement.total_needed - len(e)
+                if needed < 0:
+                    needed = 0
+                self.requirements[requirement.pk] = (e, requirement.total_needed, needed)
+
 
 class Keyword(models.Model):
     name = models.CharField(max_length=300)
@@ -132,7 +173,7 @@ class Experience(models.Model):
             return reverse('conclusion', args=[self.pk])
         if self in user.approvable_experiences() and user.is_hallstaff():
             return reverse('approval', args=[self.pk])
-        if self.status == 'co':
+        if self.status == 'co' or self.start_datetime < now():
             return reverse('view_experience', args=[self.pk])
         return reverse('edit', args=[self.pk])
 

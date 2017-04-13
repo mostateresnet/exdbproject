@@ -21,22 +21,22 @@
                 </select>
             </div>
             <div class="small-4 columns">
-                <a id="switch-section" href="{% url 'completion_board' pk=1 %}" class="button expand">Submit</a>
+                <a id="switch-section" href="{% url 'completion_board' pk=1 %}" class="button expand">{% trans 'Go!' %}</a>
             </div>
         </div>
         <div class="row expanded">
             <table class="fixed_headers">
                 <thead>
                     <tr>
-                        <th>Subtype</th>
+                        <th>{% trans 'Subtype' %}</th>
                         {% for sub, reqs in requirements.items %}
                             <th colspan="{{ reqs|length }}">{{ sub }}</th>
                         {% endfor %}
                     </tr>
                     <tr>
-                        <td>Requirement</td>
+                        <td>{% trans 'Requirement' %}</td>
                         {% for sub, reqs in requirements.items %}
-                            {% for req in reqs %}.
+                            {% for req in reqs %}
                                 <td class="requirement-head"><span class="requirement-header"><a href="{% url 'view_requirement' pk=req.pk %}">{{ req }}</a></span></td>
                             {% endfor %}
                         {% endfor %}
@@ -45,18 +45,28 @@
                 <tbody>
                     {% for section in sections %}
                         <tr>
-                            <td>{{ section }}</td>
+                            <td><a href="{% url  'section_completion_board' pk=section.pk %}">{{ section }}</a></td>
                             {% for sub, reqs in requirements.items %}
                                 {% for req in reqs %}
                                     {% for key, value in section.requirements.items %}
                                         {% if key == req.pk %}
-                                            <td style="background-color: {% if value.0 < 1 %}
+                                            <td style="background-color: {% if value.0|length < 1 %}
                                                     rgba(128, 0, 0, 0.0)
-                                                {% elif value.0 < value.1 %}
+                                                {% elif value.0|length < value.1 %}
                                                     rgba(128, 0, 0, 0.5)
                                                 {% else %}
                                                     rgba(128, 0, 0, 1.0)
-                                                {% endif %};"><span class="cell">{{ value.0 }} of {{ value.1 }}</span></td>
+                                                {% endif %};">
+                                                <span class="cell">
+                                                    {{ value.0|length }} of {{ value.1 }}
+                                                    <div class="hidden requirement-experience-list">
+                                                        {% for e in value.0 %}
+                                                            <a href="{% url 'view_experience' pk=e.pk %}">{{ e }}</a>
+                                                            <hr />
+                                                        {% endfor %}
+                                                    </div>
+                                                </span>
+                                            </td>
                                         {% endif %}
                                     {% endfor %}
                                 {% endfor %}

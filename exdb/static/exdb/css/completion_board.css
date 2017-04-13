@@ -12,11 +12,6 @@ td:hover .cell {
 }
 
 .requirement-header{
-    /*-ms-transform: rotate(-90deg);
-    -webkit-transform: rotate(-90deg);
-    transform: rotate(-90deg);
-    height: 5em;
-    width: 5em;*/
     display: block;
     font-family: monospace;
 }
@@ -24,4 +19,20 @@ td:hover .cell {
 .requirement-head {
     width: 10em;
     height: 10em;
+}
+
+.hidden {
+    display: none;
+}
+
+a span.current-requirement {
+    color: red;
+}
+
+.experience-icon {
+    font-size: 1.6em;
+}
+
+.completed-column {
+    width: 60%;
 }
