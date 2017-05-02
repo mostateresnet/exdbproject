@@ -132,6 +132,13 @@ class ModelCoverageTest(StandardTestCase):
         self.assertEqual(e.get_url(self.clients['ra'].user_object), reverse('view_experience', args=[e.pk]),
                          "The url for view_experience should have been returned")
 
+    def test_get_url_returns_view_experience_if_started(self):
+        e = self.create_experience('ad')
+        e.start_datetime = make_aware(datetime.now(), timezone=utc) - timedelta(days=1)
+        e.end_datetime = make_aware(datetime.now(), timezone=utc) + timedelta(days=1)
+        self.assertEqual(e.get_url(self.clients['ra'].user_object), reverse('view_experience', args=[e.pk]),
+                         "The url for view_experience should have been returned")
+
     def test_get_url_returns_edit(self):
         e = self.create_experience('pe', start=(now() + timedelta(days=2)), end=(now() + timedelta(days=3)))
         self.assertEqual(e.get_url(self.clients['ra'].user_object), reverse('edit', args=[e.pk]),
