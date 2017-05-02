@@ -30,6 +30,11 @@
                                 {% trans "Set the supervisor field to the appropriate user if this experience needs LLC approval." %}
                             </strong>
                         </div>
+                        {% with object.edit_log.all.0 as last_edit %}
+                            {% if last_edit %}
+                                <p class="text-center">{% trans "Last edited" %}: {{ last_edit.editor }} <span class="timestamp">{{ last_edit.timestamp }}</span></p>
+                            {% endif %}
+                        {% endwith %}
                         <div class="medium-6 medium-offset-1 columns">
                             <span class="form-errors">{{ form.non_field_errors }}</span>
                         </div>
@@ -76,5 +81,4 @@
             </div>
         </form>
     </div>
-
 {% endblock %}

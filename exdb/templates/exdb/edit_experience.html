@@ -33,6 +33,11 @@
                                 <strong>{% trans "Warning! Editing an approved experience will resubmit it for approval." %}</strong>
                             </div>
                         {% endif %}
+                        {% with object.edit_log.all.0 as last_edit %}
+                            {% if last_edit %}
+                                <p class="text-center">{% trans "Last edited" %}: {{ last_edit.editor }} <span class="timestamp">{{ last_edit.timestamp }}</span></p>
+                            {% endif %}
+                        {% endwith %}
                         <div class="medium-6 medium-offset-1 columns">
                             <span class="form-errors">{{ form.non_field_errors }}</span>
                         </div>
@@ -83,6 +88,15 @@
                         <p>{% trans 'No Comments' %}</p>
                     {% endfor %}
                 </fieldset>
+
+                <h4>{% trans 'Edit Log' %}</h4>
+                <div class="log">
+                    <p>
+                        {% for entry in object.edit_log.all %}
+                            {{ entry.timestamp }} {% trans 'made by' %} {{ entry.editor }} <br/>
+                        {% endfor %}
+                    </p>
+                </div>
             </div>
         </form>
     </div>

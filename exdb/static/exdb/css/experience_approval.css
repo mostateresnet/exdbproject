@@ -6,6 +6,10 @@ div.experience-display span:not(.help){
     font-weight: bold;
 }
 
+.timestamp{
+    font-size: 11px;
+}
+
 span.form-errors{
     color: red;
 }
