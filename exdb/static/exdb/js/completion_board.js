@@ -2,7 +2,6 @@
 
 
 $(document).ready(function () {
-
     $( "#switch-section" ).click(function( event ) {
         event.preventDefault();
         $("#switch-section").attr("href", $("#sel option:selected").val());

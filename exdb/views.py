@@ -9,7 +9,7 @@ from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth import get_user_model
 from django.conf import settings
-from django.db.models import Q, Prefetch, F
+from django.db.models import Q, Prefetch
 
 from exdb.models import Experience, ExperienceComment, ExperienceApproval, EXDBUser, Subtype, Requirement, Affiliation, Semester, Section
 from .forms import ExperienceSubmitForm, ExperienceSaveForm, ApprovalForm, ExperienceConclusionForm

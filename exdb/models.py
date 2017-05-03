@@ -52,7 +52,6 @@ class Section(models.Model):
         return self.name
 
     def completion_board_stuff(self):
-        semester = Semester.objects.filter(start_datetime__gte=now(), end_datetime__lte=now())
         requirements = Requirement.objects.filter(affiliation=self.affiliation).order_by(
             'start_datetime').select_related('subtype')
 
@@ -66,8 +65,6 @@ class Section(models.Model):
         for experience in self.experience_set.all():
             for sub in experience.subtypes.all():
                 experiences_grouped_by_subtype[sub] = experiences_grouped_by_subtype.get(sub, []) + [experience]
-                # FIX this, check the experince happened in the correct time
-                # tmp[sub] = tmp.get(sub, 0) + 1
 
         for subtype, requirements in requirement_dict.items():
             for requirement in requirements:

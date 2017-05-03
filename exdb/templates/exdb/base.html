@@ -41,9 +41,10 @@
                                 <li><a href="{% url 'create_experience' %}">{% trans 'Create an experience' %}</a></li>
                                 {% if user.is_hallstaff %}
                                     <li><a href="{% url 'completion_board' pk=1%}">{% trans "Completion Board" %}</a></li>
-                                    <li><a href="{% url 'requirement-admin' %}">{% trans "Admin" %}</a></li>
+                                    <li><a href="{% url 'requirement_admin' %}">{% trans "Admin" %}</a></li>
+                                {% else %}
+                                    <li><a href="{% url 'section_completion_board' pk=1%}">{% trans "Section Completion Board" %}</a></li>
                                 {% endif %}
-                                <li><a href="{% url 'section_completion_board' pk=1%}">{% trans "Section Completion Board" %}</a></li>
                                 <li><a href="{% url 'logout' %}">{% trans "Log out" %}</a></li>
                             </ul>
                         </div>
