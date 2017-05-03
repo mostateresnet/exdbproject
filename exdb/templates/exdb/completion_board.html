@@ -59,12 +59,6 @@
                                                 {% endif %};">
                                                 <span class="cell">
                                                     {{ value.0|length }} of {{ value.1 }}
-                                                    <div class="hidden requirement-experience-list">
-                                                        {% for e in value.0 %}
-                                                            <a href="{% url 'view_experience' pk=e.pk %}">{{ e }}</a>
-                                                            <hr />
-                                                        {% endfor %}
-                                                    </div>
                                                 </span>
                                             </td>
                                         {% endif %}

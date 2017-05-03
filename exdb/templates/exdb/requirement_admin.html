@@ -8,14 +8,77 @@
 {% block content %}
     {{ block.super }}
         <div class="row">
-            <a href="#" class="button">Add Semester</a>
-            <a href="#" class="button">Add Requirement</a>
+            <form id="add-semester-form">
+                <div class="row">
+                    <h3>{% trans 'Add Semester' %}</h3>
+                    <div class="medium-6 columns">
+                        <label for="start-datetime">{% trans 'Start Date' %}</label>
+                        <input name="start-datetime" type="date" placeholder="DD/MM/YYYY"/>
+                    </div>
+                    <div class="medium-6 columns">
+                        <label for="end-datetime">{% trans 'End Date' %}</label>
+                        <input name="end-datetime" type="date" placeholder="DD/MM/YYYY"/>
+                    </div>
+                    <input class="button" type="submit" value="Add Semester"/>
+                </div>
+            </form>
+            <hr />
+            <form id="add-requirement-form">
+                <div class="row">
+                    <h3>{% trans 'Add Requirement' %}</h3>
+                    <div class="medium-4 columns">
+                        <label for="start-datetime">{% trans 'Start Date' %}</label>
+                        <input name="start-datetime" type="date" placeholder="DD/MM/YYYY"/>
+                    </div>
+                    <div class="medium-4 columns">
+                        <label for="end-datetime">{% trans 'End Date' %}</label>
+                        <input name="end-datetime" type="date" placeholder="DD/MM/YYYY"/>
+                    </div>
+                    <div class="medium-4 columns">
+                        <label for="semester">{% trans 'Semester' %}</label>
+                        <select name="semester" multiple="multiple">
+                            {% for semester in semesters %}
+                                <option value="{{ semester.pk }}">{{ semester }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="medium-4 columns">
+                        <label for="affiliation">{% trans 'Affiliation' %}</label>
+                        <select name="affiliation" multiple="multiple">
+                            {% for affiliation in affiliations %}
+                                <option value="{{ affiliation.pk }}">{{ affiliation }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="medium-4 columns">
+                        <label for="total-needed">{% trans 'Total Needed' %}</label>
+                        <input name="total-needed" type="number" placeholder="0" min="0"/>
+                    </div>
+                    <div class="medium-4 columns">
+                        <label for="subtype">{% trans 'Subtype' %}</label>
+                        <select name="affiliation">
+                            {% for sub in subtypes %}
+                                <option value="{{ sub.pk }}">{{ sub }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="medium-10 columns">
+                        <input class="button" type="submit" value="Add Requirement"/>
+                    </div>
+                </div>
+            </form>
         </div>
+
+        <hr />
 
         <div class="row">
             <form>
                 <fieldset>
-                    <legend>Pick Semester and Affiliation</legend>
+                    <legend>{% trans 'Pick Semester and Affiliation' %}</legend>
                     <select name="semester">
                         {% for semester in semesters %}
                             <option value="{{ semester.pk }}">{{ semester }}</option>
@@ -32,41 +95,20 @@
         </div>
 
         <div class="row">
-            <h2>Requirements:</h2>
+            <h2>{% trans 'Requirements' %}:</h2>
             <table>
                 <tr>
-                    <th>Start</th>
-                    <th>End</th>
-                    <th>Total Required</th>
+                    <th>{% trans 'Subtype' %}</th>
+                    <th>{% trans 'Start' %}</th>
+                    <th>{% trans 'End' %}</th>
+                    <th>{% trans 'Total Required' %}</th>
                 </tr>
                 {% for requirement in requirements %}
                     <tr>
+                        <td>{{ requirement.subtype }}</td>
                         <td>{{ requirement.start_datetime }}</td>
                         <td>{{ requirement.end_datetime }}</td>
                         <td>{{ requirement.total_needed }}</td>
-                    </tr>
-                {% endfor %}
-            </table>
-        </div>
-        <div class="row">
-            <hr />
-        </div>
-        <div class="row">
-            <table>
-                <tr>
-                    <th>Subtype</th>
-                    <th>How many?</th>
-                    <th>Start datetime</th>
-                    <th>End datetime</th>
-                    <th>Add</th>
-                </tr>
-                {% for sub in subtypes %}
-                    <tr>
-                        <td>{{ sub }}</td>
-                        <td><input type="text"/></td>
-                        <td><input type="text"/></td>
-                        <td><input type="text"/></td>
-                        <td>+</td>
                     </tr>
                 {% endfor %}
             </table>

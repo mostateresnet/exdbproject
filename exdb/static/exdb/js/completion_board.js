@@ -9,8 +9,4 @@ $(document).ready(function () {
         $("#switch-section").attr("href", $("#sel option:selected").val());
         window.location.href = $("#switch-section").attr("href");
     });
-
-    $(".cell").click(function(event) {
-        $(this).children().toggleClass('hidden');
-    })
 });

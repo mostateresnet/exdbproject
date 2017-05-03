@@ -50,13 +50,6 @@
                                         {% endif %};">
                                             <span class="cell">
                                                 {{ value.0|length }} of {{ value.1 }}
-
-                                                <div class="hidden requirement-experience-list">
-                                                    {% for e in value.0 %}
-                                                        <a href="{% url 'view_experience' pk=e.pk %}">{{ e }}</a>
-                                                        <hr />
-                                                    {% endfor %}
-                                                </div>
                                             </span>
                                     </td>
                                 {% endif %}
@@ -75,10 +68,10 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Date range</th>
-                        <th class="text-center completed-column">Completed</th>
-                        <th class="text-center">Todo</th>
-                        <th class="text-center">Required</th>
+                        <th>{% trans 'Date range' %}</th>
+                        <th class="text-center completed-column">{% trans 'Completed' %}</th>
+                        <th class="text-center">{% trans 'Todo' %}</th>
+                        <th class="text-center">{% trans 'Required' %}</th>
                     </tr>
                 </thead>
                 <tbody>
