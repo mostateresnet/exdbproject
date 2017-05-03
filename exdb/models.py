@@ -173,7 +173,7 @@ class Experience(models.Model):
             return reverse('conclusion', args=[self.pk])
         if self in user.approvable_experiences() and user.is_hallstaff():
             return reverse('approval', args=[self.pk])
-        if self.status == 'co' or self.start_datetime < now():
+        if self.status == 'co' or self.start_datetime < now() and self.status == 'ad':
             return reverse('view_experience', args=[self.pk])
         return reverse('edit', args=[self.pk])
 
