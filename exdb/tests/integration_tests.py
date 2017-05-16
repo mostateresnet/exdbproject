@@ -1,6 +1,6 @@
 from django.test import TestCase, Client, override_settings
 from django.utils.timezone import datetime, timedelta, now, make_aware, utc, localtime
-from django.utils.six import StringIO
+from django.utils.six import StringIO, BytesIO
 from django.core.urlresolvers import reverse
 from django.core import mail
 from django.contrib.auth import get_user_model
@@ -11,6 +11,7 @@ from django.conf import settings
 
 from exdb.models import Affiliation, Experience, Type, Subtype, Section, Keyword, ExperienceComment, ExperienceApproval, EmailTask
 from exdb.forms import ExperienceSubmitForm
+from exdb.views import SearchExperienceReport
 
 
 class StandardTestCase(TestCase):
@@ -1053,3 +1054,60 @@ class ListExperienceByStatusViewTest(StandardTestCase):
         response = self.clients['hs'].get(reverse('status_list', kwargs={'status': status}))
         self.assertIn(e, response.context['experiences'],
                       'When the status is approved, the view should return experiences the user has approved')
+
+
+class SearchExperienceReportTest(StandardTestCase):
+
+    def test_gets_experience_report(self):
+        e = self.create_experience('ad')
+        e.planners.add(self.clients['ra'].user_object)
+        e.recognition.add(self.create_section())
+        e.keywords.add(self.create_keyword())
+        response = self.clients['hs'].get(reverse('search_report') + "?experiences=[" + str(e.pk) + "]")
+        self.assertEqual(response.get('Content-Disposition'), 'attachment; filename="experiences.csv"',
+                         'The response should be an attached csv file')
+
+    def test_get_experience_report_no_querystring(self):
+        response = self.clients['hs'].get(reverse('search_report'))
+        self.assertEqual(response.status_code, 404,
+                         'Trying to get a report without a querystring should return a 404')
+
+    def test_get_experience_report_no_experiences(self):
+        response = self.clients['hs'].get(reverse('search_report') + "?experiences=[]")
+        self.assertEqual(response.status_code, 404,
+                         'Trying to get a report without experiences should return a 404')
+
+    def test_gets_experience_report_and_experience_is_in_report(self):
+        e = self.create_experience('ad')
+        e.planners.add(self.clients['ra'].user_object)
+        e.recognition.add(self.create_section())
+        e.keywords.add(self.create_keyword())
+        keys = SearchExperienceReport.keys
+        experience_dict = e.convert_to_dict(keys)
+        row = ','.join([experience_dict[key] for key in keys])
+        response = self.clients['hs'].get(reverse('search_report') + "?experiences=[" + str(e.pk) + "]")
+        self.assertIn(row, str(response.content), "The experience should be returned in a csv download")
+
+    def test_does_not_get_cancelled_experiences(self):
+        e = self.create_experience('ca')
+        e.planners.add(self.clients['ra'].user_object)
+        e.recognition.add(self.create_section())
+        e.keywords.add(self.create_keyword())
+        keys = SearchExperienceReport.keys
+        experience_dict = e.convert_to_dict(keys)
+        row = ','.join([experience_dict[key] for key in keys])
+        response = self.clients['hs'].get(reverse('search_report') + "?experiences=[" + str(e.pk) + "]")
+        self.assertNotIn(row, str(response.content),
+                         "The cancelled experience should not be returned in a csv download")
+
+    def test_does_not_return_draft_with_different_author(self):
+        e = self.create_experience('dr', author=self.clients['ra'].user_object)
+        e.planners.add(self.clients['ra'].user_object)
+        e.recognition.add(self.create_section())
+        e.keywords.add(self.create_keyword())
+        keys = SearchExperienceReport.keys
+        experience_dict = e.convert_to_dict(keys)
+        row = ','.join([experience_dict[key] for key in keys])
+        response = self.clients['hs'].get(reverse('search_report') + "?experiences=[" + str(e.pk) + "]")
+        self.assertNotIn(row, str(response.content),
+                         "The draft experience with a different author should not be returned in a csv download")

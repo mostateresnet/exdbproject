@@ -8,6 +8,7 @@ from django.core.validators import validate_email
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.auth.models import AbstractUser
+from django.forms.models import model_to_dict
 
 
 class EXDBUser(AbstractUser):
@@ -135,6 +136,22 @@ class Experience(models.Model):
         if self.status == 'co' or self.start_datetime < now() and self.status == 'ad':
             return reverse('view_experience', args=[self.pk])
         return reverse('edit', args=[self.pk])
+
+    def convert_to_dict(self, keys):
+        row = model_to_dict(self, fields=keys)
+        for key in row:
+            if isinstance(row[key], list):
+                if row[key]:
+                    row[key] = ', '.join([str(a) for a in getattr(self, key).all()])
+                else:
+                    row[key] = "None"
+            elif hasattr(self, 'get_' + key + '_display') and callable(getattr(self, 'get_' + key + '_display')):
+                get_status_display = getattr(self, 'get_' + key + '_display', None)
+                if get_status_display:
+                    row[key] = get_status_display()
+            elif not isinstance(row[key], str):
+                row[key] = str(getattr(self, key))
+        return row
 
 
 class ExperienceApproval(models.Model):

@@ -1,10 +1,12 @@
+import csv
+import json
 from collections import OrderedDict
-from django.views.generic import TemplateView, ListView, RedirectView
+from django.views.generic import View, TemplateView, ListView, RedirectView
 from django.views.generic.edit import CreateView, UpdateView
 from django.shortcuts import get_object_or_404
 from django.core.urlresolvers import reverse
 from django.contrib import auth
-from django.http import HttpResponseRedirect, Http404
+from django.http import HttpResponseRedirect, Http404, HttpResponse
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth import get_user_model
@@ -383,3 +385,40 @@ class SearchExperienceResultsView(ListView):
         context = super(SearchExperienceResultsView, self).get_context_data(*args, **kwargs)
         context['search_query'] = self.request.GET.get('search', '')
         return context
+
+
+class SearchExperienceReport(View):
+    access_level = 'basic'
+    keys = [
+        'name', 'status', 'author', 'planners', 'recognition', 'start_datetime',
+        'end_datetime', 'type', 'subtypes', 'description', 'goals', 'keywords',
+        'audience', 'guest', 'guest_office', 'attendance', 'created_datetime',
+        'next_approver', 'funds', 'conclusion',
+    ]
+
+    def get(self, *args, **kwargs):
+        if not self.request.GET.get('experiences'):
+            raise Http404
+        pks = json.loads(self.request.GET.get('experiences'))
+        if not pks:
+            raise Http404
+        experiences = Experience.objects.filter(pk__in=pks).prefetch_related(
+            'planners',
+            'recognition',
+            'subtypes',
+            'keywords',
+        )
+        # Filter out canceled experiences and drafts not authored by the current user.
+        experiences = experiences.exclude(status='ca')
+        experiences = experiences.exclude(~Q(author=self.request.user), status='dr')
+
+        response = HttpResponse(content_type="text/csv")
+        response['Content-Disposition'] = 'attachment; filename="experiences.csv"'
+
+        writer = csv.DictWriter(response, fieldnames=self.keys)
+        writer.writeheader()
+
+        for experience in experiences:
+            writer.writerow(experience.convert_to_dict(self.keys))
+
+        return response
