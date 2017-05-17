@@ -529,3 +529,38 @@ class ExperienceSearchBrowserTest(DefaultLiveServerTestCase):
             self.get_table_entries_by_name(text_to_not_find)[0].is_displayed(),
             'The element should not be visible.'
         )
+
+    def test_gets_correct_pks_to_send(self):
+        e_send1 = self.create_experience('co', name="ot")
+        e_send2 = self.create_experience('co', name="oot")
+        e_no_send = self.create_experience('co', name="tk")
+        self.client.get(reverse('search') + '?search=t')
+        name_filter = self.driver.find_element(
+            By.XPATH,
+            '//table[@id="search-results"]//td[position()=%i]//*[contains(@class, "tablesorter-filter")]' % self.get_name_column_index()
+        )
+        name_filter.send_keys('o')
+        name_filter.send_keys(Keys.RETURN)
+        wait = WebDriverWait(self.driver, 1)
+        wait.until(
+            expected_conditions.invisibility_of_element_located(
+                (By.XPATH, self.get_table_entries_by_name_xpath(e_no_send.name))
+            )
+        )
+        pks = self.driver.execute_script("return get_experiences();")
+        self.assertIn(e_send1.pk, pks, 'e_send1 should have been retrieved')
+        self.assertIn(e_send2.pk, pks, 'e_send2 should have been retrieved')
+        self.assertNotIn(e_no_send.pk, pks, 'e_no_send should not have been retrieved')
+
+    def test_shows_warning_if_no_experiences(self):
+        self.client.get(reverse('search') + '?search=o')
+        self.driver.find_element(By.ID, 'export').click()
+        warning = self.driver.find_element(By.ID, 'no-experience-warning')
+        self.assertTrue(warning.is_displayed())
+
+    def test_does_not_show_warning_if_experiences(self):
+        e = self.create_experience('co', name="Name")
+        self.client.get(reverse('search') + '?search=' + e.name)
+        self.driver.find_element(By.ID, 'export').click()
+        warning = self.driver.find_element(By.ID, 'no-experience-warning')
+        self.assertFalse(warning.is_displayed())
