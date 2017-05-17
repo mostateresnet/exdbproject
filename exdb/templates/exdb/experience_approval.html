@@ -14,7 +14,7 @@
 
 {% block header_color %} {{ object.get_status_display|cut:" " }}-background{% endblock %}
 {% block header_title %}
-    <h2>{% trans "Approve or Deny" %} {{ object.name }}</h2>
+    <span class = "header">{% trans "Approve or Deny" %} {{ object.name }}</span>
 {% endblock %}
 
 {% block content %}

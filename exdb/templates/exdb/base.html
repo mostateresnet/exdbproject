@@ -34,7 +34,7 @@
                             <ul class="vertical medium-horizontal menu" data-dropdown-menu>
                                 <li class="menu-text">
                                     {% block header_title %}
-                                        <h2>{% trans 'Hello,' %} {{ user.first_name }}</h2>
+                                        <span class = "header">{% trans 'Hello,' %} {{ user.first_name }}</span>
                                     {% endblock %}
                                 </li>
                                 <li><a href="{% url 'home' %}">{% trans "Home" %}</a></li>
