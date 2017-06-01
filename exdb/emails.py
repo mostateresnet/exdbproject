@@ -79,7 +79,8 @@ class DailyDigest(EmailTaskBase):
             from_email = settings.SERVER_EMAIL
             subject = settings.EMAIL_SUBJECT_PREFIX + 'Daily Digest'
             for user in self.get_addrs():
-
+                if not user.is_hallstaff():
+                    continue
                 # Find all the approvals that need evaluation and all the experiences that
                 # need to be approved by the current user
                 experience_approvals = ExperienceApproval.objects.filter(
