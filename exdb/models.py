@@ -22,12 +22,25 @@ class EXDBUser(AbstractUser):
     def is_hallstaff(self):
         return self.groups.filter(name__icontains='hallstaff').exists()
 
+    def __str__(self):
+        if self.first_name or self.last_name:
+            return ' '.join((self.first_name, self.last_name))
+        if self.email:
+            return self.email
+        return self.username
+
+    class Meta:
+        ordering = ['first_name', 'last_name', 'email', 'username']
+
 
 class Type(models.Model):
     name = models.CharField(max_length=300)
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        ordering = ['name']
 
 
 class Subtype(models.Model):
@@ -37,12 +50,18 @@ class Subtype(models.Model):
     def __str__(self):
         return self.name
 
+    class Meta:
+        ordering = ['name']
+
 
 class Affiliation(models.Model):
     name = models.CharField(max_length=300)
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        ordering = ['name']
 
 
 class Section(models.Model):
@@ -52,12 +71,18 @@ class Section(models.Model):
     def __str__(self):
         return self.name
 
+    class Meta:
+        ordering = ['name']
+
 
 class Keyword(models.Model):
     name = models.CharField(max_length=300)
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        ordering = ['name']
 
 
 class Experience(models.Model):
