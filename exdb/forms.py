@@ -68,8 +68,8 @@ class ExperienceSaveForm(ModelForm):
         }
 
         labels = {
-            'start_datetime': 'Start Time',
-            'end_datetime': 'End Time',
+            'start_datetime': 'Starting Date & Time',
+            'end_datetime': 'Ending Date & Time',
             'next_approver': 'Supervisor',
             'name': 'Title',
         }
