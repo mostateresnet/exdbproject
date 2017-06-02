@@ -91,25 +91,25 @@ class CustomRunner(DiscoverRunner, metaclass=CustomRunnerMetaClass):
         self.__class__.exit_perma_driver()
 
     def get_drivers(self):
-        chrome = lambda: 'chrome'
+        def chrome(): return 'chrome'
         chrome.driver = webdriver.Chrome
 
-        edge = lambda: 'edge'
+        def edge(): return 'edge'
         edge.driver = webdriver.Edge
 
-        firefox = lambda: 'firefox'
+        def firefox(): return 'firefox'
         firefox.driver = webdriver.Firefox
 
-        ie = lambda: 'ie'
+        def ie(): return 'ie'
         ie.driver = webdriver.Ie
 
-        none_obj = lambda: 'none'
+        def none_obj(): return 'none'
         none_obj.driver = 'none'
 
-        phantomjs = lambda: 'phantomjs'
+        def phantomjs(): return 'phantomjs'
         phantomjs.driver = webdriver.PhantomJS
 
-        remote = lambda: 'remote'
+        def remote(): return 'remote'
         remote.driver = webdriver.Remote
         capabilities = {
             'chromeOptions': {
