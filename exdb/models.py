@@ -23,11 +23,7 @@ class EXDBUser(AbstractUser):
         return self.groups.filter(name__icontains='hallstaff').exists()
 
     def __str__(self):
-        if self.first_name or self.last_name:
-            return ' '.join((self.first_name, self.last_name))
-        if self.email:
-            return self.email
-        return self.username
+        return self.get_full_name() or self.email or self.username
 
     class Meta:
         ordering = ['first_name', 'last_name', 'email', 'username']
