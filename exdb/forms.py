@@ -68,10 +68,10 @@ class ExperienceSaveForm(ModelForm):
         }
 
         labels = {
-            'start_datetime': 'Starting Date & Time',
-            'end_datetime': 'Ending Date & Time',
-            'next_approver': 'Supervisor',
-            'name': 'Title',
+            'start_datetime': _('Starting Date & Time'),
+            'end_datetime': _('Ending Date & Time'),
+            'next_approver': _('Supervisor'),
+            'name': _('Title'),
         }
 
     def __init__(self, *args, **kwargs):
