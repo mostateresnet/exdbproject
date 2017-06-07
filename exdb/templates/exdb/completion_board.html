@@ -1,15 +1,18 @@
 {% extends "exdb/base.html" %}
 {% load i18n %}
-{% load exdbtags %}
 {% load staticfiles %}
+
 {% block css %}
     {{ block.super }}
     <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/completion_board.css' %}"/>
 {% endblock %}
+
 {% block javascript %}
     {{ block.super }}
+    <script type="text/javascript" src="{% static 'exdb/js/libraries/jquery.floatThead.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'exdb/js/completion_board.js' %}"></script>
 {% endblock %}
+
 {% block content %}
     {{ block.super }}
         <div class="row">
@@ -25,49 +28,6 @@
             </div>
         </div>
         <div class="row expanded">
-            <table class="fixed_headers">
-                <thead>
-                    <tr>
-                        <th>{% trans 'Subtype' %}</th>
-                        {% for sub, reqs in requirements.items %}
-                            <th colspan="{{ reqs|length }}">{{ sub }}</th>
-                        {% endfor %}
-                    </tr>
-                    <tr>
-                        <td>{% trans 'Requirement' %}</td>
-                        {% for sub, reqs in requirements.items %}
-                            {% for req in reqs %}
-                                <td class="requirement-head"><span class="requirement-header"><a href="{% url 'view_requirement' pk=req.pk %}">{{ req }}</a></span></td>
-                            {% endfor %}
-                        {% endfor %}
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for section in sections %}
-                        <tr>
-                            <td><a href="{% url  'section_completion_board' pk=section.pk %}">{{ section }}</a></td>
-                            {% for sub, reqs in requirements.items %}
-                                {% for req in reqs %}
-                                    {% for key, value in section.requirements.items %}
-                                        {% if key == req.pk %}
-                                            <td style="background-color: {% if value.0|length < 1 %}
-                                                    rgba(128, 0, 0, 0.0)
-                                                {% elif value.0|length < value.1 %}
-                                                    rgba(128, 0, 0, 0.5)
-                                                {% else %}
-                                                    rgba(128, 0, 0, 1.0)
-                                                {% endif %};">
-                                                <span class="cell">
-                                                    {{ value.0|length }} of {{ value.1 }}
-                                                </span>
-                                            </td>
-                                        {% endif %}
-                                    {% endfor %}
-                                {% endfor %}
-                            {% endfor %}
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            {% include 'exdb/include/completion_table.html' %}
         </div>
 {% endblock %}

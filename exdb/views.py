@@ -13,7 +13,7 @@ from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.db.models import Q, Prefetch
 
-from exdb.models import Experience, ExperienceComment, ExperienceApproval, EXDBUser, Subtype, Requirement, Affiliation, Semester, Section
+from exdb.models import Experience, ExperienceComment, ExperienceApproval, Subtype, Requirement, Affiliation, Semester, Section
 from .forms import ExperienceSubmitForm, ExperienceSaveForm, ApprovalForm, ExperienceConclusionForm
 
 
@@ -394,11 +394,22 @@ class CompletionBoardView(TemplateView):
     def get_context_data(self, *args, **kwargs):
         context = super(CompletionBoardView, self).get_context_data(*args, **kwargs)
 
-        affiliation = Affiliation.objects.get(pk=self.kwargs.get('pk'))
-        current_time = timezone.now()
-        semester = Semester.objects.get(start_datetime__lte=current_time, end_datetime__gte=current_time)
+        if not self.request.user.is_hallstaff():
+            raise Http404('User does not have access to the global completion board')
 
-        # Make sure this is correct
+        affiliation_pk = self.kwargs.get('pk') or self.request.user.affiliation_id
+        if affiliation_pk is not None:
+            affiliation = get_object_or_404(Affiliation, pk=affiliation_pk)
+        else:
+            # Just get the first one for now
+            affiliation = Affiliation.objects.first()
+        if affiliation is None:
+            raise Http404('No Affiliation objects found')
+
+        semester = Semester.get_current()
+        if semester is None:
+            raise Http404('No Semester objects found')
+
         prefetch = Prefetch(
             'experience_set',
             queryset=Experience.objects.filter(
@@ -414,7 +425,7 @@ class CompletionBoardView(TemplateView):
         context['sections'] = sections
         context['requirements'] = sections[0].requirement_dict
         context['affiliations'] = Affiliation.objects.all()
-        context['current_affiliation'] = int(self.kwargs.get('pk').strip())
+        context['current_affiliation'] = affiliation.pk
 
         return context
 
@@ -426,11 +437,33 @@ class SectionCompletionBoardView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super(SectionCompletionBoardView, self).get_context_data()
 
-        section = Section.objects.get(pk=self.kwargs.get('pk'))
+        semester = Semester.get_current()
+        if semester is None:
+            raise Http404('No Semester objects found')
+
+        prefetch = Prefetch(
+            'experience_set',
+            queryset=Experience.objects.filter(
+                start_datetime__lte=semester.end_datetime,
+                end_datetime__gte=semester.start_datetime,
+                status='co'))
+
+        section_pk = self.kwargs.get('pk') or self.request.user.section_id
+        if section_pk is not None:
+            section = get_object_or_404(
+                Section.objects.prefetch_related(
+                    prefetch,
+                    'experience_set__subtypes'),
+                pk=section_pk)
+        else:
+            raise Http404('No Section objects found')
+        if section.pk != self.request.user.section_id and not self.request.user.is_hallstaff():
+            raise Http404('User does not have access to completion boards other than their own')
+
         section.completion_board_stuff()
 
-        context['requirement_dict'] = section.requirement_dict
-        context['section'] = section
+        context['requirements'] = section.requirement_dict
+        context['sections'] = [section]
 
         return context
 

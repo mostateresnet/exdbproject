@@ -33,8 +33,8 @@ urlpatterns = [
     url(r'^list/(?P<status>[a-zA-Z\-]+)$', views.ListExperienceByStatusView.as_view(), name='status_list'),
     url(r'^experience/search/$', views.SearchExperienceResultsView.as_view(), name='search'),
     url(r'^experience/search/report$', views.SearchExperienceReport.as_view(), name='search_report'),
-    url(r'^complete/(?P<pk>\d+)$', views.CompletionBoardView.as_view(), name='completion_board'),
+    url(r'^complete/(?P<pk>\d+)?$', views.CompletionBoardView.as_view(), name='completion_board'),
     url(r'^requirement/admin$', views.RequirementAdminView.as_view(), name='requirement_admin'),
     url(r'^requirement/view/(?P<pk>\d+)$', views.ViewRequirementView.as_view(), name='view_requirement'),
-    url(r'^section/complete/(?P<pk>\d+)$', views.SectionCompletionBoardView.as_view(), name='section_completion_board'),
+    url(r'^section/complete/(?P<pk>\d+)?$', views.SectionCompletionBoardView.as_view(), name='section_completion_board'),
 ]

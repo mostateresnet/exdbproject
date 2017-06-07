@@ -1,0 +1,46 @@
+{% load i18n %}
+
+<table class="fixed_headers">
+    <thead>
+        <tr>
+            <th>{% trans 'Subtype' %}</th>
+            {% for sub, reqs in requirements.items %}
+                <th colspan="{{ reqs|length }}">{{ sub }}</th>
+            {% endfor %}
+        </tr>
+        <tr>
+            <td>{% trans 'Requirement' %}</td>
+            {% for sub, reqs in requirements.items %}
+                {% for req in reqs %}
+                    <td class="requirement-head"><span class="requirement-header"><a href="{% url 'view_requirement' pk=req.pk %}">{{ req }}</a></span></td>
+                {% endfor %}
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for section in sections %}
+            <tr>
+                <td><a href="{% url 'section_completion_board' pk=section.pk %}">{{ section }}</a></td>
+                {% for sub, reqs in requirements.items %}
+                    {% for req in reqs %}
+                        {% for key, value in section.requirements.items %}
+                            {% if key == req.pk %}
+                                <td style="background-color: {% if value.0|length < 1 %}
+                                        rgba(128, 0, 0, 0.0)
+                                    {% elif value.0|length < value.1 %}
+                                        rgba(128, 0, 0, 0.5)
+                                    {% else %}
+                                        rgba(128, 0, 0, 1.0)
+                                    {% endif %};">
+                                    <span class="cell">
+                                        {{ value.0|length }} of {{ value.1 }}
+                                    </span>
+                                </td>
+                            {% endif %}
+                        {% endfor %}
+                    {% endfor %}
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>

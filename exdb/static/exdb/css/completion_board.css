@@ -5,6 +5,8 @@ td, th{
 
 .cell {
     visibility: hidden;
+    background-color: #fff;
+    box-shadow: 0 0 20px 12px #fff;
 }
 
 td:hover .cell {
@@ -12,17 +14,12 @@ td:hover .cell {
 }
 
 .requirement-header{
-    display: block;
-    font-family: monospace;
+    font-weight: normal;
 }
 
 .requirement-head {
     width: 10em;
     height: 10em;
-}
-
-.hidden {
-    display: none;
 }
 
 a span.current-requirement {

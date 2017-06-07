@@ -12,7 +12,8 @@ from django.forms.models import model_to_dict
 
 
 class EXDBUser(AbstractUser):
-    affiliation = models.ForeignKey('Affiliation', null=True)
+    affiliation = models.ForeignKey('Affiliation', null=True, blank=True)
+    section = models.ForeignKey('Section', null=True, blank=True)
 
     def approvable_experiences(self):
         if getattr(self, '_approvable_experiences', None) is None:
@@ -230,6 +231,16 @@ class Semester(models.Model):
     start_datetime = models.DateTimeField()
     end_datetime = models.DateTimeField()
 
+    @classmethod
+    def get_current(cls):
+        current_time = now()
+        semester = cls.objects.filter(start_datetime__lte=current_time, end_datetime__gte=current_time).first()
+        if semester is None:
+            semester = cls.objects.filter(start_datetime__lte=current_time).order_by('-end_datetime').first()
+        if semester is None:
+            semester = cls.objects.order_by('-start_datetime').first()
+        return semester
+
     def __str__(self):
         return str(self.start_datetime.strftime("%B %d, %Y") + " - " + self.end_datetime.strftime("%B %d, %Y"))
 
@@ -241,6 +252,8 @@ class Requirement(models.Model):
     affiliation = models.ForeignKey(Affiliation)
     total_needed = models.IntegerField(default=1)
     subtype = models.ForeignKey(Subtype)
+    description = models.CharField(max_length=100, blank=True)
 
     def __str__(self):
-        return str(self.start_datetime.strftime("%b %d") + " - " + self.end_datetime.strftime("%b %d"))
+        return self.description or '%s - %s' % (self.start_datetime.strftime("%b %d"),
+                                                self.end_datetime.strftime("%b %d"))
