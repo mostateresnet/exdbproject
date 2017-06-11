@@ -468,19 +468,6 @@ class SectionCompletionBoardView(TemplateView):
         return context
 
 
-class RequirementAdminView(TemplateView):
-    access_level = 'basic'
-    template_name = 'exdb/requirement_admin.html'
-
-    def get_context_data(self, **kwargs):
-        context = super(RequirementAdminView, self).get_context_data()
-        context['requirements'] = Requirement.objects.all()[:20].select_related('subtype')
-        context['semesters'] = Semester.objects.all()
-        context['affiliations'] = Affiliation.objects.all()
-        context['subtypes'] = Subtype.objects.all()
-        return context
-
-
 class ViewRequirementView(TemplateView):
     access_level = 'basic'
     template_name = 'exdb/requirement_view.html'

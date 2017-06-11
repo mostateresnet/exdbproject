@@ -41,7 +41,6 @@
                                 <li><a href="{% url 'create_experience' %}">{% trans 'Create an experience' %}</a></li>
                                 {% if user.is_hallstaff %}
                                     <li><a href="{% url 'completion_board' %}">{% trans "Completion Board" %}</a></li>
-                                    <li><a href="{% url 'requirement_admin' %}">{% trans "Admin" %}</a></li>
                                 {% elif user.section_id %}
                                     <li><a href="{% url 'section_completion_board' %}">{% trans "Completion Board" %}</a></li>
                                 {% endif %}
