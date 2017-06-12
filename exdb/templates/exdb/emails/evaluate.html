@@ -1,2 +1,5 @@
-Your experience <a href="{{ url_prefix }}{% url 'conclusion' experience.pk %}">{{ experience.name }}</a> needs to be evaluated.
-
+{% load i18n %}
+{% url 'conclusion' experience.pk as url_suffix %}
+{% blocktrans with experience_name=experience.name %}
+Your experience <a href="{{ url_prefix }}{{ url_suffix }}">{{ experience_name }}</a> needs to be evaluated.
+{% endblocktrans %}
