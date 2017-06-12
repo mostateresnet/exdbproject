@@ -7,12 +7,19 @@ from django.utils.translation import ugettext_lazy as _
 from django.core.validators import validate_email
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, UserManager
 from django.forms.models import model_to_dict
 
 
 class EXDBUser(AbstractUser):
     affiliation = models.ForeignKey('Affiliation', null=True)
+
+    class EXDBUserQuerySet(models.QuerySet, UserManager):
+
+        def hallstaff(self):
+            return self.filter(groups__name__icontains='hallstaff')
+
+    objects = EXDBUserQuerySet.as_manager()
 
     def approvable_experiences(self):
         if getattr(self, '_approvable_experiences', None) is None:
@@ -20,7 +27,7 @@ class EXDBUser(AbstractUser):
         return self._approvable_experiences
 
     def is_hallstaff(self):
-        return self.groups.filter(name__icontains='hallstaff').exists()
+        return self.__class__.objects.hallstaff().filter(pk=self.pk).exists()
 
     def __str__(self):
         return self.get_full_name() or self.email or self.username
