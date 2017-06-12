@@ -91,25 +91,25 @@ class CustomRunner(DiscoverRunner, metaclass=CustomRunnerMetaClass):
         self.__class__.exit_perma_driver()
 
     def get_drivers(self):
-        def chrome(): return 'chrome'
+        def chrome(): return 'chrome'  # pylint: disable=multiple-statements
         chrome.driver = webdriver.Chrome
 
-        def edge(): return 'edge'
+        def edge(): return 'edge'  # pylint: disable=multiple-statements
         edge.driver = webdriver.Edge
 
-        def firefox(): return 'firefox'
+        def firefox(): return 'firefox'  # pylint: disable=multiple-statements
         firefox.driver = webdriver.Firefox
 
-        def ie(): return 'ie'
+        def ie(): return 'ie'  # pylint: disable=multiple-statements
         ie.driver = webdriver.Ie
 
-        def none_obj(): return 'none'
+        def none_obj(): return 'none'  # pylint: disable=multiple-statements
         none_obj.driver = 'none'
 
-        def phantomjs(): return 'phantomjs'
+        def phantomjs(): return 'phantomjs'  # pylint: disable=multiple-statements
         phantomjs.driver = webdriver.PhantomJS
 
-        def remote(): return 'remote'
+        def remote(): return 'remote'  # pylint: disable=multiple-statements
         remote.driver = webdriver.Remote
         capabilities = {
             'chromeOptions': {
