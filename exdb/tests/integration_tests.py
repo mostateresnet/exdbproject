@@ -137,6 +137,7 @@ class ModelCoverageTest(StandardTestCase):
         e = self.create_experience('ad')
         e.start_datetime = make_aware(datetime.now(), timezone=utc) - timedelta(days=1)
         e.end_datetime = make_aware(datetime.now(), timezone=utc) + timedelta(days=1)
+        e.save()
         self.assertEqual(e.get_url(self.clients['ra'].user_object), reverse('view_experience', args=[e.pk]),
                          "The url for view_experience should have been returned")
 
