@@ -189,19 +189,7 @@ class ExperienceConclusionView(UpdateView):
         return reverse('home')
 
     def get_queryset(self, **kwargs):
-        Qs = Q(author=self.request.user) | Q(planners=self.request.user)
-        if self.request.user.is_hallstaff():
-            experience_approvals = ExperienceApproval.objects.filter(
-                approver=self.request.user, experience__status='ad'
-            )
-            Qs |= Q(pk__in=experience_approvals.values('experience'))
-        return Experience.objects.filter(Qs & Q(pk=self.kwargs['pk'])).distinct()
-
-    def get_object(self, **kwargs):
-        experience = super(ExperienceConclusionView, self).get_object()
-        if experience.needs_evaluation():
-            return experience
-        raise Http404
+        return self.request.user.evaluatable_experiences()
 
     def form_valid(self, form):
         valid_form = super(ExperienceConclusionView, self).form_valid(form)
@@ -235,14 +223,7 @@ class EditExperienceView(UpdateView):
             return ExperienceSaveForm
 
     def get_queryset(self):
-        user_has_editing_privs = Q(author=self.request.user) | (Q(planners=self.request.user) & ~Q(status='dr'))
-        if self.request.user.is_hallstaff():
-            # Let the staff do whatever they want to non-drafts
-            user_has_editing_privs |= ~Q(status='dr')
-        current_status_allows_edits = ~Q(status__in=('ca', 'co'))
-        event_already_occurred = Q(status='ad') & Q(start_datetime__lte=timezone.now())
-        editable_experience = user_has_editing_privs & current_status_allows_edits & ~event_already_occurred
-        return Experience.objects.filter(editable_experience).prefetch_related('comment_set').distinct()
+        return self.request.user.editable_experiences().prefetch_related('comment_set')
 
     def form_valid(self, form):
         experience = self.get_object()

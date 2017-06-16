@@ -137,6 +137,7 @@ class ModelCoverageTest(StandardTestCase):
         e = self.create_experience('ad')
         e.start_datetime = make_aware(datetime.now(), timezone=utc) - timedelta(days=1)
         e.end_datetime = make_aware(datetime.now(), timezone=utc) + timedelta(days=1)
+        e.save()
         self.assertEqual(e.get_url(self.clients['ra'].user_object), reverse('view_experience', args=[e.pk]),
                          "The url for view_experience should have been returned")
 
@@ -880,6 +881,17 @@ class EmailTest(StandardTestCase):
         self.assertIsNone(Experience.objects.get(pk=e.pk).last_evaluation_email_datetime)
 
         emails.send_mass_mail = mass_mail
+
+    def test_daily_digest_excludes_non_hallstaff(self):
+        e = self.create_experience('ad', start=(self.test_date - timedelta(days=3)),
+                                   end=(self.test_date - timedelta(days=2)))
+        e.next_approver = self.clients['ra'].user_object
+        e.save()
+        ExperienceApproval.objects.get_or_create(experience=e, approver=e.next_approver)
+
+        self.send_emails()
+
+        self.assertEqual(len(mail.outbox), 1, "Only one evaluation reminder email should've been sent")
 
 
 class ExperienceSearchViewTest(StandardTestCase):
