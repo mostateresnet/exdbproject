@@ -1,5 +1,6 @@
 from importlib import import_module
 from django.db import models
+from django.db.models import Q
 from django.utils.timezone import now
 from django.conf import settings
 from django.core.urlresolvers import reverse
@@ -7,7 +8,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.core.validators import validate_email
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, UserManager
 from django.forms.models import model_to_dict
 
 
@@ -15,13 +16,50 @@ class EXDBUser(AbstractUser):
     affiliation = models.ForeignKey('Affiliation', null=True, blank=True)
     section = models.ForeignKey('Section', null=True, blank=True)
 
+    class EXDBUserQuerySet(models.QuerySet, UserManager):
+
+        def hallstaff(self):
+            return self.filter(groups__name__icontains='hallstaff')
+
+    objects = EXDBUserQuerySet.as_manager()
+
     def approvable_experiences(self):
         if getattr(self, '_approvable_experiences', None) is None:
             self._approvable_experiences = self.approval_queue.filter(status='pe')
         return self._approvable_experiences
 
+    def editable_experiences(self):
+        if getattr(self, '_editable_experiences', None) is None:
+            user_has_editing_privs = Q(author=self) | (Q(planners=self) & ~Q(status='dr'))
+            if self.is_hallstaff():
+                # Let the staff do whatever they want to non-drafts
+                user_has_editing_privs |= ~Q(status='dr')
+            current_status_allows_edits = ~Q(status__in=('ca', 'co'))
+            event_already_occurred = Q(status='ad') & Q(start_datetime__lte=now())
+            editable_experience = user_has_editing_privs & current_status_allows_edits & ~event_already_occurred
+            self._editable_experiences = Experience.objects.filter(editable_experience).distinct()
+        return self._editable_experiences
+
+    def evaluatable_experiences(self):
+        if getattr(self, '_evaluatable_experiences', None) is None:
+            Qs = Q(author=self) | Q(planners=self)
+            if self.is_hallstaff():
+                experience_approvals = ExperienceApproval.objects.filter(
+                    approver=self, experience__status='ad'
+                )
+                Qs |= Q(pk__in=experience_approvals.values('experience'))
+            self._evaluatable_experiences = Experience.objects.filter(
+                Qs, status='ad', end_datetime__lte=now()).distinct()
+        return self._evaluatable_experiences
+
     def is_hallstaff(self):
-        return self.groups.filter(name__icontains='hallstaff').exists()
+        return self.__class__.objects.hallstaff().filter(pk=self.pk).exists()
+
+    def __str__(self):
+        return self.get_full_name() or self.email or self.username
+
+    class Meta:
+        ordering = ['first_name', 'last_name', 'email', 'username']
 
 
 class Type(models.Model):
@@ -29,6 +67,9 @@ class Type(models.Model):
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        ordering = ['name']
 
 
 class Subtype(models.Model):
@@ -38,12 +79,18 @@ class Subtype(models.Model):
     def __str__(self):
         return self.name
 
+    class Meta:
+        ordering = ['name']
+
 
 class Affiliation(models.Model):
     name = models.CharField(max_length=300)
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        ordering = ['name']
 
 
 class Section(models.Model):
@@ -91,12 +138,18 @@ class Section(models.Model):
                     needed = 0
                 self.requirements[requirement.pk] = (e, requirement.total_needed, needed)
 
+    class Meta:
+        ordering = ['name']
+
 
 class Keyword(models.Model):
     name = models.CharField(max_length=300)
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        ordering = ['name']
 
 
 class Experience(models.Model):
@@ -168,13 +221,13 @@ class Experience(models.Model):
         return self.status == 'ad' and self.end_datetime <= now()
 
     def get_url(self, user):
-        if self.needs_evaluation():
-            return reverse('conclusion', args=[self.pk])
         if self in user.approvable_experiences() and user.is_hallstaff():
             return reverse('approval', args=[self.pk])
-        if self.status == 'co' or self.start_datetime < now() and self.status == 'ad':
-            return reverse('view_experience', args=[self.pk])
-        return reverse('edit', args=[self.pk])
+        if self in user.evaluatable_experiences():
+            return reverse('conclusion', args=[self.pk])
+        if self in user.editable_experiences():
+            return reverse('edit', args=[self.pk])
+        return reverse('view_experience', args=[self.pk])
 
     def convert_to_dict(self, keys):
         row = model_to_dict(self, fields=keys)
