@@ -11,9 +11,9 @@ from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth import get_user_model
 from django.conf import settings
-from django.db.models import Q
+from django.db.models import Q, Prefetch
 
-from exdb.models import Experience, ExperienceComment, ExperienceApproval
+from exdb.models import Experience, ExperienceComment, ExperienceApproval, Subtype, Requirement, Affiliation, Semester, Section
 from .forms import ExperienceSubmitForm, ExperienceSaveForm, ApprovalForm, ExperienceConclusionForm
 
 
@@ -365,6 +365,100 @@ class SearchExperienceResultsView(ListView):
     def get_context_data(self, *args, **kwargs):
         context = super(SearchExperienceResultsView, self).get_context_data(*args, **kwargs)
         context['search_query'] = self.request.GET.get('search', '')
+        return context
+
+
+class CompletionBoardView(TemplateView):
+    access_level = 'basic'
+    template_name = 'exdb/completion_board.html'
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(CompletionBoardView, self).get_context_data(*args, **kwargs)
+
+        if not self.request.user.is_hallstaff():
+            raise Http404('User does not have access to the global completion board')
+
+        affiliation_pk = self.kwargs.get('pk') or self.request.user.affiliation_id
+        if affiliation_pk is not None:
+            affiliation = get_object_or_404(Affiliation, pk=affiliation_pk)
+        else:
+            # Just get the first one for now
+            affiliation = Affiliation.objects.first()
+        if affiliation is None:
+            raise Http404('No Affiliation objects found')
+
+        semester = Semester.get_current()
+        if semester is None:
+            raise Http404('No Semester objects found')
+
+        prefetch = Prefetch(
+            'experience_set',
+            queryset=Experience.objects.filter(
+                start_datetime__lte=semester.end_datetime,
+                end_datetime__gte=semester.start_datetime,
+                status='co'))
+
+        sections = affiliation.section_set.prefetch_related(prefetch, 'experience_set__subtypes')
+
+        if not sections:
+            raise Http404('No Section objects found')
+
+        for section in sections:
+            section.cache_requirements(semester)
+
+        context['sections'] = sections
+        context['requirements'] = sections[0].requirement_dict
+        context['affiliations'] = Affiliation.objects.all()
+        context['current_affiliation'] = affiliation.pk
+
+        return context
+
+
+class SectionCompletionBoardView(TemplateView):
+    access_level = 'basic'
+    template_name = 'exdb/section_completion_board.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(SectionCompletionBoardView, self).get_context_data()
+
+        semester = Semester.get_current()
+        if semester is None:
+            raise Http404('No Semester objects found')
+
+        prefetch = Prefetch(
+            'experience_set',
+            queryset=Experience.objects.filter(
+                start_datetime__lte=semester.end_datetime,
+                end_datetime__gte=semester.start_datetime,
+                status='co'))
+
+        section_pk = self.kwargs.get('pk') or self.request.user.section_id
+        if section_pk is not None:
+            section = get_object_or_404(
+                Section.objects.prefetch_related(
+                    prefetch,
+                    'experience_set__subtypes'),
+                pk=section_pk)
+        else:
+            raise Http404('No Section objects found')
+        if section.pk != self.request.user.section_id and not self.request.user.is_hallstaff():
+            raise Http404('User does not have access to completion boards other than their own')
+
+        section.cache_requirements(semester)
+
+        context['requirements'] = section.requirement_dict
+        context['sections'] = [section]
+
+        return context
+
+
+class ViewRequirementView(TemplateView):
+    access_level = 'basic'
+    template_name = 'exdb/requirement_view.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(ViewRequirementView, self).get_context_data()
+        context['requirement'] = get_object_or_404(Requirement, pk=self.kwargs['pk'])
         return context
 
 

@@ -1,0 +1,33 @@
+{% extends "exdb/base.html" %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block css %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/completion_board.css' %}"/>
+{% endblock %}
+
+{% block javascript %}
+    {{ block.super }}
+    <script type="text/javascript" src="{% static 'exdb/js/libraries/jquery.floatThead.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'exdb/js/completion_board.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+    {{ block.super }}
+    <div class="row">
+        <div class="small-6 columns">
+            <select id="affiliation-selector">
+                {% for a in affiliations %}
+                    <option value="{{ a.pk }}" {% if a.pk == current_affiliation %}selected{% endif %}>{{ a }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="small-4 columns">
+            <a id="switch-affiliation" href="" class="button expand">{% trans 'Go!' %}</a>
+        </div>
+    </div>
+    <div class="row expanded">
+        {% include 'exdb/include/completion_table.html' %}
+    </div>
+{% endblock %}

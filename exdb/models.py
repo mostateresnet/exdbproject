@@ -13,7 +13,8 @@ from django.forms.models import model_to_dict
 
 
 class EXDBUser(AbstractUser):
-    affiliation = models.ForeignKey('Affiliation', null=True)
+    affiliation = models.ForeignKey('Affiliation', null=True, blank=True)
+    section = models.ForeignKey('Section', null=True, blank=True)
 
     class EXDBUserQuerySet(models.QuerySet, UserManager):
 
@@ -98,6 +99,38 @@ class Section(models.Model):
 
     def __str__(self):
         return self.name
+
+    def cache_requirements(self, semester):
+        """Find all relevant Requirements and cache them under self.requirements"""
+        requirements = Requirement.objects.filter(semester=semester, affiliation=self.affiliation).order_by(
+            'start_datetime').select_related('subtype')
+
+        requirement_dict = {}
+        for req in requirements:
+            requirement_dict[req.subtype] = requirement_dict.get(req.subtype, []) + [req]
+
+        self.requirement_dict = requirement_dict
+        self.requirements = {}
+        experiences_grouped_by_subtype = {}
+        for experience in self.experience_set.all():
+            for sub in experience.subtypes.all():
+                experiences_grouped_by_subtype[sub] = experiences_grouped_by_subtype.get(sub, []) + [experience]
+
+        for subtype, requirements in requirement_dict.items():
+            for requirement in requirements:
+                requirement.current = requirement.start_datetime < now() and requirement.end_datetime > now()
+
+                e = []
+                # loop over a copy of the original since we're deleting things from it
+                for experience in list(experiences_grouped_by_subtype.get(subtype, [])):
+                    # The below if statement might need to be reworked
+                    # We might want to check if the end_datetime is within the requirement
+                    # datetime range (ask Travis)
+                    if requirement.start_datetime <= experience.start_datetime <= requirement.end_datetime:
+                        experiences_grouped_by_subtype[subtype].remove(experience)
+                        e.append(experience)
+                needed = max(0, requirement.total_needed - len(e))
+                self.requirements[requirement.pk] = (e, requirement.total_needed, needed)
 
     class Meta:
         ordering = ['name']
@@ -239,3 +272,35 @@ class EmailTask(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Semester(models.Model):
+    start_datetime = models.DateTimeField()
+    end_datetime = models.DateTimeField()
+
+    @classmethod
+    def get_current(cls):
+        current_time = now()
+        semester = cls.objects.filter(start_datetime__lte=current_time, end_datetime__gte=current_time).first()
+        if semester is None:
+            semester = cls.objects.filter(start_datetime__lte=current_time).order_by('-end_datetime').first()
+        if semester is None:
+            semester = cls.objects.order_by('-start_datetime').first()
+        return semester
+
+    def __str__(self):
+        return str(self.start_datetime.strftime("%B %d, %Y") + " - " + self.end_datetime.strftime("%B %d, %Y"))
+
+
+class Requirement(models.Model):
+    start_datetime = models.DateTimeField()
+    end_datetime = models.DateTimeField()
+    semester = models.ForeignKey(Semester)
+    affiliation = models.ForeignKey(Affiliation)
+    total_needed = models.PositiveIntegerField(default=1)
+    subtype = models.ForeignKey(Subtype)
+    description = models.CharField(max_length=100, blank=True)
+
+    def __str__(self):
+        return self.description or '%s - %s' % (self.start_datetime.strftime("%b %d"),
+                                                self.end_datetime.strftime("%b %d"))

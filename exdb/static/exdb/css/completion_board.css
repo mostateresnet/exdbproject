@@ -1,0 +1,32 @@
+td, th{
+    border: 1px solid black;
+    text-align: center;
+}
+
+.cell {
+    visibility: hidden;
+}
+
+td:hover .cell {
+    visibility: visible;
+    background-color: #fff;
+    box-shadow: 0 0 20px 12px #ffffff;
+}
+
+.requirement-head {
+    width: 10em;
+    height: 10em;
+    font-weight: normal;
+}
+
+a span.current-requirement {
+    color: red;
+}
+
+.experience-icon {
+    font-size: 1.6em;
+}
+
+.completed-column {
+    width: 60%;
+}
