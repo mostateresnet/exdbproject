@@ -167,6 +167,7 @@ class Experience(models.Model):
     FUND_TYPES = (
         ('na', _('Not necessary')),
         ('yn', _('Yes, but request not submitted yet')),
+        ('ss', _('Yes, requesting SSI funds')),
         ('ys', _('Yes, request submitted')),
         ('ya', _('Yes, request approved')),
     )
