@@ -2,10 +2,9 @@
 
 
 $(document).ready(function () {
-    $("#switch-section").click(function (event) {
+    $("#switch-affiliation").click(function (event) {
         event.preventDefault();
-        $("#switch-section").attr("href", $("#sel option:selected").val());
-        window.location.href = $("#switch-section").attr("href");
+        window.location.href = $("#affiliation-selector option:selected").val();
     });
-    $("table.fixed_headers").floatThead();
+    $("table.fixed-headers").floatThead();
 });

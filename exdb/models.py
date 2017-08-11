@@ -100,8 +100,9 @@ class Section(models.Model):
     def __str__(self):
         return self.name
 
-    def completion_board_stuff(self):
-        requirements = Requirement.objects.filter(affiliation=self.affiliation).order_by(
+    def cache_requirements(self, semester):
+        """Find all relevant Requirements and cache them under self.requirements"""
+        requirements = Requirement.objects.filter(semester=semester, affiliation=self.affiliation).order_by(
             'start_datetime').select_related('subtype')
 
         requirement_dict = {}
@@ -117,12 +118,7 @@ class Section(models.Model):
 
         for subtype, requirements in requirement_dict.items():
             for requirement in requirements:
-                a = requirement.start_datetime < now()
-                b = requirement.end_datetime > now()
-                if a and b:
-                    requirement.current = True
-                else:
-                    requirement.current = False
+                requirement.current = requirement.start_datetime < now() and requirement.end_datetime > now()
 
                 e = []
                 # loop over a copy of the original since we're deleting things from it
@@ -133,9 +129,7 @@ class Section(models.Model):
                     if requirement.start_datetime <= experience.start_datetime <= requirement.end_datetime:
                         experiences_grouped_by_subtype[subtype].remove(experience)
                         e.append(experience)
-                needed = requirement.total_needed - len(e)
-                if needed < 0:
-                    needed = 0
+                needed = max(0, requirement.total_needed - len(e))
                 self.requirements[requirement.pk] = (e, requirement.total_needed, needed)
 
     class Meta:
@@ -303,7 +297,7 @@ class Requirement(models.Model):
     end_datetime = models.DateTimeField()
     semester = models.ForeignKey(Semester)
     affiliation = models.ForeignKey(Affiliation)
-    total_needed = models.IntegerField(default=1)
+    total_needed = models.PositiveIntegerField(default=1)
     subtype = models.ForeignKey(Subtype)
     description = models.CharField(max_length=100, blank=True)
 

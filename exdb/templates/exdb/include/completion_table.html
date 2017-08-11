@@ -1,6 +1,6 @@
 {% load i18n %}
 
-<table class="fixed_headers">
+<table class="fixed-headers">
     <thead>
         <tr>
             <th>{% trans 'Subtype' %}</th>
@@ -12,7 +12,7 @@
             <td>{% trans 'Requirement' %}</td>
             {% for sub, reqs in requirements.items %}
                 {% for req in reqs %}
-                    <td class="requirement-head"><span class="requirement-header"><a href="{% url 'view_requirement' pk=req.pk %}">{{ req }}</a></span></td>
+                    <td class="requirement-head"><a href="{% url 'view_requirement' pk=req.pk %}">{{ req }}</a></td>
                 {% endfor %}
             {% endfor %}
         </tr>

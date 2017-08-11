@@ -400,8 +400,11 @@ class CompletionBoardView(TemplateView):
 
         sections = affiliation.section_set.prefetch_related(prefetch, 'experience_set__subtypes')
 
+        if not sections:
+            raise Http404('No Section objects found')
+
         for section in sections:
-            section.completion_board_stuff()
+            section.cache_requirements(semester)
 
         context['sections'] = sections
         context['requirements'] = sections[0].requirement_dict
@@ -441,7 +444,7 @@ class SectionCompletionBoardView(TemplateView):
         if section.pk != self.request.user.section_id and not self.request.user.is_hallstaff():
             raise Http404('User does not have access to completion boards other than their own')
 
-        section.completion_board_stuff()
+        section.cache_requirements(semester)
 
         context['requirements'] = section.requirement_dict
         context['sections'] = [section]

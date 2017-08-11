@@ -5,21 +5,18 @@ td, th{
 
 .cell {
     visibility: hidden;
-    background-color: #fff;
-    box-shadow: 0 0 20px 12px #fff;
 }
 
 td:hover .cell {
     visibility: visible;
-}
-
-.requirement-header{
-    font-weight: normal;
+    background-color: #fff;
+    box-shadow: 0 0 20px 12px #ffffff;
 }
 
 .requirement-head {
     width: 10em;
     height: 10em;
+    font-weight: normal;
 }
 
 a span.current-requirement {

@@ -17,14 +17,14 @@
     {{ block.super }}
         <div class="row">
             <div class="small-6 columns">
-                <select id="sel">
+                <select id="affiliation-selector">
                     {% for a in affiliations %}
                         <option value="{{ a.pk }}" {% if a.pk == current_affiliation %}selected{% endif %}>{{ a }}</option>
                     {% endfor %}
                 </select>
             </div>
             <div class="small-4 columns">
-                <a id="switch-section" href="{% url 'completion_board' pk=1 %}" class="button expand">{% trans 'Go!' %}</a>
+                <a id="switch-affiliation" href="" class="button expand">{% trans 'Go!' %}</a>
             </div>
         </div>
         <div class="row expanded">

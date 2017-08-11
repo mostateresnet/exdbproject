@@ -17,9 +17,7 @@ from django.conf.urls import url
 from django.contrib.auth.views import login, logout_then_login
 from exdb import views
 
-
 urlpatterns = [
-
     url(r'^$', views.HomeView.as_view(), name='home'),
     url(r'^create$', views.CreateExperienceView.as_view(), name='create_experience'),
     url(r'^approval/(?P<pk>\d+)$', views.ExperienceApprovalView.as_view(), name='approval'),
