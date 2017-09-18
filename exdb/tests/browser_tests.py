@@ -91,25 +91,25 @@ class CustomRunner(DiscoverRunner, metaclass=CustomRunnerMetaClass):
         self.__class__.exit_perma_driver()
 
     def get_drivers(self):
-        chrome = lambda: 'chrome'
+        def chrome(): return 'chrome'  # pylint: disable=multiple-statements
         chrome.driver = webdriver.Chrome
 
-        edge = lambda: 'edge'
+        def edge(): return 'edge'  # pylint: disable=multiple-statements
         edge.driver = webdriver.Edge
 
-        firefox = lambda: 'firefox'
+        def firefox(): return 'firefox'  # pylint: disable=multiple-statements
         firefox.driver = webdriver.Firefox
 
-        ie = lambda: 'ie'
+        def ie(): return 'ie'  # pylint: disable=multiple-statements
         ie.driver = webdriver.Ie
 
-        none_obj = lambda: 'none'
+        def none_obj(): return 'none'  # pylint: disable=multiple-statements
         none_obj.driver = 'none'
 
-        phantomjs = lambda: 'phantomjs'
+        def phantomjs(): return 'phantomjs'  # pylint: disable=multiple-statements
         phantomjs.driver = webdriver.PhantomJS
 
-        remote = lambda: 'remote'
+        def remote(): return 'remote'  # pylint: disable=multiple-statements
         remote.driver = webdriver.Remote
         capabilities = {
             'chromeOptions': {
@@ -241,20 +241,21 @@ class DefaultLiveServerTestCase(StaticLiveServerTestCase):
         end = end or (make_aware(datetime(2015, 1, 1, 1, 30), timezone=utc) + timedelta(days=1))
         user = user or get_user_model().objects.get(username='user')
         name = name or 'Test'
-        return Experience.objects.get_or_create(
+        experience = Experience.objects.get_or_create(
             author=user,
             name=name,
             description="test",
             start_datetime=start,
             end_datetime=end,
             type=self.create_type(),
-            subtype=self.create_subtype(),
             goals="Test",
             audience="c",
             status=exp_status,
             attendance=0,
             next_approver=user,
         )[0]
+        experience.subtypes.add(self.create_subtype())
+        return experience
 
     class SeleniumClient:
 
@@ -420,7 +421,7 @@ class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
 
     def test_shows_attendance_field(self):
         self.client.get(reverse('create_experience'))
-        subtype_element = self.driver.find_element(By.ID, 'id_subtype')
+        subtype_element = self.driver.find_element(By.ID, 'id_subtypes')
         subtype_element.find_element_by_class_name('no-verification').click()
         attnd_element = self.driver.find_element(By.ID, 'id_attendance')
         self.assertTrue(attnd_element.is_displayed(),
@@ -428,7 +429,7 @@ class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
 
     def test_rehides_attendance_field(self):
         self.client.get(reverse('create_experience'))
-        subtype_element = self.driver.find_element(By.ID, 'id_subtype')
+        subtype_element = self.driver.find_element(By.ID, 'id_subtypes')
         subtype_element.find_element_by_class_name('no-verification').click()
         subtype_element.find_elements_by_tag_name('option')[0].click()
         attnd_element = self.driver.find_element(By.ID, 'id_attendance')
@@ -437,7 +438,7 @@ class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
 
     def test_attendance_conclusion_not_hidden_if_no_verify(self):
         self.client.get(reverse('create_experience'))
-        subtype_element = self.driver.find_element(By.ID, 'id_subtype')
+        subtype_element = self.driver.find_element(By.ID, 'id_subtypes')
         subtype_element.find_element_by_class_name('no-verification').click()
         self.driver.find_element(By.ID, 'submit_experience').click()
         con_element = self.driver.find_element(By.ID, 'id_conclusion')
@@ -528,3 +529,38 @@ class ExperienceSearchBrowserTest(DefaultLiveServerTestCase):
             self.get_table_entries_by_name(text_to_not_find)[0].is_displayed(),
             'The element should not be visible.'
         )
+
+    def test_gets_correct_pks_to_send(self):
+        e_send1 = self.create_experience('co', name="ot")
+        e_send2 = self.create_experience('co', name="oot")
+        e_no_send = self.create_experience('co', name="tk")
+        self.client.get(reverse('search') + '?search=t')
+        name_filter = self.driver.find_element(
+            By.XPATH,
+            '//table[@id="search-results"]//td[position()=%i]//*[contains(@class, "tablesorter-filter")]' % self.get_name_column_index()
+        )
+        name_filter.send_keys('o')
+        name_filter.send_keys(Keys.RETURN)
+        wait = WebDriverWait(self.driver, 1)
+        wait.until(
+            expected_conditions.invisibility_of_element_located(
+                (By.XPATH, self.get_table_entries_by_name_xpath(e_no_send.name))
+            )
+        )
+        pks = self.driver.execute_script("return get_experiences();")
+        self.assertIn(e_send1.pk, pks, 'e_send1 should have been retrieved')
+        self.assertIn(e_send2.pk, pks, 'e_send2 should have been retrieved')
+        self.assertNotIn(e_no_send.pk, pks, 'e_no_send should not have been retrieved')
+
+    def test_shows_warning_if_no_experiences(self):
+        self.client.get(reverse('search') + '?search=o')
+        self.driver.find_element(By.ID, 'export').click()
+        warning = self.driver.find_element(By.ID, 'no-experience-warning')
+        self.assertTrue(warning.is_displayed())
+
+    def test_does_not_show_warning_if_experiences(self):
+        e = self.create_experience('co', name="Name")
+        self.client.get(reverse('search') + '?search=' + e.name)
+        self.driver.find_element(By.ID, 'export').click()
+        warning = self.driver.find_element(By.ID, 'no-experience-warning')
+        self.assertFalse(warning.is_displayed())

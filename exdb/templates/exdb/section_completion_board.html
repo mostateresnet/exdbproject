@@ -1,0 +1,64 @@
+{% extends "exdb/base.html" %}
+{% load i18n %}
+{% load exdbtags %}
+{% load staticfiles %}
+
+{% block css %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/completion_board.css' %}"/>
+{% endblock %}
+
+{% block content %}
+    {{ block.super }}
+    <div class="row text-center">
+        <h1>{{ sections.0 }}</h1>
+    </div>
+    <hr />
+    <div class="row expanded">
+        {% include 'exdb/include/completion_table.html' %}
+    </div>
+    <hr />
+    <div class="row">
+        {% with section=sections.0 %}
+            {% for sub, requirements in requirements.items %}
+                <h2>{{ sub }}</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>{% trans 'Requirement' %}</th>
+                            <th>{% trans 'Date Range' %}</th>
+                            <th class="text-center completed-column">{% trans 'Completed' %}</th>
+                            <th class="text-center">{% trans 'To-Do' %}</th>
+                            <th class="text-center">{% trans 'Required' %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in requirements %}
+                            <tr>
+                                <td><a href="{% url 'view_requirement' pk=req.pk %}">
+                                    <span {% if req.current %}class="current-requirement"{% endif %}>{{ req.description }}</span>
+                                </a></td>
+                                <td>{{ req.start_datetime|date:"F d, Y" }} &mdash; {{ req.end_datetime|date:"F d, Y" }}</td>
+                                {% for key, value in section.requirements.items %}
+                                    {% if key == req.pk %}
+                                        <td class="text-center completed-column">
+                                            {% if value.0|length > 0 %}
+                                                {% for e in value.0 %}
+                                                    <a href="{% url 'view_experience' pk=e.pk %}">
+                                                        <i class="fa experience-icon" aria-hidden="true" title="{{ e }}">&#xf0f6;</i>
+                                                    </a>
+                                                {% endfor %}
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">{{ value.2 }}</td>
+                                    {% endif %}
+                                {% endfor %}
+                                <td class="text-center">{{ req.total_needed }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endfor %}
+        {% endwith %}
+    </div>
+{% endblock %}

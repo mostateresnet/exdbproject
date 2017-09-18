@@ -21,14 +21,14 @@
   ```shell
   pip install -U pip -r requirements/development.txt
   ```
-5. Install the required Node.js packages using one of the following commands
+5. Install the required Node.js packages using:
 
   ```shell
   nodeenv -p --prebuilt --requirements=requirements/node_packages.txt
   ```
-  OR
+  OR compile Node.js from source with:
   ```shell
-  nodeenv -p --requirements=requirements/node_packages.txt --jobs=4
+  nodeenv -p --source --requirements=requirements/node_packages.txt --jobs=4
   ```
 6. Re-activate the Python virtual environment to ensure all the environment variables are reset to their proper values
 

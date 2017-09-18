@@ -120,9 +120,29 @@ LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'UTC'
 
+DATE_INPUT_FORMATS = [
+    '%m/%d/%Y', '%m/%d/%y', '%Y-%m-%d',  # '10/25/2006', '10/25/06', '2006-10-25'
+    '%b %d %Y', '%b %d, %Y',            # 'Oct 25 2006', 'Oct 25, 2006'
+    '%d %b %Y', '%d %b, %Y',            # '25 Oct 2006', '25 Oct, 2006'
+    '%B %d %Y', '%B %d, %Y',            # 'October 25 2006', 'October 25, 2006'
+    '%d %B %Y', '%d %B, %Y',            # '25 October 2006', '25 October, 2006'
+]
+
+TIME_INPUT_FORMATS = [
+    '%I:%M %p',     # '02:30 PM'
+    '%I:%M%p',      # '02:30PM'
+    '%I:%M:%S %p',  # '02:30:59 PM'
+    '%I:%M:%S%p',   # '02:30:59PM'
+    '%I %p',        # '02 PM'
+    '%I%p',         # '02PM'
+    '%H:%M:%S',     # '14:30:59'
+    '%H:%M:%S.%f',  # '14:30:59.000200'
+    '%H:%M',        # '14:30'
+]
+
 USE_I18N = True
 
-USE_L10N = True
+USE_L10N = False  # Necessary for custom input formats
 
 USE_TZ = True
 

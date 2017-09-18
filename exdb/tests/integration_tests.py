@@ -1,6 +1,6 @@
 from django.test import TestCase, Client, override_settings
 from django.utils.timezone import datetime, timedelta, now, make_aware, utc, localtime
-from django.utils.six import StringIO
+from django.utils.six import StringIO, BytesIO
 from django.core.urlresolvers import reverse
 from django.core import mail
 from django.contrib.auth import get_user_model
@@ -11,6 +11,7 @@ from django.conf import settings
 
 from exdb.models import Affiliation, Experience, Type, Subtype, Section, Keyword, ExperienceComment, ExperienceApproval, EmailTask
 from exdb.forms import ExperienceSubmitForm
+from exdb.views import SearchExperienceReport
 
 
 class StandardTestCase(TestCase):
@@ -54,20 +55,22 @@ class StandardTestCase(TestCase):
         end = end or (self.test_date + timedelta(days=1))
         if author is None:
             author = self.clients['ra'].user_object
-        return Experience.objects.get_or_create(
+        experience = Experience.objects.get_or_create(
             author=author,
             name="Test Experience",
             description="test description",
             start_datetime=start,
             end_datetime=end,
             type=self.create_type(),
-            subtype=self.create_subtype(),
             goals="Test Goal",
             audience="b",
             status=exp_status,
             attendance=attendance,
             next_approver=self.clients['hs'].user_object,
         )[0]
+        sub = self.create_subtype()
+        experience.subtypes.add(sub)
+        return experience
 
     def create_experience_comment(self, exp, message="Test message"):
         """Creates experience comment, must pass an experience"""
@@ -130,6 +133,14 @@ class ModelCoverageTest(StandardTestCase):
         self.assertEqual(e.get_url(self.clients['ra'].user_object), reverse('view_experience', args=[e.pk]),
                          "The url for view_experience should have been returned")
 
+    def test_get_url_returns_view_experience_if_started(self):
+        e = self.create_experience('ad')
+        e.start_datetime = make_aware(datetime.now(), timezone=utc) - timedelta(days=1)
+        e.end_datetime = make_aware(datetime.now(), timezone=utc) + timedelta(days=1)
+        e.save()
+        self.assertEqual(e.get_url(self.clients['ra'].user_object), reverse('view_experience', args=[e.pk]),
+                         "The url for view_experience should have been returned")
+
     def test_get_url_returns_edit(self):
         e = self.create_experience('pe', start=(now() + timedelta(days=2)), end=(now() + timedelta(days=3)))
         self.assertEqual(e.get_url(self.clients['ra'].user_object), reverse('edit', args=[e.pk]),
@@ -158,7 +169,7 @@ class ExperienceCreationFormTest(StandardTestCase):
             'name': 'test',
             'description': 'test',
             'type': self.test_type.pk,
-            'subtype': self.test_subtype.pk,
+            'subtypes': [self.test_subtype.pk],
             'audience': 'c',
             'guest': 'test',
             'recognition': [self.test_org.pk],
@@ -184,7 +195,7 @@ class ExperienceCreationFormTest(StandardTestCase):
     def test_valid_past_experience_creation(self):
         data = self.get_post_data((self.test_date - timedelta(days=2)), (self.test_date - timedelta(days=1)))
         data['attendance'] = 1
-        data['subtype'] = self.test_past_subtype.pk
+        data['subtypes'] = [self.test_past_subtype.pk]
         data['conclusion'] = "Test conclusion"
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertTrue(form.is_valid(), "Form should have been valid")
@@ -193,14 +204,14 @@ class ExperienceCreationFormTest(StandardTestCase):
         data = self.get_post_data((self.test_date - timedelta(days=2)), (self.test_date - timedelta(days=1)))
         data.pop('audience', None)
         data['attendance'] = 1
-        data['subtype'] = self.test_past_subtype.pk
+        data['subtypes'] = [self.test_past_subtype.pk]
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
 
     def test_past_experience_subtype_with_future_dates(self):
         data = self.get_post_data((self.test_date + timedelta(days=1)), (self.test_date + timedelta(days=2)))
         data['attendance'] = 1
-        data['subtype'] = self.test_past_subtype.pk
+        data['subtypes'] = [self.test_past_subtype.pk]
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
 
@@ -214,11 +225,20 @@ class ExperienceCreationFormTest(StandardTestCase):
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
 
-    def test_past_experience_creation_no_attendance(self):
+    def test_past_experience_creation_no_attendance_submitted(self):
         data = self.get_post_data((self.test_date - timedelta(days=2)), (self.test_date - timedelta(days=1)))
-        data['subtype'] = self.test_past_subtype.pk
+        data['subtypes'] = [self.test_past_subtype.pk]
+        data['conclusion'] = 'Test conclusion'
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
+
+    def test_past_experience_creation_zero_attendance(self):
+        data = self.get_post_data((self.test_date - timedelta(days=2)), (self.test_date - timedelta(days=1)))
+        data['subtypes'] = [self.test_past_subtype.pk]
+        data['attendance'] = 0
+        data['conclusion'] = 'Test conclusion'
+        form = ExperienceSubmitForm(data, when=self.test_date)
+        self.assertTrue(form.is_valid(), "Form should have been valid")
 
     def test_experience_creation_with_attendance(self):
         data = self.get_post_data((self.test_date + timedelta(days=1)), (self.test_date + timedelta(days=2)))
@@ -229,7 +249,8 @@ class ExperienceCreationFormTest(StandardTestCase):
     def test_past_experience_creation_negative_attendance(self):
         data = self.get_post_data((self.test_date - timedelta(days=2)), (self.test_date - timedelta(days=1)))
         data['attendance'] = -1
-        data['subtype'] = self.test_past_subtype.pk
+        data['conclusion'] = 'Test conclusion'
+        data['subtypes'] = [self.test_past_subtype.pk]
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
 
@@ -253,7 +274,7 @@ class ExperienceCreationFormTest(StandardTestCase):
 
     def test_experience_creation_form_no_subtype(self):
         data = self.get_post_data((self.test_date + timedelta(days=1)), (self.test_date + timedelta(days=2)))
-        data.pop('subtype', None)
+        data.pop('subtypes', None)
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should NOT have been valid")
 
@@ -266,7 +287,7 @@ class ExperienceCreationFormTest(StandardTestCase):
     def test_experience_creation_spontaneous_no_conclusion(self):
         data = self.get_post_data((self.test_date - timedelta(days=2)), (self.test_date - timedelta(days=1)))
         data['attendance'] = 1
-        data['subtype'] = self.test_past_subtype.pk
+        data['subtypes'] = [self.test_past_subtype.pk]
         data['conclusion'] = ""
         form = ExperienceSubmitForm(data, when=self.test_date)
         self.assertFalse(form.is_valid(), "Form should not be valid with no conclusion if it does not need approval")
@@ -295,7 +316,7 @@ class ExperienceCreationViewTest(StandardTestCase):
             'name': 'test',
             'description': 'test',
             'type': self.test_type.pk,
-            'subtype': self.test_subtype.pk,
+            'subtypes': [self.test_subtype.pk],
             'audience': 'c',
             'guest': 'test',
             'recognition': [self.test_org.pk],
@@ -331,7 +352,7 @@ class ExperienceCreationViewTest(StandardTestCase):
         end = now() - timedelta(days=1)
         data = self.get_post_data(start, end)
         data['attendance'] = 1
-        data['subtype'] = self.test_past_subtype.pk
+        data['subtypes'] = [self.test_past_subtype.pk]
         data['conclusion'] = "Test conclusion"
         self.clients['ra'].post(reverse('create_experience'), data)
         self.assertEqual('co', Experience.objects.get(name='test').status,
@@ -372,7 +393,7 @@ class ExperienceConclusionViewTest(StandardTestCase):
 
     def test_no_attendance(self):
         e = self.post_data(attendance=0)
-        self.assertEqual(e.status, 'ad', "The experience should not be complete without an attendance.")
+        self.assertEqual(e.status, 'co', "Experiences should be allowed to be completed with a '0' attendance.")
 
     def test_negative_attendance(self):
         e = self.post_data(attendance=-1)
@@ -381,6 +402,42 @@ class ExperienceConclusionViewTest(StandardTestCase):
     def test_no_conclusion(self):
         e = self.post_data(conclusion="")
         self.assertEqual(e.status, 'ad', "The experience should not be complete without a conclusion.")
+
+    def test_cannot_access_conclude_if_not_needs_evaluation(self):
+        e = self.create_experience('pe')
+        response = self.clients['ra'].get(reverse('conclusion', args=[e.pk]))
+        self.assertEqual(response.status_code, 404,
+                         "If the experience does not need evaluation, the response status should be a 404")
+
+    def test_author_can_access_conclude_if_needs_evaluation(self):
+        e = self.create_experience('ad', end=now() - timedelta(days=1))
+        response = self.clients['ra'].get(reverse('conclusion', args=[e.pk]))
+        self.assertEqual(response.status_code, 200,
+                         "If the experience needs evaluation, the response status should be a 200")
+
+    def test_planner_can_access_if_needs_evaluation(self):
+        e = self.create_experience('ad', end=now() - timedelta(days=1), author=self.clients['hs'].user_object)
+        e.planners.add(self.clients['ra'].user_object)
+        response = self.clients['ra'].get(reverse('conclusion', args=[e.pk]))
+        self.assertEqual(response.status_code, 200,
+                         "A planner should be able to conclude an experience")
+
+    def test_approver_can_access_if_needs_evaluation(self):
+        e = self.create_experience('ad', end=now() - timedelta(days=1))
+        ExperienceApproval.objects.create(
+            experience=e,
+            approver=self.clients['hs'].user_object,
+            timestamp=now() - timedelta(days=1),
+        )
+        response = self.clients['hs'].get(reverse('conclusion', args=[e.pk]))
+        self.assertEqual(response.status_code, 200,
+                         "An approver should be able to conclude an experience")
+
+    def test_unrelated_user_cannot_conclude_if_needs_evaluation(self):
+        e = self.create_experience('ad', end=now() - timedelta(days=1), author=self.clients['hs'].user_object)
+        response = self.clients['ra'].get(reverse('conclusion', args=[e.pk]))
+        self.assertEqual(response.status_code, 404,
+                         "An unrelated user should not be able to conclude an experience")
 
 
 class RAHomeViewTest(StandardTestCase):
@@ -414,16 +471,16 @@ class RAHomeViewTest(StandardTestCase):
     @override_settings(HALLSTAFF_UPCOMING_TIMEDELTA=timedelta(days=0), RA_UPCOMING_TIMEDELTA=timedelta(days=31))
     def test_week_ahead(self):
         self.create_experience('ad')
-        Experience.objects.get_or_create(author=self.clients['ra'].user_object,
-                                         name="E1", description="test description",
-                                         start_datetime=(now() + timedelta(days=2)),
-                                         end_datetime=(now() + timedelta(days=3)),
-                                         type=self.create_type(),
-                                         subtype=self.create_subtype(),
-                                         goals="Test Goal",
-                                         audience="b",
-                                         status="ad",
-                                         attendance=3)
+        e = Experience.objects.get_or_create(author=self.clients['ra'].user_object,
+                                             name="E1", description="test description",
+                                             start_datetime=(now() + timedelta(days=2)),
+                                             end_datetime=(now() + timedelta(days=3)),
+                                             type=self.create_type(),
+                                             goals="Test Goal",
+                                             audience="b",
+                                             status="ad",
+                                             attendance=3)[0]
+        e.subtypes.add(self.create_subtype())
         response = self.clients['ra'].get(reverse('home'))
         self.assertEqual(len(response.context["experience_dict"]["Upcoming"]),
                          1, "There should be 1 experience in the next month")
@@ -443,9 +500,9 @@ class ExperienceApprovalViewTest(StandardTestCase):
             'start_datetime': e.start_datetime.strftime("%Y-%m-%d %H:%M:%S"),
             'end_datetime': e.end_datetime.strftime("%Y-%m-%d %H:%M:%S"),
             'type': e.type.pk,
-            'subtype': e.subtype.pk,
             'audience': e.audience,
             'attendance': 0,
+            'subtypes': [st.pk for st in e.subtypes.all()],
             'goals': e.goals,
             'guest': e.guest,
             'guest_office': e.guest_office,
@@ -554,12 +611,12 @@ class HallStaffDashboardViewTest(StandardTestCase):
                                               start_datetime=(now() + timedelta(days=2)),
                                               end_datetime=(now() + timedelta(days=3)),
                                               type=self.create_type(),
-                                              subtype=self.create_subtype(),
                                               goals="Test Goal",
                                               audience="b",
                                               status="ad",
                                               attendance=None,
                                               next_approver=self.clients['hs'].user_object)[0]
+        e2.subtypes.add(self.create_subtype())
         ExperienceApproval.objects.create(experience=e1, approver=self.clients['hs'].user_object)
         ExperienceApproval.objects.create(experience=e2, approver=self.clients['hs'].user_object)
         response = self.clients['hs'].get(reverse('home'))
@@ -587,9 +644,9 @@ class EditExperienceViewTest(StandardTestCase):
             'start_datetime': e.start_datetime.strftime("%Y-%m-%d %H:%M:%S"),
             'end_datetime': e.end_datetime.strftime("%Y-%m-%d %H:%M:%S"),
             'type': e.type.pk,
-            'subtype': e.subtype.pk,
             'audience': e.audience,
             'attendance': 0,
+            'subtypes': [st.pk for st in e.subtypes.all()],
             'goals': e.goals,
             'guest': e.guest,
             'guest_office': e.guest_office,
@@ -825,6 +882,17 @@ class EmailTest(StandardTestCase):
 
         emails.send_mass_mail = mass_mail
 
+    def test_daily_digest_excludes_non_hallstaff(self):
+        e = self.create_experience('ad', start=(self.test_date - timedelta(days=3)),
+                                   end=(self.test_date - timedelta(days=2)))
+        e.next_approver = self.clients['ra'].user_object
+        e.save()
+        ExperienceApproval.objects.get_or_create(experience=e, approver=e.next_approver)
+
+        self.send_emails()
+
+        self.assertEqual(len(mail.outbox), 1, "Only one evaluation reminder email should've been sent")
+
 
 class ExperienceSearchViewTest(StandardTestCase):
 
@@ -998,3 +1066,60 @@ class ListExperienceByStatusViewTest(StandardTestCase):
         response = self.clients['hs'].get(reverse('status_list', kwargs={'status': status}))
         self.assertIn(e, response.context['experiences'],
                       'When the status is approved, the view should return experiences the user has approved')
+
+
+class SearchExperienceReportTest(StandardTestCase):
+
+    def test_gets_experience_report(self):
+        e = self.create_experience('ad')
+        e.planners.add(self.clients['ra'].user_object)
+        e.recognition.add(self.create_section())
+        e.keywords.add(self.create_keyword())
+        response = self.clients['hs'].get(reverse('search_report') + "?experiences=[" + str(e.pk) + "]")
+        self.assertEqual(response.get('Content-Disposition'), 'attachment; filename="experiences.csv"',
+                         'The response should be an attached csv file')
+
+    def test_get_experience_report_no_querystring(self):
+        response = self.clients['hs'].get(reverse('search_report'))
+        self.assertEqual(response.status_code, 404,
+                         'Trying to get a report without a querystring should return a 404')
+
+    def test_get_experience_report_no_experiences(self):
+        response = self.clients['hs'].get(reverse('search_report') + "?experiences=[]")
+        self.assertEqual(response.status_code, 404,
+                         'Trying to get a report without experiences should return a 404')
+
+    def test_gets_experience_report_and_experience_is_in_report(self):
+        e = self.create_experience('ad')
+        e.planners.add(self.clients['ra'].user_object)
+        e.recognition.add(self.create_section())
+        e.keywords.add(self.create_keyword())
+        keys = SearchExperienceReport.keys
+        experience_dict = e.convert_to_dict(keys)
+        row = ','.join([experience_dict[key] for key in keys])
+        response = self.clients['hs'].get(reverse('search_report') + "?experiences=[" + str(e.pk) + "]")
+        self.assertIn(row, str(response.content), "The experience should be returned in a csv download")
+
+    def test_does_not_get_cancelled_experiences(self):
+        e = self.create_experience('ca')
+        e.planners.add(self.clients['ra'].user_object)
+        e.recognition.add(self.create_section())
+        e.keywords.add(self.create_keyword())
+        keys = SearchExperienceReport.keys
+        experience_dict = e.convert_to_dict(keys)
+        row = ','.join([experience_dict[key] for key in keys])
+        response = self.clients['hs'].get(reverse('search_report') + "?experiences=[" + str(e.pk) + "]")
+        self.assertNotIn(row, str(response.content),
+                         "The cancelled experience should not be returned in a csv download")
+
+    def test_does_not_return_draft_with_different_author(self):
+        e = self.create_experience('dr', author=self.clients['ra'].user_object)
+        e.planners.add(self.clients['ra'].user_object)
+        e.recognition.add(self.create_section())
+        e.keywords.add(self.create_keyword())
+        keys = SearchExperienceReport.keys
+        experience_dict = e.convert_to_dict(keys)
+        row = ','.join([experience_dict[key] for key in keys])
+        response = self.clients['hs'].get(reverse('search_report') + "?experiences=[" + str(e.pk) + "]")
+        self.assertNotIn(row, str(response.content),
+                         "The draft experience with a different author should not be returned in a csv download")

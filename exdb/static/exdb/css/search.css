@@ -36,3 +36,18 @@ tr th, tr td {
 .row {
     max-width: 85rem;
 }
+
+div#no-experience-warning{
+    max-width: 50%;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    margin-left: auto;
+    margin-right: auto;
+    border: 2px red solid;
+    border-radius: 10px;
+    background-color: #ca5353;
+    text-align: center;
+    color: white;
+    font-weight: bold;
+    font-size: 18pt;
+}

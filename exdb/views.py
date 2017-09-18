@@ -1,17 +1,19 @@
+import csv
+import json
 from collections import OrderedDict
-from django.views.generic import TemplateView, ListView, RedirectView, DetailView
+from django.views.generic import View, TemplateView, ListView, RedirectView, DetailView
 from django.views.generic.edit import CreateView, UpdateView
 from django.shortcuts import get_object_or_404
 from django.core.urlresolvers import reverse
 from django.contrib import auth
-from django.http import HttpResponseRedirect, Http404
+from django.http import HttpResponseRedirect, Http404, HttpResponse
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth import get_user_model
 from django.conf import settings
-from django.db.models import Q
+from django.db.models import Q, Prefetch
 
-from exdb.models import Experience, ExperienceComment, ExperienceApproval
+from exdb.models import Experience, ExperienceComment, ExperienceApproval, Subtype, Requirement, Affiliation, Semester, Section
 from .forms import ExperienceSubmitForm, ExperienceSaveForm, ApprovalForm, ExperienceConclusionForm
 
 
@@ -27,7 +29,8 @@ class CreateExperienceView(CreateView):
         form.instance.author = self.request.user
 
         if 'submit' in self.request.POST:
-            if form.instance.subtype.needs_verification:
+            verification = any(s.needs_verification for s in form.cleaned_data['subtypes'])
+            if verification:
                 form.instance.status = 'pe'
             else:
                 form.instance.status = 'co'
@@ -186,7 +189,8 @@ class ExperienceConclusionView(UpdateView):
         return reverse('home')
 
     def get_queryset(self, **kwargs):
-        return Experience.objects.prefetch_related('comment_set')
+        return self.request.user.evaluatable_experiences().prefetch_related('comment_set')
+
 
     def form_valid(self, form):
         valid_form = super(ExperienceConclusionView, self).form_valid(form)
@@ -220,14 +224,7 @@ class EditExperienceView(UpdateView):
             return ExperienceSaveForm
 
     def get_queryset(self):
-        user_has_editing_privs = Q(author=self.request.user) | (Q(planners=self.request.user) & ~Q(status='dr'))
-        if self.request.user.is_hallstaff():
-            # Let the staff do whatever they want to non-drafts
-            user_has_editing_privs |= ~Q(status='dr')
-        current_status_allows_edits = ~Q(status__in=('ca', 'co'))
-        event_already_occurred = Q(status='ad') & Q(start_datetime__lte=timezone.now())
-        editable_experience = user_has_editing_privs & current_status_allows_edits & ~event_already_occurred
-        return Experience.objects.filter(editable_experience).prefetch_related('comment_set').distinct()
+        return self.request.user.editable_experiences().prefetch_related('comment_set')
 
     def form_valid(self, form):
         experience = self.get_object()
@@ -340,7 +337,7 @@ class SearchExperienceResultsView(ListView):
             'author__first_name',
             'author__last_name',
             'type__name',
-            'subtype__name',
+            'subtypes__name',
         ]
 
         filter_Qs = Q()
@@ -359,13 +356,145 @@ class SearchExperienceResultsView(ListView):
         # get rid of a users drafts for everyone else
         queryset = queryset.exclude(~Q(author=self.request.user), status='dr')
 
-        return queryset.select_related('type', 'subtype').prefetch_related(
+        return queryset.select_related('type').prefetch_related(
             'planners',
             'keywords',
             'recognition__affiliation',
+            'subtypes',
         ).distinct()
 
     def get_context_data(self, *args, **kwargs):
         context = super(SearchExperienceResultsView, self).get_context_data(*args, **kwargs)
         context['search_query'] = self.request.GET.get('search', '')
         return context
+
+
+class CompletionBoardView(TemplateView):
+    access_level = 'basic'
+    template_name = 'exdb/completion_board.html'
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(CompletionBoardView, self).get_context_data(*args, **kwargs)
+
+        if not self.request.user.is_hallstaff():
+            raise Http404('User does not have access to the global completion board')
+
+        affiliation_pk = self.kwargs.get('pk') or self.request.user.affiliation_id
+        if affiliation_pk is not None:
+            affiliation = get_object_or_404(Affiliation, pk=affiliation_pk)
+        else:
+            # Just get the first one for now
+            affiliation = Affiliation.objects.first()
+        if affiliation is None:
+            raise Http404('No Affiliation objects found')
+
+        semester = Semester.get_current()
+        if semester is None:
+            raise Http404('No Semester objects found')
+
+        prefetch = Prefetch(
+            'experience_set',
+            queryset=Experience.objects.filter(
+                start_datetime__lte=semester.end_datetime,
+                end_datetime__gte=semester.start_datetime,
+                status='co'))
+
+        sections = affiliation.section_set.prefetch_related(prefetch, 'experience_set__subtypes')
+
+        if not sections:
+            raise Http404('No Section objects found')
+
+        for section in sections:
+            section.cache_requirements(semester)
+
+        context['sections'] = sections
+        context['requirements'] = sections[0].requirement_dict
+        context['affiliations'] = Affiliation.objects.all()
+        context['current_affiliation'] = affiliation.pk
+
+        return context
+
+
+class SectionCompletionBoardView(TemplateView):
+    access_level = 'basic'
+    template_name = 'exdb/section_completion_board.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(SectionCompletionBoardView, self).get_context_data()
+
+        semester = Semester.get_current()
+        if semester is None:
+            raise Http404('No Semester objects found')
+
+        prefetch = Prefetch(
+            'experience_set',
+            queryset=Experience.objects.filter(
+                start_datetime__lte=semester.end_datetime,
+                end_datetime__gte=semester.start_datetime,
+                status='co'))
+
+        section_pk = self.kwargs.get('pk') or self.request.user.section_id
+        if section_pk is not None:
+            section = get_object_or_404(
+                Section.objects.prefetch_related(
+                    prefetch,
+                    'experience_set__subtypes'),
+                pk=section_pk)
+        else:
+            raise Http404('No Section objects found')
+        if section.pk != self.request.user.section_id and not self.request.user.is_hallstaff():
+            raise Http404('User does not have access to completion boards other than their own')
+
+        section.cache_requirements(semester)
+
+        context['requirements'] = section.requirement_dict
+        context['sections'] = [section]
+
+        return context
+
+
+class ViewRequirementView(TemplateView):
+    access_level = 'basic'
+    template_name = 'exdb/requirement_view.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(ViewRequirementView, self).get_context_data()
+        context['requirement'] = get_object_or_404(Requirement, pk=self.kwargs['pk'])
+        return context
+
+
+class SearchExperienceReport(View):
+    access_level = 'basic'
+    keys = [
+        'name', 'status', 'author', 'planners', 'recognition', 'start_datetime',
+        'end_datetime', 'type', 'subtypes', 'description', 'goals', 'keywords',
+        'audience', 'guest', 'guest_office', 'attendance', 'created_datetime',
+        'next_approver', 'funds', 'conclusion',
+    ]
+
+    def get(self, *args, **kwargs):
+        if not self.request.GET.get('experiences'):
+            raise Http404
+        pks = json.loads(self.request.GET.get('experiences'))
+        if not pks:
+            raise Http404
+        experiences = Experience.objects.filter(pk__in=pks).prefetch_related(
+            'planners',
+            'recognition',
+            'subtypes',
+            'keywords',
+        )
+        # Filter out canceled experiences and drafts not authored by the current user.
+        experiences = experiences.exclude(status='ca')
+        experiences = experiences.exclude(~Q(author=self.request.user), status='dr')
+
+        response = HttpResponse(content_type="text/csv")
+        response['Content-Disposition'] = 'attachment; filename="experiences.csv"'
+
+        writer = csv.DictWriter(response, fieldnames=self.keys)
+        writer.writeheader()
+
+        for experience in experiences:
+            writer.writerow(experience.convert_to_dict(self.keys))
+
+        return response

@@ -1,14 +1,15 @@
 {% extends "exdb/base.html" %}
 {% load i18n %}
 {% load staticfiles %}
+
 {% block css %}
     {{ block.super }}
-    <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/experience_approval.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/experience_view.css' %}" />
 {% endblock %}
 
 {% block header_color %} {{ experience.get_status_display|cut:" " }}-background{% endblock %}
 {% block header_title %}
-    <h2>{% trans "View" %} {{ experience.name }}</h2>
+    <h2>{{ experience.name }}</h2>
 {% endblock %}
 
 {% block content %}
@@ -38,8 +39,14 @@
             {{ experience.created_datetime }}
         </p>
         <p>
-            <span>{% trans "Type/Subtype" %}:</span>
-            {{ experience.type }}/{{ experience.subtype }}
+            <span>{% trans "Type" %}:</span>
+            {{ experience.type }}
+        </p>
+        <p>
+            <span>{% trans "Subtypes" %}:</span>
+            {% for sub in experience.subtypes.all %}
+                {{ sub }}{% if not forloop.last %}, {% endif %}
+            {% endfor %}
         </p>
         <p>
             <span>{% trans "Start/End" %}:</span>
@@ -47,11 +54,11 @@
         </p>
         <p>
             <span>{% trans "Description" %}:</span>
-            {{ experience.description }}
+            <span class="multiline">{{ experience.description|linebreaksbr }}</span>
         </p>
         <p>
             <span>{% trans "Goals" %}:</span>
-            {{ experience.goals }}
+            <span class="multiline">{{ experience.goals|linebreaksbr }}</span>
         </p>
         {% if experience.attendance %}
             <p>
@@ -84,7 +91,7 @@
         {% if experience.conclusion %}
             <p>
                 <span>{% trans "Conclusion" %}:</span>
-                {{ experience.conclusion }}
+                <span class="multiline">{{ experience.conclusion|linebreaksbr }}</span>
             </p>
         {% endif %}
     </div>

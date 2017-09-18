@@ -66,7 +66,7 @@ class DailyDigest(EmailTaskBase):
         experience_approvals_needing_eval = ExperienceApproval.objects.filter(
             experience__status='ad', experience__end_datetime__lt=now())
 
-        users = get_user_model().objects.filter(
+        users = get_user_model().objects.hallstaff().filter(
             Q(approval_queue__pk__in=pending_experiences) |
             Q(approval_set__pk__in=experience_approvals_needing_eval)
         ).distinct()
@@ -79,7 +79,6 @@ class DailyDigest(EmailTaskBase):
             from_email = settings.SERVER_EMAIL
             subject = settings.EMAIL_SUBJECT_PREFIX + 'Daily Digest'
             for user in self.get_addrs():
-
                 # Find all the approvals that need evaluation and all the experiences that
                 # need to be approved by the current user
                 experience_approvals = ExperienceApproval.objects.filter(
