@@ -11,9 +11,18 @@ div.exp-card {
 
 div.exp-card div{
     border-radius: 10px;
-    padding-top: 10px;
+    padding-top: 5px;
     padding-bottom: 10px;
     margin-bottom: 10px;
+    max-height:60px;
+}
+
+.exp-name {
+    display:inline-block;
+    max-width:300px;
+    overflow:hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 div.exp-card a{
