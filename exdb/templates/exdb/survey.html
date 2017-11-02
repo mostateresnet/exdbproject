@@ -1,0 +1,43 @@
+{% load i18n %}
+{% load staticfiles %}
+
+{% block css %}
+    <link rel="stylesheet" href="{% static 'exdb/css/foundation_css/foundation.css' %}"/>
+    <link rel="stylesheet" href="{% static 'exdb/css/font-awesome-4.6.3/css/font-awesome.min.css' %}"/>
+{% endblock %}
+{% block javascript %}
+    <script type="text/javascript" src="{% static 'exdb/js/libraries/jquery-2.1.4.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'exdb/js/libraries/foundation.min.js' %}"></script>
+{% endblock %}
+
+<div class="row text-center">
+    <h2>Survey for {{ experience.name }}</h2>
+    <hr />
+</div>
+<form method=POST>
+    {% csrf_token %}
+    {% for question in questions %}
+        <div class="row">
+            {% if question.type == 'f' %}
+                <label>
+                    {{ question }}
+                    <input type="text" id="{{ question.id }}" name="{{ question.id }}"></input>
+                </label>
+            {% endif %}
+
+            {% if question.type == 'm' %}
+                <fieldset>
+                    <legend>{{ question }}</legend>
+                    {% for choice in question.choice_set.all|dictsort:"order_number" %}
+                        <input type="radio" name="{{ question.id }}" value="{{ choice.pk }}" id="{{ choice.pk }}">
+                        <label for="{{ choice.pk }}">{{ choice }}</label>
+                    {% endfor %}
+                </fieldset>
+            {% endif %}
+        </div>
+    {% endfor %}
+    <div class="row">
+        <hr />
+        <input type="submit" class="button expanded" value="Submit">
+    </div>
+</form>

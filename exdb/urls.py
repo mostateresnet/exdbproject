@@ -34,4 +34,5 @@ urlpatterns = [
     url(r'^complete/(?P<pk>\d+)?$', views.CompletionBoardView.as_view(), name='completion_board'),
     url(r'^requirement/view/(?P<pk>\d+)$', views.ViewRequirementView.as_view(), name='view_requirement'),
     url(r'^section/complete/(?P<pk>\d+)?$', views.SectionCompletionBoardView.as_view(), name='section_completion_board'),
+    url(r'^survey/(?P<code>[a-zA-z0-9]+)?$', views.SurveyView.as_view(), name='survey_view'),
 ]

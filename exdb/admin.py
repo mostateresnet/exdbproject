@@ -1,5 +1,6 @@
 from django.contrib import admin
 from .models import Type, Subtype, Section, Keyword, Experience, ExperienceComment, ExperienceApproval, Affiliation, EmailTask, EXDBUser, Requirement, Semester
+from .models import Question, Choice, Ballot, Answer
 
 
 class SubtypeAdmin(admin.ModelAdmin):
@@ -63,3 +64,7 @@ admin.site.register(Affiliation)
 admin.site.register(EXDBUser, EXDBUserAdmin)
 admin.site.register(Requirement)
 admin.site.register(Semester)
+admin.site.register(Question)
+admin.site.register(Choice)
+admin.site.register(Ballot)
+admin.site.register(Answer)

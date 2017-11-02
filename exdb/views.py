@@ -14,6 +14,7 @@ from django.conf import settings
 from django.db.models import Q, Prefetch
 
 from exdb.models import Experience, ExperienceComment, ExperienceApproval, Subtype, Requirement, Affiliation, Semester, Section
+from exdb.models import Question, Choice, Ballot, Answer
 from .forms import ExperienceSubmitForm, ExperienceSaveForm, ApprovalForm, ExperienceConclusionForm
 
 
@@ -205,7 +206,17 @@ class ViewExperienceView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(ViewExperienceView, self).get_context_data()
-        context['experience'] = get_object_or_404(Experience, pk=self.kwargs['pk'])
+        e = get_object_or_404(Experience, pk=self.kwargs['pk'])
+        context['experience'] = e
+        context['questions'] = Question.objects.all().values()
+
+        ballots = Ballot.objects.filter(experience=e)
+        for question in context['questions']:
+            a = Answer.objects.filter(
+                choice__question=question['id'],
+                ballot__in=ballots
+            )
+            question['answers'] = a
         return context
 
 
@@ -497,3 +508,50 @@ class SearchExperienceReport(View):
             writer.writerow(experience.convert_to_dict(self.keys))
 
         return response
+
+
+class SurveyView(TemplateView):
+    access_level = 'basic'
+    template_name = 'exdb/survey.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(SurveyView, self).get_context_data()
+        context['experience'] = get_object_or_404(Experience, survey_code=self.kwargs['code'])
+        context['questions'] = Question.objects.all()
+        return context
+
+
+    def post(self, request, *args, **kwargs):
+        e = get_object_or_404(Experience, survey_code=self.kwargs['code'])
+        if Ballot.objects.filter(user=self.request.user, experience=e):
+            HttpResponse("<html><body><h1>Double Submit</h1></body></html>")
+        b = Ballot.objects.create(
+            timestamp=timezone.now(),
+            experience=e,
+            user=self.request.user,
+            ip=self.request.META['REMOTE_ADDR']
+        )
+        for question in self.request.POST:
+            try:
+                int(question)
+                q = Question.objects.filter(id=question)[0]
+                choice = None
+                # If the question is freeform create a new choice
+                if q.type == 'f':
+                    choice = Choice.objects.create(
+                        question=q,
+                        text=self.request.POST[question],
+                        order_number=1
+                    )
+                else:
+                    choice = Choice.objects.get(
+                        question=q,
+                        text=self.request.POST[question]
+                    )
+                Answer.objects.create(
+                    choice=choice,
+                    ballot=b
+                )
+            except ValueError:
+                pass
+        return HttpResponse("<html><body><h1>Thank you for your response</h1></body></html>")

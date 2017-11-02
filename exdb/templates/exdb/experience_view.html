@@ -95,4 +95,18 @@
             </p>
         {% endif %}
     </div>
+    <hr />
+    <div class="row">
+        <h3 class="columns text-center">And the survey says...</h3>
+        <hr />
+        {% for question in questions %}
+            <div class="columns">
+                {{ question.text }}
+                {% for a in question.answers %}
+                    <p>{{ a.choice.text }}</p>
+                {% endfor %}
+            </div>
+            <hr />
+        {% endfor %}
+    </div>
 {% endblock %}
