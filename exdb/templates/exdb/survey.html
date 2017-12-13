@@ -1,0 +1,36 @@
+{% extends "exdb/survey_base.html" %}
+{% load i18n %}
+{% load staticfiles %}
+{% block content %}
+    <div class="row text-center">
+        <h2>{% trans 'Survey for' %} {{ experience.name }}</h2>
+        <hr />
+    </div>
+    <form method=POST>
+        {% csrf_token %}
+        {% for question in questions %}
+            <div class="row">
+                {% if question.type == 'f' %}
+                    <label>
+                        {{ question }}
+                        <input type="text" id="{{ question.id }}" name="{{ question.id }}"></input>
+                    </label>
+                {% endif %}
+
+                {% if question.type == 'm' %}
+                    <fieldset>
+                        <legend>{{ question }}</legend>
+                        {% for choice in question.choice_set.all|dictsort:"order_number" %}
+                            <input type="radio" name="{{ question.id }}" value="{{ choice.pk }}" id="{{ choice.pk }}">
+                            <label for="{{ choice.pk }}">{{ choice }}</label>
+                        {% endfor %}
+                    </fieldset>
+                {% endif %}
+            </div>
+        {% endfor %}
+        <div class="row">
+            <hr />
+            <input type="submit" class="button expanded" value="{% trans 'Submit' %}">
+        </div>
+    </form>
+{% endblock %}

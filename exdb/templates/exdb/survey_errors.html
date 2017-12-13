@@ -1,0 +1,10 @@
+{% extends "exdb/survey_base.html" %}
+{% load i18n %}
+{% load staticfiles %}
+{% block content %}
+    <div class="row text-center">
+        {% if resubmit %}
+            <h3>It looks like you have already submited a survey for this experience</h3>
+        {% endif %}
+    </div>
+{% endblock %}

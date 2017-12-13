@@ -94,5 +94,24 @@
                 <span class="multiline">{{ experience.conclusion|linebreaksbr }}</span>
             </p>
         {% endif %}
+        {% if experience.survey_code %}
+            <p>
+                <span>{% trans "Survey Code" %}:</span>
+                <a href="{% url 'survey_view' code=experience.survey_code %}">{{ experience.survey_code }}</a>
+            </p>
+        {% endif %}
+    </div>
+    <hr />
+    <div class="row">
+        <h3 class="columns text-center">{% trans 'And the survey says' %}...</h3>
+        <hr />
+        {% for question in questions %}
+            <div class="panel callout radius">
+                <h5>{{ question.text }}</h5>
+                {% for a in question.answers %}
+                    <p>{{ a.choice.text }}</p>
+                {% endfor %}
+            </div>
+        {% endfor %}
     </div>
 {% endblock %}

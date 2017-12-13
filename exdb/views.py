@@ -3,7 +3,7 @@ import json
 from collections import OrderedDict
 from django.views.generic import View, TemplateView, ListView, RedirectView
 from django.views.generic.edit import CreateView, UpdateView
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.core.urlresolvers import reverse
 from django.contrib import auth
 from django.http import HttpResponseRedirect, Http404, HttpResponse
@@ -14,6 +14,7 @@ from django.conf import settings
 from django.db.models import Q, Prefetch
 
 from exdb.models import Experience, ExperienceComment, ExperienceApproval, Subtype, Requirement, Affiliation, Semester, Section
+from exdb.models import Question, Choice, Ballot, Answer
 from .forms import ExperienceSubmitForm, ExperienceSaveForm, ApprovalForm, ExperienceConclusionForm
 
 
@@ -205,7 +206,19 @@ class ViewExperienceView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(ViewExperienceView, self).get_context_data()
-        context['experience'] = get_object_or_404(Experience, pk=self.kwargs['pk'])
+        experience = get_object_or_404(Experience, pk=self.kwargs['pk'])
+        context['experience'] = experience
+        context['questions'] = Question.objects.all().values()
+
+        ballots = Ballot.objects.filter(experience=experience)
+        for question in context['questions']:
+            a = Answer.objects.filter(
+                choice__question=question['id'],
+                ballot__in=ballots
+            )
+            # context['answers'] = a
+            question['answers'] = a
+        # import pdb; pdb.set_trace()
         return context
 
 
@@ -497,3 +510,75 @@ class SearchExperienceReport(View):
             writer.writerow(experience.convert_to_dict(self.keys))
 
         return response
+
+
+class SurveyError(TemplateView):
+    access_level = 'basic'
+    template_name = 'exdb/survey_errors.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(SurveyError, self).get_context_data()
+        if self.kwargs['error'] in ('resubmit',):
+            context['resubmit'] = True
+        return context
+
+
+class SurveyView(TemplateView):
+    access_level = 'basic'
+    template_name = 'exdb/survey.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(SurveyView, self).get_context_data()
+        context['experience'] = get_object_or_404(Experience, survey_code=self.kwargs['code'])
+        context['questions'] = Question.objects.all()
+        return context
+
+    def post(self, request, *args, **kwargs):
+        experience = get_object_or_404(Experience, survey_code=self.kwargs['code'])
+        if Ballot.objects.filter(user=self.request.user, experience=experience):
+            return redirect(reverse('survey_error', kwargs={'error': 'resubmit'}))
+        b = Ballot.objects.create(
+            timestamp=timezone.now(),
+            experience=experience,
+            user=self.request.user,
+            ip=self.request.META['REMOTE_ADDR']
+        )
+
+        for question in self.request.POST:
+            try:
+                int(question)
+                q = Question.objects.filter(id=question)[0]
+                choice = None
+                # If the question is a freeform create a new choice
+                if q.type in ('f',):
+                    choice = Choice.objects.create(
+                        question=q,
+                        text=self.request.POST[question],
+                        order_number=1
+                    )
+                else:
+                    choice = Choice.objects.filter(question=q, text=self.request.POST[question])[0]
+
+                Answer.objects.create(
+                    choice=choice,
+                    ballot=b
+                )
+            except ValueError:
+                pass
+
+        return redirect(reverse('survey_search', kwargs={'search': ''}))
+
+
+class SurveySearch(TemplateView):
+    access_level = 'basic'
+    template_name = 'exdb/survey_search.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(SurveySearch, self).get_context_data()
+        if self.kwargs.get('search', None):
+            experience = Experience.objects.filter(survey_code=self.kwargs['search'])
+            if experience:
+                return redirect(reverse('survey_view', kwargs={'code': experience[0].survey_code}))
+            context['error'] = True
+        context['recentExperiences'] = Experience.objects.filter(end_datetime__lt=timezone.now()).order_by('-end_datetime')[:15]
+        return context

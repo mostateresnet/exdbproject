@@ -11,6 +11,8 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.auth.models import AbstractUser, UserManager
 from django.forms.models import model_to_dict
 
+import shortuuid
+
 
 class EXDBUser(AbstractUser):
     affiliation = models.ForeignKey('Affiliation', null=True, blank=True)
@@ -209,6 +211,9 @@ class Experience(models.Model):
     # the user evaluates it.
     last_evaluation_email_datetime = models.DateTimeField(null=True, blank=True)
 
+    survey_required = models.BooleanField(default=True)
+    survey_code = models.CharField(max_length=6, blank=True)
+
     def __str__(self):
         return self.name
 
@@ -239,6 +244,14 @@ class Experience(models.Model):
             elif not isinstance(row[key], str):
                 row[key] = str(getattr(self, key))
         return row
+
+    def generate_survey_code(self):
+        if not self.survey_code:
+            code = shortuuid.ShortUUID().random(length=6)
+            while Experience.objects.filter(survey_code=code).count():
+                code = shortuuid.ShortUUID().random(length=6)
+            self.survey_code = code
+            self.save()
 
 
 class ExperienceApproval(models.Model):
@@ -305,3 +318,45 @@ class Requirement(models.Model):
     def __str__(self):
         return self.description or '%s - %s' % (self.start_datetime.strftime("%b %d"),
                                                 self.end_datetime.strftime("%b %d"))
+
+
+class Question(models.Model):
+    QUESTION_TYPES = (
+        ('m', _('Multiple')),
+        ('f', _('Free Form')),
+    )
+
+    text = models.TextField()
+    required = models.BooleanField(default=True)
+    order_number = models.PositiveIntegerField()
+    type = models.CharField(max_length=1, choices=QUESTION_TYPES, default='f')
+
+    def __str__(self):
+        return self.text
+
+
+class Choice(models.Model):
+    question = models.ForeignKey(Question)
+    text = models.TextField()
+    order_number = models.PositiveIntegerField()
+
+    def __str__(self):
+        return self.text
+
+
+class Ballot(models.Model):
+    ip = models.GenericIPAddressField()
+    timestamp = models.DateTimeField()
+    experience = models.ForeignKey(Experience)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL)
+
+    def __str__(self):
+        return '{} {} {}'.format(self.ip, self.timestamp, self.experience.name)
+
+
+class Answer(models.Model):
+    choice = models.ForeignKey(Choice)
+    ballot = models.ForeignKey(Ballot)
+
+    def __str__(self):
+        return self.choice.text

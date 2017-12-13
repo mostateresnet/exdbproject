@@ -1,0 +1,25 @@
+{% load i18n %}
+{% load staticfiles %}
+<!DOCTYPE html>
+<html lang="en" class="no-js" dir="ltr">
+    <head>
+        {% block css %}
+            <link rel="stylesheet" href="{% static 'exdb/css/foundation_css/foundation.css' %}"/>
+            <link rel="stylesheet" href="{% static 'exdb/css/font-awesome-4.6.3/css/font-awesome.min.css' %}"/>
+        {% endblock %}
+        {% block javascript %}
+            <script type="text/javascript" src="{% static 'exdb/js/libraries/jquery-2.1.4.min.js' %}"></script>
+            <script type="text/javascript" src="{% static 'exdb/js/libraries/foundation.min.js' %}"></script>
+        {% endblock %}
+        <title>Survey</title>
+    </head>
+    <body>
+        {% block body %}
+            <div class="clearfix body">
+                <br />
+                {% block content %}
+                {% endblock %}
+            </div>
+        {% endblock %}
+    </body>
+</html>

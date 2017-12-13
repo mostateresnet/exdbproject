@@ -38,6 +38,13 @@
                         </div>
                     </div>
 
+                    {% if experience.survey_code %}
+                        <div class="row">
+                            <span>{% trans "Survey Code" %}:</span>
+                            <a href="{% url 'survey_view' code=experience.survey_code %}">{{ experience.survey_code }}</a>
+                        </div>
+                    {% endif %}
+
                     {% for field in form %}
                         <div class="row">
                             <div class="large-9 large-centered columns">
