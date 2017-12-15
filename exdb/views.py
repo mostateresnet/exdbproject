@@ -159,6 +159,7 @@ class ExperienceApprovalView(UpdateView):
             if experience_form.instance.next_approver == self.request.user or not experience_form.instance.next_approver:
                 experience_form.instance.next_approver = None
                 experience_form.instance.status = 'ad'
+                experience_form.instance.generate_survey_code()
                 experience_form.instance.needs_author_email = True
             ExperienceApproval.objects.create(experience=experience_form.instance,
                                               approver=self.request.user)
@@ -216,9 +217,7 @@ class ViewExperienceView(TemplateView):
                 choice__question=question['id'],
                 ballot__in=ballots
             )
-            # context['answers'] = a
             question['answers'] = a
-        # import pdb; pdb.set_trace()
         return context
 
 
@@ -572,13 +571,20 @@ class SurveyView(TemplateView):
 class SurveySearch(TemplateView):
     access_level = 'basic'
     template_name = 'exdb/survey_search.html'
+    found = False
 
-    def get_context_data(self, **kwargs):
-        context = super(SurveySearch, self).get_context_data()
+    def get(self, request, *args, **kwargs):
         if self.kwargs.get('search', None):
             experience = Experience.objects.filter(survey_code=self.kwargs['search'])
             if experience:
-                return redirect(reverse('survey_view', kwargs={'code': experience[0].survey_code}))
-            context['error'] = True
+                return redirect('survey_view', code=experience[0].survey_code)
+            else:
+                self.found = True
+        return super(SurveySearch, self).get(request)
+
+    def get_context_data(self, **kwargs):
+        context = super(SurveySearch, self).get_context_data()
         context['recentExperiences'] = Experience.objects.filter(end_datetime__lt=timezone.now()).order_by('-end_datetime')[:15]
+        if self.found:
+            context['error'] = True
         return context
