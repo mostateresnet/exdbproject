@@ -1,0 +1,6 @@
+Publications
+<ul>
+{% for p in experience.publication_set.all %}
+    <li><a href='/{{ p.file.url }}'>{{ p.original_filename }}<a></li>
+{% endfor %}
+</ul>

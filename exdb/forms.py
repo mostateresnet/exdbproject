@@ -9,7 +9,7 @@ from django.utils.translation import ugettext as _
 from django.forms import ModelForm
 from django.utils.timezone import utc
 from django.contrib.auth import get_user_model
-from exdb.models import Experience, ExperienceComment
+from exdb.models import Experience, ExperienceComment, Publication
 
 
 class SubtypeSelect(forms.SelectMultiple):
@@ -37,6 +37,7 @@ class SubtypeSelect(forms.SelectMultiple):
 
 
 class ExperienceSaveForm(ModelForm):
+    publications = forms.FileField(widget=forms.ClearableFileInput(attrs={'multiple': True}), required=False)
 
     class Meta:
         model = Experience
@@ -58,6 +59,7 @@ class ExperienceSaveForm(ModelForm):
             'guest_office',
             'funds',
             'conclusion',
+            'publications',
         ]
 
         widgets = {
@@ -82,6 +84,24 @@ class ExperienceSaveForm(ModelForm):
         self.approval_form = submit
         self.fields['next_approver'].queryset = get_user_model().objects.filter(groups__name__icontains="hallstaff")
 
+    def attach_request(self, request):
+        self.request = request
+
+    def get_request(self):
+        request = getattr(self, 'request', None)
+        assert request is not None, 'Request object cannot be fetched if it has not been attached. Call "attach_request" first.'
+        return request
+
+    def save(self, *args, **kwargs):
+        request = self.get_request()  # make sure request exists before saving experience
+        experience = super().save()
+        publications = request.FILES.getlist('publications')
+        p_objects = []
+        for p in publications:
+            p_objects.append(Publication(file=p, experience=experience, original_filename=p.name))
+        Publication.objects.bulk_create(p_objects)
+        return experience
+
 
 class ExperienceSubmitForm(ExperienceSaveForm):
 
@@ -102,28 +122,46 @@ class ExperienceSubmitForm(ExperienceSaveForm):
             (not self.cleaned_data.get('start_datetime'), ValidationError(_('A start time is required'))),
             (not self.cleaned_data.get('type'), ValidationError(_('The type field is required'))),
             (not ex_subtype, ValidationError(_('The subtype field is required'))),
-            (needs_verification and not self.approval_form and
-                not self.cleaned_data.get('next_approver'),
-             ValidationError(_('Please select the supervisor to review this experience'))),
-            (needs_verification is False and (self.cleaned_data.get('start_datetime', max_dt) > self.when),
-                ValidationError(_('This experience must have a start date in the past'))),
-            (needs_verification and (self.cleaned_data.get('start_datetime', min_dt) < self.when and not self.approval_form),
-                ValidationError(_('This experience must have a start date in the future'))),
-            (self.cleaned_data.get('start_datetime', max_dt) >= self.cleaned_data.get('end_datetime', min_dt),
-             ValidationError(_('Start time must be before end time'))),
-            (needs_verification is False and ((not self.cleaned_data.get(
-                'attendance') and self.cleaned_data.get('attendance', -1) != 0)
-             or self.cleaned_data.get('attendance') < 0),
-             ValidationError(_('An attendance is required'))),
-            (needs_verification is False and not self.cleaned_data.get('audience'),
-             ValidationError(_('An audience is required'))),
-            (needs_verification and self.cleaned_data.get('attendance'),
-             ValidationError(_('An attendance is not allowed yet'))),
-            (needs_verification and self.cleaned_data.get('next_approver')
-                and not self.cleaned_data.get('next_approver').is_hallstaff(),
-             ValidationError(_('Supervisor must have permissions to approve and deny experiences'))),
-            (needs_verification is False and not self.cleaned_data.get('conclusion'),
-             ValidationError(_('A conclusion is required'))),
+            (
+                needs_verification and not self.approval_form and not self.cleaned_data.get('next_approver'),
+                ValidationError(_('Please select the supervisor to review this experience'))
+            ),
+            (
+                needs_verification is False and (self.cleaned_data.get('start_datetime', max_dt) > self.when),
+                ValidationError(_('This experience must have a start date in the past'))
+            ),
+            (
+                needs_verification and (self.cleaned_data.get('start_datetime', min_dt)
+                                        < self.when and not self.approval_form),
+                ValidationError(_('This experience must have a start date in the future'))
+            ),
+            (
+                self.cleaned_data.get('start_datetime', max_dt) >= self.cleaned_data.get('end_datetime', min_dt),
+                ValidationError(_('Start time must be before end time'))
+            ),
+            (
+                needs_verification is False and (
+                    (not self.cleaned_data.get('attendance') and self.cleaned_data.get(
+                        'attendance', -1) != 0) or self.cleaned_data.get('attendance') < 0),
+                ValidationError(_('An attendance is required'))
+            ),
+            (
+                needs_verification is False and not self.cleaned_data.get('audience'),
+                ValidationError(_('An audience is required'))
+            ),
+            (
+                needs_verification and self.cleaned_data.get('attendance'),
+                ValidationError(_('An attendance is not allowed yet'))
+            ),
+            (
+                needs_verification and self.cleaned_data.get(
+                    'next_approver') and not self.cleaned_data.get('next_approver').is_hallstaff(),
+                ValidationError(_('Supervisor must have permissions to approve and deny experiences'))
+            ),
+            (
+                needs_verification is False and not self.cleaned_data.get('conclusion'),
+                ValidationError(_('A conclusion is required'))
+            ),
         )
 
         validation_errors = []

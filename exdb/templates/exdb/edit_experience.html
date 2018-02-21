@@ -23,7 +23,7 @@
 
     <div class="row">
         <div class="medium-7 columns">
-            <form method="POST">
+            <form method="POST" enctype="multipart/form-data">
                 {% csrf_token %}
                 <fieldset class="fieldset">
 
@@ -48,6 +48,8 @@
                             </div>
                         </div>
                     {% endfor %}
+
+                    {% include 'exdb/publication_include.html' %}
 
                     <div class="row">
                         <div class="large-12 large-centered columns text-center">

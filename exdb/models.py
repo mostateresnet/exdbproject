@@ -305,3 +305,9 @@ class Requirement(models.Model):
     def __str__(self):
         return self.description or '%s - %s' % (self.start_datetime.strftime("%b %d"),
                                                 self.end_datetime.strftime("%b %d"))
+
+
+class Publication(models.Model):
+    file = models.FileField()
+    original_filename = models.CharField(max_length=255)
+    experience = models.ForeignKey(Experience)

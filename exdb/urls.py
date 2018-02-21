@@ -13,7 +13,8 @@ Including another URLconf
     1. Add an import:  from blog import urls as blog_urls
     2. Add a URL to urlpatterns:  url(r'^blog/', include(blog_urls))
 """
-from django.conf.urls import url
+from django.conf.urls import url, static
+from django.conf import settings
 from django.contrib.auth.views import login, logout_then_login
 from exdb import views
 
@@ -35,3 +36,5 @@ urlpatterns = [
     url(r'^requirement/view/(?P<pk>\d+)$', views.ViewRequirementView.as_view(), name='view_requirement'),
     url(r'^section/complete/(?P<pk>\d+)?$', views.SectionCompletionBoardView.as_view(), name='section_completion_board'),
 ]
+if settings.DEBUG:
+    urlpatterns += static.static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

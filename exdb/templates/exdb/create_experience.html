@@ -20,7 +20,7 @@
     {{ block.super }}
 
     <div class="row">
-        <form action="{% url "create_experience" %}" method="POST">
+        <form action="{% url "create_experience" %}" method="POST" enctype="multipart/form-data">
           {% csrf_token %}
           <fieldset class="fieldset">
             <div class="row">

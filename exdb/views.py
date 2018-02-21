@@ -13,7 +13,7 @@ from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.db.models import Q, Prefetch
 
-from exdb.models import Experience, ExperienceComment, ExperienceApproval, Subtype, Requirement, Affiliation, Semester, Section
+from exdb.models import Experience, ExperienceComment, ExperienceApproval, Subtype, Requirement, Affiliation, Semester, Section, Publication
 from .forms import ExperienceSubmitForm, ExperienceSaveForm, ApprovalForm, ExperienceConclusionForm
 
 
@@ -26,6 +26,7 @@ class CreateExperienceView(CreateView):
         return reverse('home')
 
     def form_valid(self, form):
+        form.attach_request(self.request)
         form.instance.author = self.request.user
 
         if 'submit' in self.request.POST:
@@ -223,9 +224,10 @@ class EditExperienceView(UpdateView):
             return ExperienceSaveForm
 
     def get_queryset(self):
-        return self.request.user.editable_experiences().prefetch_related('comment_set')
+        return self.request.user.editable_experiences().prefetch_related('comment_set', 'publication_set')
 
     def form_valid(self, form):
+        form.attach_request(self.request)
         experience = self.get_object()
         needs_reapproval = not (self.request.user.is_hallstaff() and experience.status == 'ad')
         if self.request.POST.get('submit') and needs_reapproval:
@@ -237,6 +239,11 @@ class EditExperienceView(UpdateView):
             experience.save()
             return HttpResponseRedirect(self.get_success_url())
         return super(EditExperienceView, self).form_valid(form)
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        context['publications'] = Publication.objects.all()
+        return context
 
 
 class ListExperienceByStatusView(ListView):

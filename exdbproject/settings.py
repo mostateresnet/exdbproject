@@ -188,6 +188,12 @@ RA_UPCOMING_TIMEDELTA = timezone.timedelta(days=31)
 # be scrupulous in adding any exemptions to the middleware
 RESTRICTED_ACCESS_EXEMPTIONS = ['logout', 'login']
 
+# media file location
+MEDIA_ROOT = 'media/'
+
+# media url location
+MEDIA_URL = 'media/'
+
 # override settings with settings_local
 try:
     from exdbproject.settings_local import *  # pylint: disable=wildcard-import,unused-wildcard-import,wrong-import-position
