@@ -31,12 +31,17 @@ class EXDBUser(AbstractUser):
     def editable_experiences(self):
         if getattr(self, '_editable_experiences', None) is None:
             user_has_editing_privs = Q(author=self) | (Q(planners=self) & ~Q(status='dr'))
-            if self.is_hallstaff():
-                # Let the staff do whatever they want to non-drafts
-                user_has_editing_privs |= ~Q(status='dr')
             current_status_allows_edits = ~Q(status__in=('ca', 'co'))
             event_already_occurred = Q(status='ad') & Q(start_datetime__lte=now())
-            editable_experience = user_has_editing_privs & current_status_allows_edits & ~event_already_occurred
+            if self.is_hallstaff():
+                # Let the staff do whatever they want to non-drafts and anything they approved (regardless of time)
+                user_has_editing_privs |= ~Q(status='dr')
+                user_is_approver = Q(approval_set__approver=self)
+            else:
+                # Only allow these extra privs for people that are STILL employed as Hall Staff
+                user_is_approver = Q(pk__isnull=True)  # "False" in ORM terms
+            editable_experience = user_has_editing_privs
+            editable_experience &= user_is_approver | (current_status_allows_edits & ~event_already_occurred)
             self._editable_experiences = Experience.objects.filter(editable_experience).distinct()
         return self._editable_experiences
 
