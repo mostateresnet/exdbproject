@@ -411,7 +411,8 @@ class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
 
     def setUp(self):
         super(CreateExperienceBrowserTest, self).setUp()
-        Subtype.objects.create(name="Spontaneous", needs_verification=False)
+        t = Type.objects.create(name="Example")
+        t.valid_subtypes = [Subtype.objects.create(name="Spontaneous", needs_verification=False)]
 
     def test_attendance_hidden(self):
         self.client.get(reverse('create_experience'))
@@ -431,7 +432,7 @@ class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
         self.client.get(reverse('create_experience'))
         subtype_element = self.driver.find_element(By.ID, 'id_subtypes')
         subtype_element.find_element_by_class_name('no-verification').click()
-        subtype_element.find_elements_by_tag_name('option')[0].click()
+        subtype_element.find_element_by_class_name('no-verification').click()
         attnd_element = self.driver.find_element(By.ID, 'id_attendance')
         self.assertFalse(attnd_element.is_displayed(),
                          'Attendance field should be hidden when spontaneous is not selected.')
@@ -445,6 +446,19 @@ class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
         att_element = self.driver.find_element(By.ID, 'id_attendance')
         visible = att_element.is_displayed() and con_element.is_displayed()
         self.assertTrue(visible, 'Attendance and Conclusion fields should be displayed')
+
+    def test_filter_subtypes_based_on_type(self):
+        Subtype.objects.create(name='Filtered subtype', needs_verification=True)
+        self.client.get(reverse('create_experience'))
+        type_element = self.driver.find_element(By.ID, 'id_type')
+        subtype_element = self.driver.find_element(By.ID, 'id_subtypes')
+        for element in subtype_element.find_elements_by_tag_name('input'):
+            element.click()  # Select all subtypes
+        type_element.find_elements_by_tag_name('option')[1].click()  # Select the "Example" type
+        self.assertTrue(subtype_element.find_element_by_class_name('no-verification').is_displayed(),
+                        "Spontaneous should be shown since it's a valid subtype for Example type")
+        self.assertFalse(subtype_element.find_element_by_class_name('verification').is_displayed(),
+                         "'Filtered subtype' should NOT be shown since it's NOT a valid subtype for Example type")
 
 
 class ExperienceSearchBrowserTest(DefaultLiveServerTestCase):

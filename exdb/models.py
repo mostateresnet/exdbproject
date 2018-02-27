@@ -64,6 +64,7 @@ class EXDBUser(AbstractUser):
 
 class Type(models.Model):
     name = models.CharField(max_length=300)
+    valid_subtypes = models.ManyToManyField('Subtype', blank=True)
 
     def __str__(self):
         return self.name

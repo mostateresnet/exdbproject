@@ -9,31 +9,49 @@ from django.utils.translation import ugettext as _
 from django.forms import ModelForm
 from django.utils.timezone import utc
 from django.contrib.auth import get_user_model
-from exdb.models import Experience, ExperienceComment
+from exdb.models import Experience, ExperienceComment, Type, Subtype
 
 
-class SubtypeSelect(forms.SelectMultiple):
-
+class TypeSelect(forms.Select):
     def render_option(self, selected_choices, option_value, option_label):
         if option_value is None:
             option_value = ''  # pragma: no cover
         option_value = force_text(option_value)
         if option_value in selected_choices:
             selected_html = mark_safe(' selected="selected"')
-
+            if not self.allow_multiple_selected:
+                # Only allow for a single selection.
+                selected_choices.remove(option_value)
         else:
             selected_html = ''
-        css_classes = []
+        valid_subtypes = []
         choice_dict = {str(c.pk): c for c in self.choices.queryset}
-        if option_value in choice_dict and not choice_dict[option_value].needs_verification:
-            css_classes.append('no-verification')
-        else:
-            css_classes.append('verification')
-        return format_html('<option class="{}" value="{}"{}>{}</option>',
-                           ' '.join(css_classes),
+        if option_value in choice_dict:
+            valid_subtypes = [st.pk for st in choice_dict[option_value].valid_subtypes.all()]
+        return format_html('<option data-valid-subtypes="{}" value="{}"{}>{}</option>',
+                           ','.join(str(pk) for pk in valid_subtypes),
                            option_value,
                            selected_html,
                            force_text(option_label))
+
+
+class SubtypeRenderer(forms.widgets.CheckboxFieldRenderer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.choice_object_dict = {st.pk: st for st in Subtype.objects.filter(pk__in=[c[0] for c in self.choices])}
+
+    def choice_input_class(self, name, value, attrs, choice, index):
+        if choice[0] in self.choice_object_dict and not self.choice_object_dict[choice[0]].needs_verification:
+            class_attr = 'no-verification'
+        else:
+            class_attr = 'verification'
+        attrs = attrs.copy()
+        attrs['class'] = class_attr
+        return forms.widgets.CheckboxChoiceInput(name, value, attrs, choice, index)
+
+
+class SubtypeSelect(forms.CheckboxSelectMultiple):
+    renderer = SubtypeRenderer
 
 
 class ExperienceSaveForm(ModelForm):
@@ -63,6 +81,7 @@ class ExperienceSaveForm(ModelForm):
         widgets = {
             'description': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
             'goals': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
+            'type': TypeSelect(),
             'subtypes': SubtypeSelect(),
             'conclusion': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
         }
@@ -80,6 +99,7 @@ class ExperienceSaveForm(ModelForm):
         super(ExperienceSaveForm, self).__init__(*args, **kwargs)
         self.when = when
         self.approval_form = submit
+        self.fields['type'].queryset = Type.objects.prefetch_related('valid_subtypes')
         self.fields['next_approver'].queryset = get_user_model().objects.filter(groups__name__icontains="hallstaff")
 
 
