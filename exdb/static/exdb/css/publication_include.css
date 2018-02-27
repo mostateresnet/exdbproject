@@ -1,0 +1,15 @@
+input[type='checkbox'] {
+    display: none;
+}
+
+input[type=checkbox] + label {
+    background-image: url(/static/exdb/delete.png);
+    background-size: 1em;
+    width: 1em;
+    height: 1em;
+    margin: 0;
+}
+
+input[type=checkbox]:checked + label {
+    background-image: url(/static/exdb/delete_yes.png);
+}

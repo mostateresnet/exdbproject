@@ -1,3 +1,5 @@
+import os
+
 from importlib import import_module
 from django.db import models
 from django.db.models import Q
@@ -311,3 +313,8 @@ class Publication(models.Model):
     file = models.FileField()
     original_filename = models.CharField(max_length=255)
     experience = models.ForeignKey(Experience)
+
+    def delete(self, *args, **kwargs):
+        os.remove(self.file.file.name)
+        return super().delete()
+

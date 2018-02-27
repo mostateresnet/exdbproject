@@ -5,6 +5,7 @@
     {{ block.super }}
     <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/edit_experience.css' %}" />
     <link href="{% static 'exdb/css/foundation_css/foundation-datepicker.css' %}" rel="stylesheet">
+    <link href="{% static 'exdb/css/publication_include.css' %}" rel="stylesheet">
 {% endblock %}
 {% block javascript %}
     {{ block.super }}
@@ -49,7 +50,7 @@
                         </div>
                     {% endfor %}
 
-                    {% include 'exdb/publication_include.html' %}
+                    {% include 'exdb/publication_include.html' with delete_option=True %}
 
                     <div class="row">
                         <div class="large-12 large-centered columns text-center">

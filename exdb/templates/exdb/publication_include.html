@@ -1,6 +1,15 @@
-Publications
+{% load i18n %}
+{% load static %}
+{% trans 'Publications' %}
 <ul>
 {% for p in experience.publication_set.all %}
-    <li><a href='/{{ p.file.url }}'>{{ p.original_filename }}<a></li>
+    <li>
+        <!--img src='{% static 'exdb/delete.png '%}'-->
+        {% if delete_option %}
+            <input id='publication-{{ p.id }}' type='checkbox' name='publication-deletions' value='{{ p.id }}'></input>
+            <label for='publication-{{ p.id }}'></label>
+        {% endif %}
+        <a href='/{{ p.file.url }}'>{{ p.original_filename }}<a>
+    </li>
 {% endfor %}
 </ul>

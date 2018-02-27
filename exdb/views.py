@@ -154,6 +154,7 @@ class ExperienceApprovalView(UpdateView):
             return self.form_invalid(experience_form, comment_form)
 
     def form_valid(self, experience_form, comment_form):
+        experience_form.attach_request(self.request)
         comment_form.instance.author = self.request.user
         if self.request.POST.get('approve'):
             if experience_form.instance.next_approver == self.request.user or not experience_form.instance.next_approver:

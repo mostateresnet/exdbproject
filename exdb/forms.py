@@ -35,9 +35,15 @@ class SubtypeSelect(forms.SelectMultiple):
                            selected_html,
                            force_text(option_label))
 
+class DeleteCheckbox(forms.CheckboxInput):
+    pass
 
 class ExperienceSaveForm(ModelForm):
-    publications = forms.FileField(widget=forms.ClearableFileInput(attrs={'multiple': True}), required=False)
+    publications = forms.FileField(
+        widget=forms.ClearableFileInput(attrs={'multiple': True}),
+        required=False,
+        label='New Publications'
+    )
 
     class Meta:
         model = Experience
@@ -100,6 +106,12 @@ class ExperienceSaveForm(ModelForm):
         for p in publications:
             p_objects.append(Publication(file=p, experience=experience, original_filename=p.name))
         Publication.objects.bulk_create(p_objects)
+
+        publication_deletions = request.POST.getlist('publication-deletions')
+        # make sure to only delete files from this experience
+        for p in experience.publication_set.filter(id__in=publication_deletions):
+            # call individual delete rather than bulk because of a custom delete handler deleting the files
+            p.delete()
         return experience
 
 

@@ -5,6 +5,7 @@
     {{ block.super }}
     <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/experience_approval.css' %}" />
     <link href="{% static 'exdb/css/foundation_css/foundation-datepicker.css' %}" rel="stylesheet">
+    <link href="{% static 'exdb/css/publication_include.css' %}" rel="stylesheet">
 {% endblock %}
 {% block javascript %}
     {{ block.super }}
@@ -20,7 +21,7 @@
 {% block content %}
     <div class="row">
         <div class="medium-7 columns">
-            <form method="POST">
+            <form method="POST" enctype="multipart/form-data">
                 {% csrf_token %}
                 <fieldset class="fieldset">
 
@@ -46,7 +47,7 @@
                         </div>
                     {% endfor %}
 
-                    {% include 'exdb/publication_include.html' %}
+                    {% include 'exdb/publication_include.html' with delete_option=True %}
 
                     <div class="row">
                         <div class="large-6  large-centered columns">
