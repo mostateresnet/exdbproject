@@ -9,6 +9,10 @@ ul#id_subtypes li {
     border-bottom: none;
 }
 
+ul#id_subtypes label {
+    cursor: pointer;
+}
+
 ul#id_subtypes li input[type=checkbox] {
-    margin-left: 0.5rem;
+    margin: 0.75rem 0.5rem 0.75rem 0.5rem;
 }
