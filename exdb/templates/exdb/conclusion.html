@@ -20,6 +20,9 @@
     <div class="row NeedsEvaluation-foreground">
         <div class="large-6 columns">
             <div class="experience-display">
+                {% if experience in user.editable_experiences %}
+                    <a class="button" href="{% url 'edit' pk=experience.pk %}">Edit</a>
+                {% endif %}
                 <p>
                     <span>{% trans "Author" %}:</span>
                     {{ experience.author }}
@@ -56,11 +59,11 @@
                 </p>
                 <p>
                     <span>{% trans "Description" %}:</span>
-                    {{ experience.description }}
+                    <span class="multiline">{{ experience.description|linebreaksbr }}</span>
                 </p>
                 <p>
                     <span>{% trans "Goals" %}:</span>
-                    {{ experience.goals }}
+                    <span class="multiline">{{ experience.goals|linebreaksbr }}</span>
                 </p>
                 <p>
                     <span>{% trans "Funds" %}:</span>

@@ -70,6 +70,11 @@ div.main-menu input{
     max-width: none;
 }
 
+.multiline {
+    display: block;
+    margin-left: 2em;
+}
+
 .Draft-foreground{
     color: #F6B418;
 }

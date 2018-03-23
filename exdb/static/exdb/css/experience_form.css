@@ -1,0 +1,18 @@
+ul#id_subtypes {
+    list-style-type: none;
+    margin-left: 0px;
+    border-bottom: 1px solid #cacaca;
+}
+
+ul#id_subtypes li {
+    border: 1px solid #cacaca;
+    border-bottom: none;
+}
+
+ul#id_subtypes label {
+    cursor: pointer;
+}
+
+ul#id_subtypes li input[type=checkbox] {
+    margin: 0.75rem 0.5rem 0.75rem 0.5rem;
+}

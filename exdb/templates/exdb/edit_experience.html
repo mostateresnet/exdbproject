@@ -3,13 +3,14 @@
 {% load staticfiles %}
 {% block css %}
     {{ block.super }}
-    <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/edit_experience.css' %}" />
     <link href="{% static 'exdb/css/foundation_css/foundation-datepicker.css' %}" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/edit_experience.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'exdb/css/experience_form.css' %}" />
 {% endblock %}
 {% block javascript %}
     {{ block.super }}
-    <script type="text/javascript" src="{% static 'exdb/js/experience_form.js' %}"></script>
     <script type="text/javascript" src="{% static 'exdb/js/libraries/foundation-datepicker.js' %}"></script>
+    <script type="text/javascript" src="{% static 'exdb/js/experience_form.js' %}"></script>
 {% endblock %}
 
 
