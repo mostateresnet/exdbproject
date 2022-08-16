@@ -102,6 +102,7 @@ class Affiliation(models.Model):
 class Section(models.Model):
     name = models.CharField(max_length=300)
     affiliation = models.ForeignKey(Affiliation)
+    order = models.CharField(max_length=64, blank=True)
 
     def __str__(self):
         return self.name
@@ -138,8 +139,38 @@ class Section(models.Model):
                 needed = max(0, requirement.total_needed - len(e))
                 self.requirements[requirement.pk] = (e, requirement.total_needed, needed)
 
+    def save(self, *args, **kwargs):
+        self.order = self.name.lower()
+        replacements = [
+            ('first', 1),
+            ('second', 2),
+            ('third', 3),
+            ('fourth', 4),
+            ('fifth', 5),
+            ('sixth', 6),
+            ('seventh', 7),
+            ('eighth', 8),
+            ('ninth', 9),
+            ('tenth', 10),
+            ('eleventh', 11),
+            ('twelfth', 12),
+            ('thirteenth', 13),
+            ('fourteenth', 14),
+            ('fifteenth', 15),
+            ('sixteenth', 16),
+            ('seventeenth', 17),
+            ('eighteenth', 18),
+            ('eigthteenth', 18), # don't ask
+            ('nineteenth', 19),
+            ('twentieth', 20),
+        ]
+        for pattern, substitution in replacements:
+            self.order = self.order.replace(pattern, '%03d' % substitution)
+
+        return super().save(*args, **kwargs)
+
     class Meta:
-        ordering = ['name']
+        ordering = ['order']
 
 
 class Keyword(models.Model):
