@@ -100,7 +100,8 @@ class ExperienceSaveForm(ModelForm):
         self.when = when
         self.approval_form = submit
         self.fields['type'].queryset = Type.objects.prefetch_related('valid_subtypes')
-        self.fields['next_approver'].queryset = get_user_model().objects.filter(groups__name__icontains="hallstaff")
+        self.fields['next_approver'].queryset = get_user_model().objects.hallstaff()
+        self.fields['planners'].queryset = get_user_model().objects.filter(is_active=True)
 
 
 class ExperienceSubmitForm(ExperienceSaveForm):
