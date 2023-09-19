@@ -15,7 +15,8 @@ class Command(BaseCommand):
         already_populated_usernames = set()
 
         # TODO: Ideally this would just read from the USER_FLAGS_BY_GROUP setting
-        for group in ('RL-RESLIFE-HallStaff', 'RL-RESLIFE-RA'):
+        # Add any users from the special groups
+        for group in ('RL-RESLIFE-HallStaff', 'RL-RESLIFE-RA', 'RL-RESLIFE-HallCouncil'):
             usernames = get_group_members(group)
 
             # Add/update the user
@@ -23,10 +24,17 @@ class Command(BaseCommand):
                 user = ldap_backend.populate_user(username)
                 already_populated_usernames.add(user.username)
 
-
         # Update everyone else
+        deactivated_usernames = []
         for username in get_user_model().objects.exclude(username__in=already_populated_usernames).values_list('username', flat=True):
             user = ldap_backend.populate_user(username)
+            if user is None:
+                deactivated_usernames.append(username)
+
+        # Disable any accounts that no longer exist on AD
+        UserGroupRelationshipModel = get_user_model().groups.through
+        UserGroupRelationshipModel.objects.filter(exdbuser__username__in=deactivated_usernames).delete()
+        get_user_model().objects.filter(username__in=deactivated_usernames).update(is_active=False)
 
         return
 
