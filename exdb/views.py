@@ -315,6 +315,32 @@ class SearchExperienceResultsView(ListView):
     context_object_name = 'experiences'
     template_name = 'exdb/search.html'
     model = Experience
+    paginate_by = 20
+
+    #post request is made if requested to download csv file
+    def post(self, request,*args,**kwargs):
+        #keys to be included in the CSV
+        keys = [
+        'name', 'status', 'author', 'planners', 'recognition', 'start_datetime',
+        'end_datetime', 'type', 'subtypes', 'description', 'goals', 'keywords',
+        'audience', 'guest', 'guest_office', 'attendance', 'created_datetime',
+        'next_approver', 'funds', 'conclusion',
+    ]
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="experiences.csv"'
+
+        writer = csv.DictWriter(response, fieldnames=keys)
+        writer.writeheader()
+        queryset = self.get_queryset()
+
+        for row in queryset.select_related('type').prefetch_related(
+            'planners',
+            'keywords',
+            'recognition__affiliation',
+            'subtypes',
+        ).distinct():
+                writer.writerow(row.convert_to_dict(keys)) 
+        return response
 
     def get_queryset(self):
         tokens = self.request.GET.get('search', '').split()
@@ -354,13 +380,23 @@ class SearchExperienceResultsView(ListView):
 
         # get rid of a users drafts for everyone else
         queryset = queryset.exclude(~Q(author=self.request.user), status='dr')
-
-        return queryset.select_related('type').prefetch_related(
+        
+        result = queryset.select_related('type').prefetch_related(
             'planners',
             'keywords',
             'recognition__affiliation',
             'subtypes',
         ).distinct()
+
+        #entries to show per page
+        per_page = self.request.GET.get('per_page','')
+        if(per_page!='' and per_page.isnumeric):
+            if(int(per_page)<=result.count()):
+                self.paginate_by = int(per_page)
+            else:
+                self.paginate_by = result.count()
+
+        return result
 
     def get_context_data(self, *args, **kwargs):
         context = super(SearchExperienceResultsView, self).get_context_data(*args, **kwargs)
@@ -462,38 +498,4 @@ class ViewRequirementView(TemplateView):
         return context
 
 
-class SearchExperienceReport(View):
-    access_level = 'basic'
-    keys = [
-        'name', 'status', 'author', 'planners', 'recognition', 'start_datetime',
-        'end_datetime', 'type', 'subtypes', 'description', 'goals', 'keywords',
-        'audience', 'guest', 'guest_office', 'attendance', 'created_datetime',
-        'next_approver', 'funds', 'conclusion',
-    ]
 
-    def get(self, *args, **kwargs):
-        if not self.request.GET.get('experiences'):
-            raise Http404
-        pks = json.loads(self.request.GET.get('experiences'))
-        if not pks:
-            raise Http404
-        experiences = Experience.objects.filter(pk__in=pks).prefetch_related(
-            'planners',
-            'recognition',
-            'subtypes',
-            'keywords',
-        )
-        # Filter out canceled experiences and drafts not authored by the current user.
-        experiences = experiences.exclude(status='ca')
-        experiences = experiences.exclude(~Q(author=self.request.user), status='dr')
-
-        response = HttpResponse(content_type="text/csv")
-        response['Content-Disposition'] = 'attachment; filename="experiences.csv"'
-
-        writer = csv.DictWriter(response, fieldnames=self.keys)
-        writer.writeheader()
-
-        for experience in experiences:
-            writer.writerow(experience.convert_to_dict(self.keys))
-
-        return response
