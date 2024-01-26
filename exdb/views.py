@@ -315,6 +315,7 @@ class SearchExperienceResultsView(ListView):
     context_object_name = 'experiences'
     template_name = 'exdb/search.html'
     model = Experience
+    paginate_by = 20
 
     #post request is made if requested to download csv file
     def post(self, request,*args,**kwargs):
@@ -379,13 +380,23 @@ class SearchExperienceResultsView(ListView):
 
         # get rid of a users drafts for everyone else
         queryset = queryset.exclude(~Q(author=self.request.user), status='dr')
-
-        return queryset.select_related('type').prefetch_related(
+        
+        result = queryset.select_related('type').prefetch_related(
             'planners',
             'keywords',
             'recognition__affiliation',
             'subtypes',
         ).distinct()
+
+        #entries to show per page
+        per_page = self.request.GET.get('per_page','')
+        if(per_page!='' and per_page.isnumeric):
+            if(int(per_page)<=result.count()):
+                self.paginate_by = int(per_page)
+            else:
+                self.paginate_by = result.count()
+
+        return result
 
     def get_context_data(self, *args, **kwargs):
         context = super(SearchExperienceResultsView, self).get_context_data(*args, **kwargs)

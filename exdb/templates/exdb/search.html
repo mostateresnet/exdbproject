@@ -64,6 +64,48 @@
                     {% endfor %}
                 </tbody>
             </table>
+
+            {% if is_paginated%}
+            <nav aria-label="Pagination">
+                <ul class="pagination text-center">
+
+                    {% if page_obj.has_previous %}
+                        <li class="pagination-previous"><a href="?search={{search_query}}&page={{page_obj.previous_page_number}}&per_page={{page_obj.paginator.per_page}}" aria-label="Next page">Previous</a></li>
+                    {% endif %}
+
+                    {% if page_obj.number != 1 %}
+                        <li><a href="?search={{search_query}}&page=1&per_page={{page_obj.paginator.per_page}}" aria-label="page 1">1</a></li>
+                    {% endif %}
+
+
+                    
+                         <li class="current"><span class="show-for-sr">You're on page</span> {{page_obj.number}}</li>
+
+
+                    {% if page_obj.number != page_obj.paginator.num_pages %}
+                         <li ><a href="?search={{search_query}}&page={{page_obj.paginator.num_pages}}&per_page={{page_obj.paginator.per_page}}" aria-label="Next page"> {{page_obj.paginator.num_pages}}</a></li>
+                     {% endif %}
+                    {% if page_obj.has_next %}
+                         <li class="pagination-next"><a href="?search={{search_query}}&page={{page_obj.next_page_number}}&per_page={{page_obj.paginator.per_page}}" aria-label="Next page">Next</a></li>
+                    {% endif %}
+                </ul>
+              </nav>
+              
+            
+            {% endif %}
+            <label>Showing {{page_obj.paginator.per_page}} of {{page_obj.paginator.count}} items
+                <select onchange="
+                self.location=`?search={{search_query}}&page=1&per_page=${this.options[this.selectedIndex].value}`">
+                {% with '10 20 50 100 200' as list %}
+                <option value={{page_obj.paginator.per_page}}  selected>{{page_obj.paginator.per_page}}</option>
+
+                    {% for i in list.split %}
+                        <option value={{i}} {% if page_obj.paginator.per_page == i %}selected="true" {% endif %} >{{i}}</option>
+                    {% endfor %}
+                {% endwith %}
+                </select>
+              </label>
+        
         {% else %}
             <p>{% trans "Your search returned no experiences" %}</p>
         {% endif %}
