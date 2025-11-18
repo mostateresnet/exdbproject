@@ -1,0 +1,21 @@
+[[package]]
+name = "django"
+version = "1.9.13"
+description = "A high-level Python Web framework that encourages rapid development and clean, pragmatic design."
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.extras]
+bcrypt = ["bcrypt"]
+
+[metadata]
+lock-version = "1.1"
+python-versions = "^3.5"
+content-hash = "e7d824b751dfc07886fb7fca86885dbb019ef1852aeba78b9f7f50155b071df8"
+
+[metadata.files]
+django = [
+    {file = "Django-1.9.13-py2.py3-none-any.whl", hash = "sha256:c213590aa8599b17a9a914ab017f7dc6fc16c9c69603ecf071100346b8d9d777"},
+    {file = "Django-1.9.13.tar.gz", hash = "sha256:c007dba5086061f7d0f4d88a3bc4016d881a7eede86d6c1c4fdbbaadddd53f1d"},
+]

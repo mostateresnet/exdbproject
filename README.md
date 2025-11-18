@@ -11,17 +11,27 @@
   ```shell
   cd exdbproject
   ```
-3. Create a new virtual environment for EXDB
+3. Install Python 3.5
 
   ```shell
-  mkvirtualenv --python=$(which python3.5) exdbproject
+  pyenv install 3.5
   ```
-4. Install the required Python packages
+4. Create the virtual environment
 
   ```shell
-  pip install -U pip -r requirements/development.txt
+  poetry env use $(which python3.5)
   ```
-5. Install the required Node.js packages using:
+5. Switch to the newly created virtual environment
+
+  ```shell
+  poetry shell
+  ```
+6. Install the required Python packages
+
+  ```shell
+  poetry install
+  ```
+7. Install the required Node.js packages using:
 
   ```shell
   nodeenv -p --prebuilt --requirements=requirements/node_packages.txt
@@ -30,15 +40,15 @@
   ```shell
   nodeenv -p --source --requirements=requirements/node_packages.txt --jobs=4
   ```
-6. Re-activate the Python virtual environment to ensure all the environment variables are reset to their proper values
-
-  ```shell
-  workon exdbproject
-  ```
-7. Test that everything worked
+8. Test that everything worked
 
   ```shell
   ./manage.py verify
+  ```
+9. Start the dev server
+
+  ```shell
+  poetry run python manage.py runserver 0.0.0.0:8000
   ```
 
 ## Testing Dependencies
