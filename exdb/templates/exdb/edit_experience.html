@@ -79,7 +79,10 @@
             <div class="medium-5 columns">
                 <fieldset class="fieldset">
                     {% for comment in object.comment_set.all %}
-                        <p>{{ comment.message }}<p>
+                        <div>
+                            <div>{{ comment.message }}</div>
+                            <div class="comment-author">-{% blocktrans %}{{ comment.author }} said on {{ comment.timestamp }}{% endblocktrans %}</div>
+                        </div>
                     {% empty %}
                         <p>{% trans 'No Comments' %}</p>
                     {% endfor %}
