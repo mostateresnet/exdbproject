@@ -30,13 +30,36 @@ $(document).ready(function () {
         return confirm("Are you sure you want to delete this experience?");
     });
 
-    $('#id_start_datetime').fdatepicker({
-        format: 'mm/dd/yyyy hh:ii',
-        pickTime: true
-    });
+   // Setup date -> time picker
+    function setupFlatpickr(selector) {
+        let pickedDate = null;
 
-    $('#id_end_datetime').fdatepicker({
-        format: 'mm/dd/yyyy hh:ii',
-        pickTime: true
-    });
+        const datePicker = flatpickr(selector, {
+            enableTime: false,
+            dateFormat: "m/d/Y",
+            allowInput: true,
+            onChange: function(selectedDates, dateStr, instance) {
+                if (!selectedDates.length) return;
+                pickedDate = selectedDates[0];
+
+                // Destroy and replace with time picker
+                instance.destroy();
+
+                flatpickr(selector, {
+                    enableTime: true,
+                    noCalendar: true,
+                    dateFormat: "m/d/Y h:i K",
+                    defaultDate: pickedDate,
+                    time_24hr: false,
+                    allowInput: true,
+                    onClose: function(selDates, dateStr2, timeInstance) {
+                        if (dateStr2.includes(":")) timeInstance.close();
+                    },
+                }).open();
+            },
+        });
+    }
+
+    setupFlatpickr("#id_start_datetime");
+    setupFlatpickr("#id_end_datetime");
 });

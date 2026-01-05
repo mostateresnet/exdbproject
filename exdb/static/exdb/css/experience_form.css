@@ -16,3 +16,30 @@ ul#id_subtypes label {
 ul#id_subtypes li input[type=checkbox] {
     margin: 0.75rem 0.5rem 0.75rem 0.5rem;
 }
+/* Maroon Calendar */
+.flatpickr-calendar {
+    border: 1px solid #800000 !important;
+}
+
+.flatpickr-day.selected {
+    background-color: #800000 !important;
+    color: #fff !important;
+}
+
+.flatpickr-day.today {
+    border: 1px solid #800000 !important;
+}
+
+.flatpickr-time input {
+    border: 1px solid #800000 !important;
+}
+
+.flatpickr-time .flatpickr-am-pm {
+    color: #800000 !important;
+}
+
+.flatpickr-months .cur-month,
+.flatpickr-months .flatpickr-prev-month,
+.flatpickr-months .flatpickr-next-month {
+    color: #800000 !important;
+}
