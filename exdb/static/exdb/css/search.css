@@ -51,3 +51,39 @@ div#no-experience-warning{
     font-weight: bold;
     font-size: 18pt;
 }
+/* Pagination + page size controls container */
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+}
+
+/* Page size form + buttons container */
+.pagination-controls form,
+.pagination-controls .pagination-links {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+/* Pagination links style */
+.pagination-links a,
+.pagination-links span {
+    padding: 0.25rem 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 0.25rem;
+    text-decoration: none;
+    color: #333;
+    font-size: 0.875rem;
+}
+
+/* Highlight current page */
+.pagination-links span.current-page {
+    background-color: #800000; /* Maroon */
+    color: #fff;
+    font-weight: bold;
+}
+
