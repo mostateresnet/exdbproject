@@ -1,18 +1,58 @@
+/* Subtype list container */
 ul#id_subtypes {
     list-style-type: none;
-    margin-left: 0px;
-    border-bottom: 1px solid #cacaca;
+    margin-left: 0;
+    border: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 1rem;
+    padding: 0;
 }
 
+/* Subtype item box */
 ul#id_subtypes li {
     border: 1px solid #cacaca;
-    border-bottom: none;
+    border-radius: 8px;
+    background-color: #fdfdfd;
+    padding: 0.75rem 1rem;
+    transition: all 0.2s ease;
 }
 
+/* Hover effect */
+ul#id_subtypes li:hover {
+    background-color: #f9f3f3;
+}
+
+/* Make label clickable */
 ul#id_subtypes label {
+    display: flex;       /* inline layout for checkbox + name */
+    align-items: center; /* vertically center */
     cursor: pointer;
+    font: inherit;       /* inherit font style from form */
 }
 
+/* Checkbox placement */
 ul#id_subtypes li input[type=checkbox] {
-    margin: 0.75rem 0.5rem 0.75rem 0.5rem;
+    margin-right: 0.5rem;
+    flex-shrink: 0;
+}
+
+/* Subtype name */
+.subtype-label .subtype-name {
+    font-weight: bold;
+}
+
+/* Help text below name */
+.subtype-label .subtype-help {
+    display: block;
+    margin-left: 1.5rem;
+    line-height: 1.2;
+    font: inherit;       /* inherit font style from form */
+    color: #666;
+}
+
+/* Highlight selected */
+ul#id_subtypes li input[type=checkbox]:checked + .subtype-label {
+    border-color: maroon;
+    background-color: #fbeaea;
 }
