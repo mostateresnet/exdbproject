@@ -17,6 +17,15 @@ ul#id_subtypes li input[type=checkbox] {
     margin: 0.75rem 0.5rem 0.75rem 0.5rem;
 }
 /* Maroon Calendar */
+#id_start_datetime,
+#id_end_datetime {
+    background-color: white;
+    color: #000;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 6px 10px;
+}
+
 .flatpickr-calendar {
     border: 1px solid #800000 !important;
 }
