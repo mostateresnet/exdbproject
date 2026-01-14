@@ -103,6 +103,14 @@ class ExperienceSaveForm(ModelForm):
         self.fields['next_approver'].queryset = get_user_model().objects.hallstaff()
         self.fields['planners'].queryset = get_user_model().objects.filter(is_active=True)
 
+        datetime_formats = [
+            "%m/%d/%Y %I:%M %p",  # 12-hour AM/PM
+            "%m/%d/%Y %H:%M",     # 24-hour fallback
+            "%Y-%m-%d %H:%M:%S",  # ISO fallback
+        ]
+        self.fields['start_datetime'].input_formats = datetime_formats
+        self.fields['end_datetime'].input_formats = datetime_formats
+
 
 class ExperienceSubmitForm(ExperienceSaveForm):
 
