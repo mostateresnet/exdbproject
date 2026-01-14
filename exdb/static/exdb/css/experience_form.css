@@ -52,7 +52,7 @@ ul#id_subtypes li input[type=checkbox] {
 }
 
 /* Highlight selected */
-ul#id_subtypes li input[type=checkbox]:checked + .subtype-label {
+ul#id_subtypes li:has(input[type=checkbox]:checked) {
     border-color: maroon;
     background-color: #fbeaea;
 }
