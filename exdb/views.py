@@ -12,6 +12,8 @@ from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.db.models import Q, Prefetch
+from urllib.parse import urlencode
+from django.utils.encoding import force_text
 
 from exdb.models import Experience, ExperienceComment, ExperienceApproval, Subtype, Requirement, Affiliation, Semester, Section
 from .forms import ExperienceSubmitForm, ExperienceSaveForm, ApprovalForm, ExperienceConclusionForm
@@ -310,6 +312,95 @@ class ListExperienceByStatusView(ListView):
         return context
 
 
+def _apply_column_filters(queryset, request):
+    """Apply column-filter GET params (filter_*) to queryset. Used by search and export."""
+    def _get(name):
+        return (request.GET.get(name) or '').strip()
+
+    name_val = _get('filter_name')
+    if name_val:
+        queryset = queryset.filter(name__icontains=name_val)
+
+    planners_val = _get('filter_planners')
+    if planners_val:
+        q = Q(planners__first_name__icontains=planners_val) | Q(planners__last_name__icontains=planners_val)
+        queryset = queryset.filter(q).distinct()
+
+    type_val = _get('filter_type')
+    if type_val:
+        queryset = queryset.filter(type__name__icontains=type_val)
+
+    subtypes_val = _get('filter_subtypes')
+    if subtypes_val:
+        queryset = queryset.filter(subtypes__name__icontains=subtypes_val).distinct()
+
+    building_val = _get('filter_building')
+    if building_val:
+        queryset = queryset.filter(recognition__affiliation__name__icontains=building_val).distinct()
+
+    keywords_val = _get('filter_keywords')
+    if keywords_val:
+        queryset = queryset.filter(keywords__name__icontains=keywords_val).distinct()
+
+    status_val = _get('filter_status')
+    if status_val:
+        status_val_lower = status_val.lower()
+        q_status = Q()
+        for code, label, _slug in Experience.STATUS_TYPES:
+            if status_val_lower in force_text(label).lower():
+                q_status |= Q(status=code)
+        if q_status:
+            queryset = queryset.filter(q_status)
+        else:
+            queryset = queryset.filter(status__icontains=status_val)
+
+    return queryset
+
+
+
+def get_search_queryset(request):
+    """Build search queryset from request GET 'search'. Shared by search results and export."""
+    tokens = request.GET.get('search', '').split()
+    if not tokens:
+        return Experience.objects.none()
+
+    search_fields = [
+        'name',
+        'description',
+        'goals',
+        'guest',
+        'guest_office',
+        'conclusion',
+        'keywords__name',
+        'recognition__name',
+        'recognition__affiliation__name',
+        'planners__first_name',
+        'planners__last_name',
+        'author__first_name',
+        'author__last_name',
+        'type__name',
+        'subtypes__name',
+    ]
+
+    filter_Qs = Q()
+    for token in tokens:
+        or_Qs = Q()
+        for field in search_fields:
+            or_Qs |= Q(**{field + '__icontains': token})
+        filter_Qs &= or_Qs
+    queryset = Experience.objects.filter(filter_Qs).exclude(status='ca')
+    queryset = queryset.exclude(~Q(author=request.user), status='dr')
+    queryset = _apply_column_filters(queryset, request)
+
+    return queryset.select_related('type').prefetch_related(
+        'planners',
+        'keywords',
+        'recognition__affiliation',
+        'subtypes',
+    ).distinct()
+
+
+
 class SearchExperienceResultsView(ListView):
     access_level = 'basic'
     context_object_name = 'experiences'
@@ -325,55 +416,22 @@ class SearchExperienceResultsView(ListView):
         return self.paginate_by
 
     def get_queryset(self):
-        tokens = self.request.GET.get('search', '').split()
-        if not tokens:
-            return Experience.objects.none()
-
-        search_fields = [
-            'name',
-            'description',
-            'goals',
-            'guest',
-            'guest_office',
-            'conclusion',
-            'keywords__name',
-            'recognition__name',
-            'recognition__affiliation__name',
-            'planners__first_name',
-            'planners__last_name',
-            'author__first_name',
-            'author__last_name',
-            'type__name',
-            'subtypes__name',
-        ]
-
-        filter_Qs = Q()
-        for token in tokens:
-            or_Qs = Q()
-            for field in search_fields:
-                or_Qs |= Q(**{field + '__icontains': token})
-            filter_Qs &= or_Qs
-        # This will look something like:
-        # WHERE
-        #     (column_1 ILIKE '%token_1%' OR column_2 ILIKE '%token_1%')
-        # AND (column_1 ILIKE '%token_2%' OR column_2 ILIKE '%token_2%')
-        # AND (column_1 ILIKE '%token_3%' OR column_2 ILIKE '%token_3%')
-        queryset = Experience.objects.filter(filter_Qs).exclude(status='ca')
-
-        # get rid of a users drafts for everyone else
-        queryset = queryset.exclude(~Q(author=self.request.user), status='dr')
-
-        return queryset.select_related('type').prefetch_related(
-            'planners',
-            'keywords',
-            'recognition__affiliation',
-            'subtypes',
-        ).distinct()
+        return get_search_queryset(self.request)
 
     def get_context_data(self, *args, **kwargs):
         context = super(SearchExperienceResultsView, self).get_context_data(*args, **kwargs)
-        context['search_query'] = self.request.GET.get('search', '')
+        g = self.request.GET
+        context['search_query'] = g.get('search', '')
         context['page_sizes'] = [5, 10, 20, 50]
+        context['filter_name'] = g.get('filter_name', '')
+        context['filter_planners'] = g.get('filter_planners', '')
+        context['filter_type'] = g.get('filter_type', '')
+        context['filter_subtypes'] = g.get('filter_subtypes', '')
+        context['filter_building'] = g.get('filter_building', '')
+        context['filter_keywords'] = g.get('filter_keywords', '')
+        context['filter_status'] = g.get('filter_status', '')
+        params = {k: v for k, v in g.items() if k != 'page'}
+        context['query_params_no_page'] = urlencode(params)
         return context
 
 
@@ -481,20 +539,9 @@ class SearchExperienceReport(View):
     ]
 
     def get(self, *args, **kwargs):
-        if not self.request.GET.get('experiences'):
+        if not self.request.GET.get('search'):
             raise Http404
-        pks = json.loads(self.request.GET.get('experiences'))
-        if not pks:
-            raise Http404
-        experiences = Experience.objects.filter(pk__in=pks).prefetch_related(
-            'planners',
-            'recognition',
-            'subtypes',
-            'keywords',
-        )
-        # Filter out canceled experiences and drafts not authored by the current user.
-        experiences = experiences.exclude(status='ca')
-        experiences = experiences.exclude(~Q(author=self.request.user), status='dr')
+        experiences = get_search_queryset(self.request)
 
         response = HttpResponse(content_type="text/csv")
         response['Content-Disposition'] = 'attachment; filename="experiences.csv"'
