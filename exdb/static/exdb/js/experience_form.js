@@ -30,13 +30,12 @@ $(document).ready(function () {
         return confirm("Are you sure you want to delete this experience?");
     });
 
-    $('#id_start_datetime').fdatepicker({
-        format: 'mm/dd/yyyy hh:ii',
-        pickTime: true
+   // Setup date -> time picker
+    $('#id_start_datetime, #id_end_datetime').flatpickr({
+        enableTime: true,        // enables time picker
+        noCalendar: false,       // show calendar
+        dateFormat: "m/d/Y h:i K", // 12-hour format with AM/PM
+        time_24hr: false         // must be false for 12-hour
     });
 
-    $('#id_end_datetime').fdatepicker({
-        format: 'mm/dd/yyyy hh:ii',
-        pickTime: true
-    });
 });
