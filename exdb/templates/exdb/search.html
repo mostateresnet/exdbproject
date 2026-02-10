@@ -61,6 +61,54 @@
                     {% endfor %}
                 </tbody>
             </table>
+
+            <!-- PAGINATION CONTROLS -->
+            <div class="pagination-controls">
+                <!-- Page size selector -->
+                <form method="get">
+                    {% for key, value in request.GET.items %}
+                        {% if key != 'page_size' and key != 'page' %}
+                            <input type="hidden" name="{{ key }}" value="{{ value }}">
+                        {% endif %}
+                    {% endfor %}
+                    <label for="page_size">{% trans "Results per page:" %}</label>
+                    <select name="page_size" onchange="this.form.submit()">
+                        {% for size in page_sizes %}
+                            {% if request.GET.page_size %}
+                                {% if size|stringformat:"s" == request.GET.page_size %}
+                                    <option value="{{ size }}" selected>{{ size }}</option>
+                                {% else %}
+                                    <option value="{{ size }}">{{ size }}</option>
+                                {% endif %}
+                            {% else %}
+                                {% if size == 5 %}
+                                    <option value="{{ size }}" selected>{{ size }}</option>
+                                {% else %}
+                                    <option value="{{ size }}">{{ size }}</option>
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </form>
+
+                <!-- Previous / Next buttons -->
+                {% if is_paginated %}
+                    <div class="pagination-links">
+                        {% with request.GET.urlencode|cut:"page=" as querystring %}
+                            {% if page_obj.has_previous %}
+                                <a href="?search={{ search_query }}&page={{ page_obj.previous_page_number }}&page_size={{ request.GET.page_size|default:"5" }}">Previous</a>
+                            {% endif %}
+
+                            <span class="current-page">{% trans "Page" %} {{ page_obj.number }} {% trans "of" %} {{ paginator.num_pages }}</span>
+
+                            {% if page_obj.has_next %}
+                                <a href="?search={{ search_query }}&page={{ page_obj.next_page_number }}&page_size={{ request.GET.page_size|default:"5" }}">Next</a>
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+                {% endif %}
+            </div>
+
         {% else %}
             <p>{% trans "Your search returned no experiences" %}</p>
         {% endif %}

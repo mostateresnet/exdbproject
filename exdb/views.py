@@ -315,6 +315,14 @@ class SearchExperienceResultsView(ListView):
     context_object_name = 'experiences'
     template_name = 'exdb/search.html'
     model = Experience
+    paginate_by = 5 
+
+    def get_paginate_by(self, queryset):
+        """Allow configurable page size via ?page_size="""
+        page_size = self.request.GET.get('page_size')
+        if page_size and page_size.isdigit():
+            return int(page_size)
+        return self.paginate_by
 
     def get_queryset(self):
         tokens = self.request.GET.get('search', '').split()
@@ -365,6 +373,7 @@ class SearchExperienceResultsView(ListView):
     def get_context_data(self, *args, **kwargs):
         context = super(SearchExperienceResultsView, self).get_context_data(*args, **kwargs)
         context['search_query'] = self.request.GET.get('search', '')
+        context['page_sizes'] = [5, 10, 20, 50]
         return context
 
 
