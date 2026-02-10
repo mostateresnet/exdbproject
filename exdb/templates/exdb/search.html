@@ -14,20 +14,37 @@
     {{ block.super }}
 
     <div class="row">
-        <button id="export" class="button" data-url="{% url 'search_report' %}">{% trans "Export as CSV" %}</button>
-        <div id="no-experience-warning" class="hide">{% trans "No experiences to export!" %}</div>
-        {% if experiences %}
+         {% if search_query %}
+            <a id="export" class="button" href="{% url 'search_report' %}?{{ query_params_no_page }}">{% trans "Export as CSV" %}</a>
+        {% endif %}
+         {% if experiences %}
+            <form method="get" action="{% url 'search' %}" id="search-filter-form">
+                {% for key, value in request.GET.items %}
+                    {% if key != 'filter_name' and key != 'filter_planners' and key != 'filter_type' and key != 'filter_subtypes' and key != 'filter_building' and key != 'filter_keywords' and key != 'filter_status' and key != 'page' %}
+                        <input type="hidden" name="{{ key }}" value="{{ value }}">
+                    {% endif %}
+                {% endfor %}
             <table id="search-results" class="tablesorter responsive">
                 <thead>
                     <tr>
-                        <th data-placeholder="&#xf002;">{% trans "Experience Name" %}</th>
-                        <th data-placeholder="&#xf002;">{% trans "Planners" %}</th>
-                        <th data-placeholder="&#xf002;">{% trans "Type" %}</th>
-                        <th data-placeholder="&#xf002;">{% trans "Subtypes" %}</th>
-                        <th data-placeholder="&#xf002;">{% trans "Building" %}</th>
-                        <th data-placeholder="&#xf002;">{% trans "Keywords" %}</th>
-                        <th data-placeholder="&#xf002;">{% trans "Status" %}</th>
-                        <th data-placeholder="&#xf002;" data-sorter="shortDate">{% trans "Start Time" %}</th>
+                        <th>{% trans "Experience Name" %}</th>
+                        <th>{% trans "Planners" %}</th>
+                        <th>{% trans "Type" %}</th>
+                        <th>{% trans "Subtypes" %}</th>
+                        <th>{% trans "Building" %}</th>
+                        <th>{% trans "Keywords" %}</th>
+                        <th>{% trans "Status" %}</th>
+                        <th data-sorter="shortDate">{% trans "Start Time" %}</th>
+                    </tr>
+                    <tr class="column-filters">
+                        <th><input type="text" name="filter_name" value="{{ filter_name }}" placeholder="&#xf002;" class="column-filter fa round-search-box" autocomplete="off"></th>
+                        <th><input type="text" name="filter_planners" value="{{ filter_planners }}" placeholder="&#xf002;" class="column-filter fa round-search-box" autocomplete="off"></th>
+                        <th><input type="text" name="filter_type" value="{{ filter_type }}" placeholder="&#xf002;" class="column-filter fa round-search-box" autocomplete="off"></th>
+                        <th><input type="text" name="filter_subtypes" value="{{ filter_subtypes }}" placeholder="&#xf002;" class="column-filter fa round-search-box" autocomplete="off"></th>
+                        <th><input type="text" name="filter_building" value="{{ filter_building }}" placeholder="&#xf002;" class="column-filter fa round-search-box" autocomplete="off"></th>
+                        <th><input type="text" name="filter_keywords" value="{{ filter_keywords }}" placeholder="&#xf002;" class="column-filter fa round-search-box" autocomplete="off"></th>
+                        <th><input type="text" name="filter_status" value="{{ filter_status }}" placeholder="&#xf002;" class="column-filter fa round-search-box" autocomplete="off"></th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -61,6 +78,53 @@
                     {% endfor %}
                 </tbody>
             </table>
+            </form>
+
+            <!-- PAGINATION CONTROLS -->
+            <div class="pagination-controls">
+                <!-- Page size selector -->
+                <form method="get">
+                    {% for key, value in request.GET.items %}
+                        {% if key != 'page_size' and key != 'page' %}
+                            <input type="hidden" name="{{ key }}" value="{{ value }}">
+                        {% endif %}
+                    {% endfor %}
+                    <label for="page_size">{% trans "Results per page:" %}</label>
+                    <select name="page_size" onchange="this.form.submit()">
+                        {% for size in page_sizes %}
+                            {% if request.GET.page_size %}
+                                {% if size|stringformat:"s" == request.GET.page_size %}
+                                    <option value="{{ size }}" selected>{{ size }}</option>
+                                {% else %}
+                                    <option value="{{ size }}">{{ size }}</option>
+                                {% endif %}
+                            {% else %}
+                                {% if size == 5 %}
+                                    <option value="{{ size }}" selected>{{ size }}</option>
+                                {% else %}
+                                    <option value="{{ size }}">{{ size }}</option>
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </form>
+
+                <!-- Previous / Next buttons -->
+                 {% if is_paginated %}
+                    <div class="pagination-links">
+                            {% if page_obj.has_previous %}
+                                <a href="?{{ query_params_no_page }}&page={{ page_obj.previous_page_number }}">{% trans "Previous" %}</a>
+                            {% endif %}
+
+                            <span class="current-page">{% trans "Page" %} {{ page_obj.number }} {% trans "of" %} {{ paginator.num_pages }}</span>
+
+                            {% if page_obj.has_next %}
+                                <a href="?{{ query_params_no_page }}&page={{ page_obj.next_page_number }}">{% trans "Next" %}</a>
+                            {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+
         {% else %}
             <p>{% trans "Your search returned no experiences" %}</p>
         {% endif %}
