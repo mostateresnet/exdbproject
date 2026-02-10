@@ -103,6 +103,41 @@ class ExperienceSaveForm(ModelForm):
         self.fields['next_approver'].queryset = get_user_model().objects.hallstaff()
         self.fields['planners'].queryset = get_user_model().objects.filter(is_active=True)
 
+        # --- Add Help Texts for Subtypes ---
+        subtype_help_map = {
+            "Alcohol/Alcohol Alternative": "Programs addressing alcohol awareness or providing non-alcoholic social options.",
+            "Building-wide Community Enrichment": "Events open to everyone in the building that build community and belonging.",
+            "Bulletin Board": "Informational or themed bulletin boards created to educate or engage residents.",
+            "Door Decorations": "Creative decorations for residents’ doors to promote community identity.",
+            "Floor Decorations": "Shared floor decorations to enhance community spirit or theme.",
+            "LLC": "Living-Learning Community–related experience connecting academic and residential life.",
+            "Needs-based": "Program created to respond to a specific community need or incident.",
+            "Other Planned Community Development Experience": "An event that doesn’t fit standard categories but is intentionally planned.",
+            "Passive Engagement Campaign": "Educational or engagement efforts not requiring active participation (e.g., posters).",
+            "Piggyback (does not fit another category)": "Small-scale event added to an existing program or initiative.",
+            "Public Affairs": "Events focused on current issues, politics, or civic engagement.",
+            "Resource": "Efforts to share or promote available campus/community resources.",
+            "Sexual Misconduct Education and Prevention": "Programs promoting awareness and prevention of sexual misconduct.",
+            "Spontaneous": "Unplanned or casual community interactions that still have impact.",
+            "Support": "Programs aimed at offering emotional, academic, or social support.",
+            "Sustainability": "Events that promote eco-friendly behaviors and environmental responsibility.",
+            "Togetherness": "Community-building activities that strengthen relationships and inclusion.",
+        }
+
+        # Customize subtype labels with help text underneath
+        subtype_choices = []
+        for subtype in Subtype.objects.all():
+            helptext = subtype_help_map.get(subtype.name, "")
+            label_html = format_html(
+                '<div class="subtype-label">'
+                '<span class="subtype-name">{}</span><br>'
+                '<small class="subtype-help">{}</small>'
+                '</div>', subtype.name, helptext
+            )
+            subtype_choices.append((subtype.pk, mark_safe(label_html)))
+
+        self.fields['subtypes'].choices = subtype_choices
+
 
 class ExperienceSubmitForm(ExperienceSaveForm):
 
