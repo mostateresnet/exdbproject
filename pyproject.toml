@@ -7,8 +7,18 @@ authors = ["Your Name <you@example.com>"]
 [tool.poetry.dependencies]
 python = "^3.5"
 Django = "<1.10"
+django-silk = "<2.0"
+psycopg2 = {version = "<2.9", optional = true}
+uWSGI = {version = "^2.0.31", optional = true}
+django-auth-ldap = {version = "<1.3", optional = true}
+django-auth-sgf = { git = "file:///mnt/repo/django-auth-sgf", optional = true }
 
 [tool.poetry.dev-dependencies]
+nodeenv = ">=1.6"
+colorama = ">=0.4.5"
+
+[tool.poetry.extras]
+prod = ["psycopg2", "uWSGI", "django-auth-ldap", "django-auth-sgf"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

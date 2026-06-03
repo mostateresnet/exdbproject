@@ -11,15 +11,15 @@
   ```shell
   cd exdbproject
   ```
-3. Install Python 3.5
+3. Install required Python version
 
   ```shell
-  pyenv install 3.5
+  pyenv install
   ```
 4. Create the virtual environment
 
   ```shell
-  poetry env use $(which python3.5)
+  poetry env use 3.5
   ```
 5. Switch to the newly created virtual environment
 
@@ -30,6 +30,10 @@
 
   ```shell
   poetry install
+  ```
+  OR if you want to install production server dependencies:
+  ```shell
+  poetry install --extras prod
   ```
 7. Install the required Node.js packages using:
 
@@ -43,7 +47,7 @@
 8. Test that everything worked
 
   ```shell
-  ./manage.py verify
+  poetry run python manage.py verify
   ```
 9. Start the dev server
 
@@ -60,11 +64,11 @@ Many if not all of the drivers are linked at http://www.seleniumhq.org/download/
 ## Testing
 To test using your browser of choice pass the -b option to manage.py test (phantomjs is the default):
 ```shell
-python manage.py test -b chrome
+poetry run python manage.py test -b chrome
 ``` 
 
 If you would like to test using an android device you will need to setup the Remote webdriver for android then you can specify the broadcast address for the test server:
 ```shell
-python manage.py test -b remote --liveserver=0.0.0.0:8081
+poetry run python manage.py test -b remote --liveserver=0.0.0.0:8081
 ```
 The test runner will automatically try to acertain and test using the hostname of the machine running the tests if the ip is 0.0.0.0
