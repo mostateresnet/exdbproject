@@ -63,9 +63,9 @@ class CustomRunner(DiscoverRunner, metaclass=CustomRunnerMetaClass):
                 error = _('Unknown browser %(argument)s\nThe known browsers are: %(browsers)s')
                 raise ValueError(error % {'argument': browser_arg, 'browsers': ', '.join(drivers.keys())})
         else:
-            default_driver = 'phantomjs'
+            default_driver = 'chrome'
             driver_obj = drivers.get(default_driver)
-        self.__class__.browser_driver = lambda: driver_obj.driver(*getattr(driver_obj, 'args', []))
+        self.__class__.browser_driver = lambda: driver_obj.driver(*getattr(driver_obj, 'args', []), **getattr(driver_obj, 'kwargs', {}))
 
         # setting the server location since the location may be relative to a remote host
         # if it looks like 0.0.0.0:\d+ then we should change the

@@ -54,7 +54,25 @@ class SubtypeSelect(forms.CheckboxSelectMultiple):
     renderer = SubtypeRenderer
 
 
+class DateTimeLocalInput(forms.DateTimeInput):
+    input_type = 'datetime-local'
+
+
+class DateTimeLocalField(forms.DateTimeField):
+    input_formats = [
+        '%Y-%m-%dT%H:%M:%S',
+        '%Y-%m-%dT%H:%M:%S.%f',
+        '%Y-%m-%dT%H:%M',
+    ]
+
+    def __init__(self, *args, **kwargs):
+        super(DateTimeLocalField, self).__init__(input_formats=self.input_formats, *args, **kwargs)
+        self.widget = DateTimeLocalInput(format='%Y-%m-%dT%H:%M')
+
+
 class ExperienceSaveForm(ModelForm):
+    start_datetime = DateTimeLocalField()
+    end_datetime = DateTimeLocalField()
 
     class Meta:
         model = Experience

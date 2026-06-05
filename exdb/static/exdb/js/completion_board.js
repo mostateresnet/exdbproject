@@ -2,7 +2,7 @@
 
 
 $(document).ready(function () {
-    $("#switch-affiliation").click(function (event) {
+    $("#switch-affiliation").on('click', function (event) {
         event.preventDefault();
         window.location.href = $("#affiliation-selector option:selected").val();
     });

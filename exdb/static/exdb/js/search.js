@@ -17,7 +17,7 @@ $(document).ready(function () {
         },
     });
 
-    $('tr.link').click(
+    $('tr.link').on('click',
         /* istanbul ignore next because this is actually covered & tested but istanbul won't realize that */
         function () {
             window.location = $(this).attr('data-url');
@@ -25,7 +25,7 @@ $(document).ready(function () {
     );
 
 
-    $('button#export').click(function () {
+    $('button#export').on('click', function () {
         var experiences = get_experiences();
         if (experiences.length) {
             window.location = $(this).data('url') + "?experiences=" + JSON.stringify(experiences);

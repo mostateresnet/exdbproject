@@ -16,6 +16,10 @@ django-auth-sgf = { git = "file:///mnt/repo/django-auth-sgf", optional = true }
 [tool.poetry.dev-dependencies]
 nodeenv = ">=1.6"
 colorama = ">=0.4.5"
+coverage = ">=5.5"
+selenium = ">=3.141"
+python-auto-mock = "^0.1.1"
+pylint = ">=2.6.2,<2.7.0"
 
 [tool.poetry.extras]
 prod = ["psycopg2", "uWSGI", "django-auth-ldap", "django-auth-sgf"]
