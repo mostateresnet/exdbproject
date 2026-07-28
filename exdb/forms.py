@@ -35,18 +35,30 @@ class TypeSelect(forms.Select):
                            force_text(option_label))
 
 
-class SubtypeRenderer(forms.widgets.CheckboxFieldRenderer):
+class CheckboxFieldRenderer(forms.widgets.CheckboxFieldRenderer):
+    outer_html = '<ul{id_attr} class="checkbox-multiselect">{content}</ul>'
+
+    def choice_input_class(self, name, value, attrs, choice, index):
+        attrs = attrs.copy()
+        attrs['class'] = 'checkbox-option'
+        return forms.widgets.CheckboxChoiceInput(name, value, attrs, choice, index)
+
+
+class GenericCheckboxSelect(forms.CheckboxSelectMultiple):
+    renderer = CheckboxFieldRenderer
+
+
+class SubtypeRenderer(CheckboxFieldRenderer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.choice_object_dict = {st.pk: st for st in Subtype.objects.filter(pk__in=[c[0] for c in self.choices])}
 
     def choice_input_class(self, name, value, attrs, choice, index):
-        if choice[0] in self.choice_object_dict and not self.choice_object_dict[choice[0]].needs_verification:
-            class_attr = 'no-verification'
-        else:
-            class_attr = 'verification'
         attrs = attrs.copy()
-        attrs['class'] = class_attr
+        if choice[0] in self.choice_object_dict and not self.choice_object_dict[choice[0]].needs_verification:
+            attrs['class'] = 'no-verification checkbox-option'
+        else:
+            attrs['class'] = 'verification checkbox-option'
         return forms.widgets.CheckboxChoiceInput(name, value, attrs, choice, index)
 
 
@@ -102,6 +114,9 @@ class ExperienceSaveForm(ModelForm):
             'type': TypeSelect(),
             'subtypes': SubtypeSelect(),
             'conclusion': forms.Textarea(attrs={'cols': 40, 'rows': 4}),
+            'planners': GenericCheckboxSelect(),
+            'recognition': GenericCheckboxSelect(),
+            'keywords': GenericCheckboxSelect(),
         }
 
         labels = {
