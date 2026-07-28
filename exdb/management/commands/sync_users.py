@@ -21,6 +21,7 @@ class Command(BaseCommand):
 
             # Add/update the user
             for username in usernames:
+                print('Updating %s...' % username)
                 user = ldap_backend.populate_user(username)
                 already_populated_usernames.add(user.username)
 
@@ -43,12 +44,7 @@ def get_group_members(group):
 
     ldap_backend = SGFBackend()
     ldap_settings = ldap_backend.settings
-    ldap = ldap_backend.ldap
-
-    conn = ldap.initialize(ldap_settings.SERVER_URI)
-    conn.set_option(ldap.OPT_PROTOCOL_VERSION, ldap.VERSION3)
-    conn.set_option(ldap.OPT_REFERRALS, 0)
-    conn.bind_s(ldap_settings.BIND_DN, ldap_settings.BIND_PASSWORD)
+    conn = ldap_backend.get_ldap_connection()
 
     search = ldap_settings.GROUP_SEARCH.search_with_additional_terms({'cn': group})
 

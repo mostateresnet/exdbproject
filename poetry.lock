@@ -99,7 +99,7 @@ django-auth-ldap = ">=1.2.17"
 type = "git"
 url = "file:///mnt/repo/django-auth-sgf"
 reference = "master"
-resolved_reference = "57edb2826cfe945e08abd78ad120a5dc170a1e86"
+resolved_reference = "3ad713d394d45644dc7ae37cc9e2547a41f76feb"
 
 [[package]]
 name = "django-silk"
