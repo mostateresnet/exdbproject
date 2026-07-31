@@ -3,8 +3,8 @@ from django.db import models
 from django.db.models import Q
 from django.utils.timezone import now
 from django.conf import settings
-from django.core.urlresolvers import reverse
-from django.utils.translation import ugettext_lazy as _
+from django.urls import reverse
+from django.utils.translation import gettext_lazy as _
 from django.core.validators import validate_email
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -13,8 +13,8 @@ from django.forms.models import model_to_dict
 
 
 class EXDBUser(AbstractUser):
-    affiliation = models.ForeignKey('Affiliation', null=True, blank=True)
-    section = models.ForeignKey('Section', null=True, blank=True)
+    affiliation = models.ForeignKey('Affiliation', on_delete=models.CASCADE, null=True, blank=True)
+    section = models.ForeignKey('Section', on_delete=models.CASCADE, null=True, blank=True)
 
     class EXDBUserQuerySet(models.QuerySet, UserManager):
 
@@ -101,7 +101,7 @@ class Affiliation(models.Model):
 
 class Section(models.Model):
     name = models.CharField(max_length=300)
-    affiliation = models.ForeignKey(Affiliation)
+    affiliation = models.ForeignKey(Affiliation, on_delete=models.CASCADE)
     order = models.CharField(max_length=64, blank=True)
 
     def __str__(self):
@@ -209,14 +209,14 @@ class Experience(models.Model):
         ('ya', _('Yes, request approved')),
     )
 
-    author = models.ForeignKey(settings.AUTH_USER_MODEL)
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     planners = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='planner_set', blank=True)
     recognition = models.ManyToManyField(Section, blank=True)
     name = models.CharField(max_length=300)
     description = models.TextField(blank=True)
     start_datetime = models.DateTimeField()
     end_datetime = models.DateTimeField()
-    type = models.ForeignKey(Type)
+    type = models.ForeignKey(Type, on_delete=models.CASCADE)
     subtypes = models.ManyToManyField(Subtype, blank=True, related_name='experience_set')
     goals = models.TextField(blank=True)
     keywords = models.ManyToManyField(Keyword, blank=True, related_name='keyword_set')
@@ -230,7 +230,7 @@ class Experience(models.Model):
         choices=tuple(
             statuses[:2] for statuses in STATUS_TYPES),
         default=STATUS_TYPES[1][0])
-    next_approver = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True, related_name='approval_queue')
+    next_approver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, blank=True, null=True, related_name='approval_queue')
     funds = models.CharField(max_length=2, choices=FUND_TYPES, default='na')
     conclusion = models.TextField(
         blank=True,
@@ -279,8 +279,8 @@ class Experience(models.Model):
 
 
 class ExperienceApproval(models.Model):
-    experience = models.ForeignKey(Experience, related_name='approval_set')
-    approver = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='approval_set')
+    experience = models.ForeignKey(Experience, on_delete=models.CASCADE, related_name='approval_set')
+    approver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='approval_set')
     timestamp = models.DateTimeField(default=now, blank=True)
 
     class Meta:
@@ -288,10 +288,10 @@ class ExperienceApproval(models.Model):
 
 
 class ExperienceComment(models.Model):
-    experience = models.ForeignKey(Experience, related_name='comment_set')
+    experience = models.ForeignKey(Experience, on_delete=models.CASCADE, related_name='comment_set')
     message = models.TextField()
     timestamp = models.DateTimeField(default=now)
-    author = models.ForeignKey(settings.AUTH_USER_MODEL)
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
     class Meta:
         ordering = ['timestamp']
@@ -333,10 +333,10 @@ class Semester(models.Model):
 class Requirement(models.Model):
     start_datetime = models.DateTimeField()
     end_datetime = models.DateTimeField()
-    semester = models.ForeignKey(Semester)
-    affiliation = models.ForeignKey(Affiliation)
+    semester = models.ForeignKey(Semester, on_delete=models.CASCADE)
+    affiliation = models.ForeignKey(Affiliation, on_delete=models.CASCADE)
     total_needed = models.PositiveIntegerField(default=1)
-    subtype = models.ForeignKey(Subtype)
+    subtype = models.ForeignKey(Subtype, on_delete=models.CASCADE)
     description = models.CharField(max_length=100, blank=True)
 
     def __str__(self):

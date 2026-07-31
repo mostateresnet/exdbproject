@@ -2,6 +2,7 @@ from django.contrib import admin
 from .models import Type, Subtype, Section, Keyword, Experience, ExperienceComment, ExperienceApproval, Affiliation, EmailTask, EXDBUser, Requirement, Semester
 
 
+@admin.register(Subtype)
 class SubtypeAdmin(admin.ModelAdmin):
     list_display = ('name', 'needs_verification')
     search_fields = ('name',)
@@ -12,6 +13,7 @@ class ExperienceCommentInline(admin.TabularInline):
     raw_id_fields = ('author',)
 
 
+@admin.register(Experience)
 class ExperienceAdmin(admin.ModelAdmin):
     list_display = ('name', 'description', 'created_datetime', 'author')
     search_fields = (
@@ -30,6 +32,7 @@ class ExperienceAdmin(admin.ModelAdmin):
     inlines = (ExperienceCommentInline,)
 
 
+@admin.register(ExperienceApproval)
 class ExperienceApprovalAdmin(admin.ModelAdmin):
     list_display = ('experience', 'approver', 'timestamp')
     search_fields = (
@@ -42,24 +45,21 @@ class ExperienceApprovalAdmin(admin.ModelAdmin):
     raw_id_fields = ('experience', 'approver')
 
 
+@admin.register(Section)
 class SectionAdmin(admin.ModelAdmin):
     list_display = ('name', 'affiliation')
     search_fields = ('name', 'affiliation__name')
 
 
+@admin.register(EXDBUser)
 class EXDBUserAdmin(admin.ModelAdmin):
     list_display = ('username', 'first_name', 'last_name', 'email')
     search_fields = ('username', 'first_name', 'last_name', 'email')
 
 
 admin.site.register(Type)
-admin.site.register(Subtype, SubtypeAdmin)
-admin.site.register(Section, SectionAdmin)
 admin.site.register(Keyword)
-admin.site.register(Experience, ExperienceAdmin)
-admin.site.register(ExperienceApproval, ExperienceApprovalAdmin)
 admin.site.register(EmailTask)
 admin.site.register(Affiliation)
-admin.site.register(EXDBUser, EXDBUserAdmin)
 admin.site.register(Requirement)
 admin.site.register(Semester)

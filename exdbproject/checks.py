@@ -20,7 +20,7 @@ def check_secret_key(**kwargs):
 @register()
 def check_restricted_access(**kwargs):
     errors = []
-    if settings.RESTRICTED_ACCESS_MIDDLEWARE not in settings.MIDDLEWARE_CLASSES:
+    if settings.RESTRICTED_ACCESS_MIDDLEWARE not in settings.MIDDLEWARE:
         errors.append(
             Error(
                 'Access is not restricted',

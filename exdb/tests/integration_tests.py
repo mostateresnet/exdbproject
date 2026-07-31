@@ -1,7 +1,7 @@
 from django.test import TestCase, Client, override_settings
 from django.utils.timezone import datetime, timedelta, now, make_aware, utc, localtime
-from django.utils.six import StringIO, BytesIO
-from django.core.urlresolvers import reverse
+from io import StringIO, BytesIO
+from django.urls import reverse
 from django.core import mail
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404
 from django.core.management import call_command
 from django.conf import settings
 
-from exdb.models import Affiliation, Experience, Type, Subtype, Section, Keyword, ExperienceComment, ExperienceApproval, EmailTask
+from exdb.models import Affiliation, Experience, Type, Subtype, Section, Keyword, ExperienceComment, ExperienceApproval, EmailTask, Semester, Requirement
 from exdb.forms import ExperienceSubmitForm
 from exdb.views import SearchExperienceReport
 
@@ -921,7 +921,7 @@ class LogoutTest(StandardTestCase):
 
     def test_logout(self):
         response = self.clients['ra'].get(reverse('logout'))
-        self.assertFalse(response.wsgi_request.user.is_authenticated(), "User should have been logged out")
+        self.assertFalse(response.wsgi_request.user.is_authenticated, "User should have been logged out")
 
 
 class ListExperienceByStatusViewTest(StandardTestCase):

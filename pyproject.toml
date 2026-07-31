@@ -1,29 +1,37 @@
-[tool.poetry]
+[project]
 name = "exdbproject"
 version = "0.1.0"
 description = ""
-authors = ["Your Name <you@example.com>"]
+authors = [{ name = "Your Name", email = "you@example.com" }]
+requires-python = ">=3.8,<4"
+dependencies = [
+    "Django>=2.2,<3.0",
+    "django-silk>=3.0",
+]
 
-[tool.poetry.dependencies]
-python = "^3.5"
-Django = "<1.10"
-django-silk = "<2.0"
-psycopg2 = {version = "<2.9", optional = true}
-uWSGI = {version = "^2.0.31", optional = true}
-django-auth-ldap = {version = "<1.3", optional = true}
-django-auth-sgf = { git = "file:///mnt/repo/django-auth-sgf", optional = true }
+[tool.uv.build-backend]
+module-root = ""
 
-[tool.poetry.dev-dependencies]
-nodeenv = ">=1.6"
-colorama = ">=0.4.5"
-coverage = ">=5.5"
-selenium = ">=3.141"
-python-auto-mock = "^0.1.1"
-pylint = ">=2.6.2,<2.7.0"
-
-[tool.poetry.extras]
-prod = ["psycopg2", "uWSGI", "django-auth-ldap", "django-auth-sgf"]
+[tool.uv.sources]
+django-auth-sgf = { git = "file:///mnt/repo/django-auth-sgf" }
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["uv_build>=0.11.17,<0.12.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "colorama>=0.4.6",
+    "coverage>=7.6.1",
+    "django-silk>=4.4.1",
+    "nodeenv>=1.10.0",
+    "pylint>=3.2.7",
+    "python-auto-mock>=0.1.1",
+    "selenium>=4.27.1",
+]
+prod = [
+    "django-auth-sgf",
+    "django-extra-sensitive-variables>=1.0.2",
+    "psycopg2<2.9",
+    "uwsgi>=2.0.31",
+]

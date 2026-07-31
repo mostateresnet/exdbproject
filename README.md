@@ -11,48 +11,33 @@
   ```shell
   cd exdbproject
   ```
-3. Install required Python version
+3. Install required Python version and dependencies in the virtual environment
 
   ```shell
-  pyenv install
-  ```
-4. Create the virtual environment
-
-  ```shell
-  poetry env use 3.5
-  ```
-5. Switch to the newly created virtual environment
-
-  ```shell
-  poetry shell
-  ```
-6. Install the required Python packages
-
-  ```shell
-  poetry install
+  uv sync
   ```
   OR if you want to install production server dependencies:
   ```shell
-  poetry install --extras prod
-  ```
-7. Install the required Node.js packages using:
+  uv sync --group prod
+```
+4. Install the required Node.js packages using:
 
   ```shell
-  nodeenv -p --prebuilt --requirements=requirements/node_packages.txt
+  uv run nodeenv -p --prebuilt --requirements=requirements/node_packages.txt
   ```
   OR compile Node.js from source with:
   ```shell
-  nodeenv -p --source --requirements=requirements/node_packages.txt --jobs=4
+  uv run nodeenv -p --source --requirements=requirements/node_packages.txt --jobs=4
   ```
-8. Test that everything worked
+5. Test that everything worked
 
   ```shell
-  poetry run python manage.py verify
+  uv run python manage.py verify
   ```
-9. Start the dev server
+6. Start the dev server
 
   ```shell
-  poetry run python manage.py runserver 0.0.0.0:8000
+  uv run python manage.py runserver 0.0.0.0:8000
   ```
 
 ## Testing Dependencies
@@ -64,11 +49,11 @@ Many if not all of the drivers are linked at http://www.seleniumhq.org/download/
 ## Testing
 To test using your browser of choice pass the -b option to manage.py test (phantomjs is the default):
 ```shell
-poetry run python manage.py test -b chrome
+uv run python manage.py test -b chrome
 ``` 
 
 If you would like to test using an android device you will need to setup the Remote webdriver for android then you can specify the broadcast address for the test server:
 ```shell
-poetry run python manage.py test -b remote --liveserver=0.0.0.0:8081
+uv run python manage.py test -b remote --liveserver=0.0.0.0:8081
 ```
 The test runner will automatically try to acertain and test using the hostname of the machine running the tests if the ip is 0.0.0.0
