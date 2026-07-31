@@ -659,7 +659,7 @@ class ExperienceSearchBrowserTest(DefaultLiveServerTestCase):
 
     def test_page_loads(self):
         self.client.get(reverse('search'))
-        self.assertEqual(self.driver.find_element(By.XPATH, '//p').text, _('Your search returned no experiences'))
+        self.assertEqual(self.driver.find_element(By.XPATH, '//p').text, _('Your search returned no engagements'))
 
     def test_navigates_to_experience_page(self):
         search_for = 'Test'
@@ -672,7 +672,7 @@ class ExperienceSearchBrowserTest(DefaultLiveServerTestCase):
 
     def get_name_column_index(self):
         table_name = 'search-results'
-        column_header = 'Experience Name'
+        column_header = 'Engagement Name'
         xpath_query = '//table[@id="%s"]//th/*[text()="%s"]/../preceding-sibling::th'
         preceding_elements = self.driver.find_elements(By.XPATH, xpath_query % (table_name, column_header))
         return len(preceding_elements) + 1
@@ -811,7 +811,7 @@ class ExperienceSearchBrowserTest(DefaultLiveServerTestCase):
         wait = WebDriverWait(self.driver, 15)
         wait.until(expected_conditions.presence_of_element_located((By.CSS_SELECTOR, 'table#search-results tbody tr')))
         name_header = self.driver.find_element(
-            By.XPATH, '//table[@id="search-results"]//th[contains(., "Experience Name")]')
+            By.XPATH, '//table[@id="search-results"]//th[contains(., "Engagement Name")]')
         name_header.click()
         wait = WebDriverWait(self.driver, 15)
         first_row = self.driver.find_element(By.CSS_SELECTOR, 'table#search-results tbody tr:first-child')
