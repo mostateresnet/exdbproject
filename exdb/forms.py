@@ -28,14 +28,21 @@ class TypeSelect(forms.Select):
 
 class GenericCheckboxSelect(forms.CheckboxSelectMultiple):
 
+    outer_class = 'checkbox-multiselect'
+    option_class = 'checkbox-option'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        existing = self.attrs.get('class', '')
+        self.attrs['class'] = self.outer_class + (' ' + existing if existing else '')
+
     def create_option(self, name, value, label, selected, index, subindex=None, *args, **kwargs):
         option = super().create_option(name, value, label, selected, index, subindex, *args, **kwargs)
-        option['attrs']['class'] = 'checkbox-option ' + option.get('attrs', {}).get('class', '')
+        option['attrs']['class'] = self.option_class
         return option
 
 
-class SubtypeSelect(forms.CheckboxSelectMultiple):
-
+class SubtypeSelect(GenericCheckboxSelect):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._choice_object_dict = None
@@ -46,17 +53,15 @@ class SubtypeSelect(forms.CheckboxSelectMultiple):
         return self._choice_object_dict
 
     def create_option(self, name, value, label, selected, index, subindex=None, *args, **kwargs):
-        option = super(forms.CheckboxSelectMultiple, self).create_option(name, value, label, selected, index, subindex, *args, **kwargs)
+        option = super().create_option(name, value, label, selected, index, subindex, *args, **kwargs)
         choice_val = value if isinstance(value, str) else str(value)
         choice_object_dict = self._get_choice_object_dict()
         if choice_val in choice_object_dict:
             subtype = choice_object_dict[choice_val]
             if not subtype.needs_verification:
-                option['attrs']['class'] = 'no-verification checkbox-option'
+                option['attrs']['class'] = 'no-verification ' + self.option_class
             else:
-                option['attrs']['class'] = 'verification checkbox-option'
-        else:
-            option['attrs']['class'] = 'checkbox-option'
+                option['attrs']['class'] = 'verification ' + self.option_class
         return option
 
 
