@@ -18,7 +18,7 @@
             <script type="text/javascript" src="{% static 'exdb/js/libraries/foundation.min.js' %}"></script>
             <script type="text/javascript" src="{% static 'exdb/js/base.js' %}"></script>
         {% endblock %}
-        <title>{% block title %}Experience Database{% endblock %}</title>
+        <title>{% block title %}Engagement Database{% endblock %}</title>
     </head>
     <body>
         {% block body %}
@@ -38,7 +38,7 @@
                                     {% endblock %}
                                 </li>
                                 <li><a href="{% url 'home' %}">{% trans "Home" %}</a></li>
-                                <li><a href="{% url 'create_experience' %}">{% trans 'Create an experience' %}</a></li>
+                                <li><a href="{% url 'create_experience' %}">{% trans 'Create an Engagement' %}</a></li>
                                 {% if user.is_hallstaff %}
                                     <li><a href="{% url 'completion_board' %}">{% trans "Completion Board" %}</a></li>
                                 {% elif user.section_id %}
@@ -50,7 +50,7 @@
                         <div class="top-bar-right">
                             <form method="GET" action="{% url 'search' %}">
                                 <ul class="menu">
-                                    <li><input class="fa round-base-search-box" type="text" name="search" placeholder="&#xf002; {% trans 'Search Experiences' %}" value="{{ search_query }}" /></li>
+                                    <li><input class="fa round-base-search-box" type="text" name="search" placeholder="&#xf002; {% trans 'Search Engagements' %}" value="{{ search_query }}" /></li>
                                     <li><i class="fa"><input class="button postfix round-search-button" type="submit" value="&#xf002;" /></i></li>
                                 </ul>
                             </form>

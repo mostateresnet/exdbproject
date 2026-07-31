@@ -15,12 +15,12 @@
 
     <div class="row">
         <button id="export" class="button" data-url="{% url 'search_report' %}">{% trans "Export as CSV" %}</button>
-        <div id="no-experience-warning" class="hide">{% trans "No experiences to export!" %}</div>
+        <div id="no-experience-warning" class="hide">{% trans "No engagements to export!" %}</div>
         {% if experiences %}
             <table id="search-results" class="tablesorter responsive">
                 <thead>
                     <tr>
-                        <th data-placeholder="&#xf002;">{% trans "Experience Name" %}</th>
+                        <th data-placeholder="&#xf002;">{% trans "Engagement Name" %}</th>
                         <th data-placeholder="&#xf002;">{% trans "Planners" %}</th>
                         <th data-placeholder="&#xf002;">{% trans "Type" %}</th>
                         <th data-placeholder="&#xf002;">{% trans "Subtypes" %}</th>
@@ -62,7 +62,7 @@
                 </tbody>
             </table>
         {% else %}
-            <p>{% trans "Your search returned no experiences" %}</p>
+            <p>{% trans "Your search returned no engagements" %}</p>
         {% endif %}
     </div>
 
