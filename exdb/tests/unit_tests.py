@@ -1,5 +1,6 @@
 from django.test import TestCase
 from auto_mock import full_mock, easy_mock
+from exdb.forms import GenericCheckboxSelect, SubtypeSelect
 
 
 class Test(TestCase):
@@ -69,3 +70,18 @@ class Test(TestCase):
         request.user.is_superuser = True
         with self.check_authenticated_user_mocker(stubs) as _check_authenticated_user:
             self.assertIsNone(_check_authenticated_user(request))
+
+
+class CheckboxMultiselectWidgetTest(TestCase):
+
+    def test_generic_checkbox_select_has_checkbox_multiselect_class(self):
+        w = GenericCheckboxSelect()
+        html = w.render('test_field', [])
+        self.assertIn('checkbox-multiselect', html,
+                      'GenericCheckboxSelect should render checkbox-multiselect class on <ul>')
+
+    def test_subtype_select_has_checkbox_multiselect_class(self):
+        w = SubtypeSelect()
+        html = w.render('test_field', [])
+        self.assertIn('checkbox-multiselect', html,
+                      'SubtypeSelect should render checkbox-multiselect class on <ul>')
