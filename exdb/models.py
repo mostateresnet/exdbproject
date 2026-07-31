@@ -67,9 +67,18 @@ class EXDBUser(AbstractUser):
         ordering = ['first_name', 'last_name', 'email', 'username']
 
 
+class IgnoreRemoved(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(removed=False)
+
+
 class Type(models.Model):
     name = models.CharField(max_length=300)
     valid_subtypes = models.ManyToManyField('Subtype', blank=True)
+    removed = models.BooleanField(default=False)
+
+    objects = models.Manager()
+    valid_objects = IgnoreRemoved()
 
     def __str__(self):
         return self.name
@@ -81,6 +90,10 @@ class Type(models.Model):
 class Subtype(models.Model):
     name = models.CharField(max_length=300)
     needs_verification = models.BooleanField(default=True)
+    removed = models.BooleanField(default=False)
+
+    objects = models.Manager()
+    valid_objects = IgnoreRemoved()
 
     def __str__(self):
         return self.name
@@ -175,6 +188,10 @@ class Section(models.Model):
 
 class Keyword(models.Model):
     name = models.CharField(max_length=300)
+    removed = models.BooleanField(default=False)
+
+    objects = models.Manager()
+    valid_objects = IgnoreRemoved()
 
     def __str__(self):
         return self.name
