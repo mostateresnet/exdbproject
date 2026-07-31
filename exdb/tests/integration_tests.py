@@ -1123,3 +1123,92 @@ class SearchExperienceReportTest(StandardTestCase):
         response = self.clients['hs'].get(reverse('search_report') + "?experiences=[" + str(e.pk) + "]")
         self.assertNotIn(row, str(response.content),
                          "The draft experience with a different author should not be returned in a csv download")
+
+
+class FormsCoverageTest(StandardTestCase):
+
+    def test_type_select_create_option_with_none_value(self):
+        from exdb.forms import TypeSelect
+        from django.forms.models import ModelChoiceField
+        t = self.create_type()
+        field = ModelChoiceField(queryset=Type.objects.all())
+        widget = TypeSelect()
+        widget.choices = field.choices
+        opt = widget.create_option('type', None, 'None', False, 0)
+        self.assertIn('data-valid-subtypes', opt.get('attrs', {}))
+
+    def test_subtype_select_create_option_with_unknown_choice(self):
+        from exdb.forms import SubtypeSelect
+        widget = SubtypeSelect()
+        widget.choices = []
+        opt = widget.create_option('subtypes', '99999', 'Unknown', False, 0)
+        self.assertEqual(opt.get('attrs', {}).get('class'), 'checkbox-option')
+
+    def test_experience_convert_to_dict_with_empty_m2m(self):
+        e = self.create_experience('pe')
+        # Ensure keywords is empty
+        e.keywords.clear()
+        keys = ['keywords', 'name']
+        row = e.convert_to_dict(keys)
+        self.assertEqual(row['keywords'], 'None')
+
+    def test_experience_convert_to_dict_with_nonempty_m2m(self):
+        e = self.create_experience('pe')
+        k = self.create_keyword()
+        e.keywords.add(k)
+        keys = ['keywords', 'name']
+        row = e.convert_to_dict(keys)
+        self.assertIn(str(k), row['keywords'])
+
+    def test_experience_convert_to_dict_with_display_method(self):
+        e = self.create_experience('pe')
+        e.audience = 'b'
+        e.save()
+        keys = ['audience', 'name']
+        row = e.convert_to_dict(keys)
+        self.assertIn('Building', row['audience'])
+
+    def test_experience_convert_to_dict_with_non_string_field(self):
+        e = self.create_experience('pe')
+        keys = ['start_datetime', 'name']
+        row = e.convert_to_dict(keys)
+        self.assertIsInstance(row['start_datetime'], str)
+
+    def test_section_cache_requirements(self):
+        from django.utils.timezone import make_aware, datetime, utc
+        from exdb.models import Requirement
+        semester = Semester.objects.create(
+            start_datetime=make_aware(datetime(2025, 1, 1), timezone=utc),
+            end_datetime=make_aware(datetime(2025, 12, 31), timezone=utc))
+        aff = self.create_affiliation()
+        section = self.create_section(affiliation=aff)
+        sub = self.create_subtype()
+        Requirement.objects.create(
+            start_datetime=make_aware(datetime(2025, 6, 1), timezone=utc),
+            end_datetime=make_aware(datetime(2025, 6, 30), timezone=utc),
+            semester=semester, affiliation=aff, subtype=sub, total_needed=5)
+        section.cache_requirements(semester)
+        self.assertTrue(hasattr(section, 'requirement_dict'))
+        self.assertTrue(hasattr(section, 'requirements'))
+
+    def test_section_cache_requirements_with_experiences(self):
+        from django.utils.timezone import make_aware, datetime, utc
+        from exdb.models import Requirement
+        semester = Semester.objects.create(
+            start_datetime=make_aware(datetime(2025, 1, 1), timezone=utc),
+            end_datetime=make_aware(datetime(2025, 12, 31), timezone=utc))
+        aff = self.create_affiliation()
+        section = self.create_section(affiliation=aff)
+        sub = self.create_subtype()
+        Requirement.objects.create(
+            start_datetime=make_aware(datetime(2025, 6, 1), timezone=utc),
+            end_datetime=make_aware(datetime(2025, 6, 30), timezone=utc),
+            semester=semester, affiliation=aff, subtype=sub, total_needed=5)
+        exp = self.create_experience('co',
+            start=make_aware(datetime(2025, 6, 15), timezone=utc),
+            end=make_aware(datetime(2025, 6, 16), timezone=utc))
+        exp.subtypes.add(sub)
+        exp.recognition.add(section)
+        section.cache_requirements(semester)
+        self.assertTrue(hasattr(section, 'requirement_dict'))
+        self.assertTrue(hasattr(section, 'requirements'))
