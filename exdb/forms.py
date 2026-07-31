@@ -2,10 +2,10 @@ from datetime import datetime
 from django import forms
 from django.core.exceptions import ValidationError
 from django.utils.timezone import now
-from django.utils.encoding import force_text
+from django.utils.encoding import force_str
 from django.utils.safestring import mark_safe
 from django.utils.html import format_html
-from django.utils.translation import ugettext as _
+from django.utils.translation import gettext as _
 from django.forms import ModelForm
 from django.utils.timezone import utc
 from django.contrib.auth import get_user_model
@@ -13,57 +13,51 @@ from exdb.models import Experience, ExperienceComment, Type, Subtype
 
 
 class TypeSelect(forms.Select):
-    def render_option(self, selected_choices, option_value, option_label):
-        if option_value is None:
-            option_value = ''  # pragma: no cover
-        option_value = force_text(option_value)
-        if option_value in selected_choices:
-            selected_html = mark_safe(' selected="selected"')
-            if not self.allow_multiple_selected:
-                # Only allow for a single selection.
-                selected_choices.remove(option_value)
-        else:
-            selected_html = ''
+    def create_option(self, name, value, label, selected, index, subindex=None, *args, **kwargs):
+        opt = super().create_option(name, value, label, selected, index, subindex, *args, **kwargs)
+        if value is None:
+            value = ''
+        value = force_str(value)
         valid_subtypes = []
         choice_dict = {str(c.pk): c for c in self.choices.queryset}
-        if option_value in choice_dict:
-            valid_subtypes = [st.pk for st in choice_dict[option_value].valid_subtypes.all()]
-        return format_html('<option data-valid-subtypes="{}" value="{}"{}>{}</option>',
-                           ','.join(str(pk) for pk in valid_subtypes),
-                           option_value,
-                           selected_html,
-                           force_text(option_label))
-
-
-class CheckboxFieldRenderer(forms.widgets.CheckboxFieldRenderer):
-    outer_html = '<ul{id_attr} class="checkbox-multiselect">{content}</ul>'
-
-    def choice_input_class(self, name, value, attrs, choice, index):
-        attrs = attrs.copy()
-        attrs['class'] = 'checkbox-option'
-        return forms.widgets.CheckboxChoiceInput(name, value, attrs, choice, index)
+        if value in choice_dict:
+            valid_subtypes = [st.pk for st in choice_dict[value].valid_subtypes.all()]
+        opt['attrs']['data-valid-subtypes'] = ','.join(str(pk) for pk in valid_subtypes)
+        return opt
 
 
 class GenericCheckboxSelect(forms.CheckboxSelectMultiple):
-    renderer = CheckboxFieldRenderer
 
-
-class SubtypeRenderer(CheckboxFieldRenderer):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.choice_object_dict = {st.pk: st for st in Subtype.objects.filter(pk__in=[c[0] for c in self.choices])}
-
-    def choice_input_class(self, name, value, attrs, choice, index):
-        attrs = attrs.copy()
-        if choice[0] in self.choice_object_dict and not self.choice_object_dict[choice[0]].needs_verification:
-            attrs['class'] = 'no-verification checkbox-option'
-        else:
-            attrs['class'] = 'verification checkbox-option'
-        return forms.widgets.CheckboxChoiceInput(name, value, attrs, choice, index)
+    def create_option(self, name, value, label, selected, index, subindex=None, *args, **kwargs):
+        option = super().create_option(name, value, label, selected, index, subindex, *args, **kwargs)
+        option['attrs']['class'] = 'checkbox-option ' + option.get('attrs', {}).get('class', '')
+        return option
 
 
 class SubtypeSelect(forms.CheckboxSelectMultiple):
-    renderer = SubtypeRenderer
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._choice_object_dict = None
+
+    def _get_choice_object_dict(self):
+        if self._choice_object_dict is None:
+            self._choice_object_dict = {str(st.pk): st for st in Subtype.objects.filter(pk__in=[c[0] for c in self.choices])}
+        return self._choice_object_dict
+
+    def create_option(self, name, value, label, selected, index, subindex=None, *args, **kwargs):
+        option = super(forms.CheckboxSelectMultiple, self).create_option(name, value, label, selected, index, subindex, *args, **kwargs)
+        choice_val = value if isinstance(value, str) else str(value)
+        choice_object_dict = self._get_choice_object_dict()
+        if choice_val in choice_object_dict:
+            subtype = choice_object_dict[choice_val]
+            if not subtype.needs_verification:
+                option['attrs']['class'] = 'no-verification checkbox-option'
+            else:
+                option['attrs']['class'] = 'verification checkbox-option'
+        else:
+            option['attrs']['class'] = 'checkbox-option'
+        return option
 
 
 class DateTimeLocalInput(forms.DateTimeInput):
@@ -75,6 +69,8 @@ class DateTimeLocalField(forms.DateTimeField):
         '%Y-%m-%dT%H:%M:%S',
         '%Y-%m-%dT%H:%M:%S.%f',
         '%Y-%m-%dT%H:%M',
+        '%Y-%m-%d %H:%M:%S',
+        '%Y-%m-%d %H:%M',
     ]
 
     def __init__(self, *args, **kwargs):

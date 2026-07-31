@@ -9,7 +9,7 @@ from django.core.mail import get_connection
 from django.core.mail.message import EmailMessage, EmailMultiAlternatives
 from django.contrib.auth import get_user_model
 from django.db.models import Q
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.conf import settings
 from exdb.models import Experience, ExperienceApproval
 

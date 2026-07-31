@@ -4,11 +4,11 @@ from collections import OrderedDict
 from django.views.generic import View, TemplateView, ListView, RedirectView
 from django.views.generic.edit import CreateView, UpdateView
 from django.shortcuts import get_object_or_404
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.contrib import auth
 from django.http import HttpResponseRedirect, Http404, HttpResponse
 from django.utils import timezone
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.db.models import Q, Prefetch

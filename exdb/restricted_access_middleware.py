@@ -1,6 +1,6 @@
 import urllib
 import sys
-from django.core.urlresolvers import resolve, reverse
+from django.urls import resolve, reverse
 from django.http import Http404
 from django.conf import settings
 from django.contrib.auth.views import redirect_to_login
@@ -15,6 +15,9 @@ class RestrictedAccess(object):
     This middleware manages the security of the exdbproject.
     By ensuring that an unauthenticated user cannot access django pages.
     """
+
+    def __init__(self, get_response=None):
+        self.get_response = get_response
 
     def _check_authenticated_user(self, request):
         view_function = resolve(request.path_info).func
@@ -45,7 +48,14 @@ class RestrictedAccess(object):
     def process_request(self, request):
         if resolve(request.path_info).view_name in settings.RESTRICTED_ACCESS_EXEMPTIONS:
             return None
-        elif request.user.is_authenticated():
+        elif request.user.is_authenticated:
             return self._check_authenticated_user(request)
         else:
             return redirect_to_login(request.path)
+
+    def __call__(self, request):
+        response = self.process_request(request)
+        if response:
+            return response
+        response = self.get_response(request)
+        return response
