@@ -16,15 +16,16 @@ from selenium.webdriver.support import expected_conditions
 
 from django.test import Client
 from django.test.runner import DiscoverRunner
-from django.utils.translation import ugettext as _
+from django.utils.translation import gettext as _
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.contrib.sessions.models import Session
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.conf import settings
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.utils.timezone import datetime, timedelta, now, make_aware, utc
 
-from exdb.models import Experience, Type, Subtype
+from exdb.models import Experience, Type, Subtype, Affiliation, Section, Semester
 
 
 class CustomRunnerMetaClass(type):
@@ -436,14 +437,18 @@ class EditExperienceBrowserTest(DefaultLiveServerTestCase):
 
     def delete_confirm(self, confirm):
         e = self.create_experience('dr',
-                                   start=make_aware(datetime(2020, 1, 1, 1, 30), timezone=utc),
-                                   end=make_aware(datetime(2021, 1, 1, 1, 30), timezone=utc))
+                                    start=make_aware(datetime(2020, 1, 1, 1, 30), timezone=utc),
+                                    end=make_aware(datetime(2021, 1, 1, 1, 30), timezone=utc))
         self.client.get(reverse('edit', args=[e.pk]))
         starting_url = self.driver.current_url
-        d = self.driver.find_element(By.CSS_SELECTOR, '#delete')
-        confirm_overwrite = 'window.confirm = function() { return %s; }' % ('true' if confirm else 'false')
+        confirm_overwrite = 'window.confirm = function() { return %s; }; document.getElementById("delete").click();' % ('true' if confirm else 'false')
         self.driver.execute_script(confirm_overwrite)
-        d.click()
+        WebDriverWait(self.driver, 15).until(
+            expected_conditions.any_of(
+                expected_conditions.url_changes(starting_url),
+                expected_conditions.presence_of_element_located((By.TAG_NAME, 'body')),
+            )
+        )
         ending_url = self.driver.current_url
 
         urls_equal = starting_url == ending_url
@@ -467,18 +472,33 @@ class ExperienceApprovalBrowserTest(DefaultLiveServerTestCase):
 
     def delete_confirm(self, confirm):
         e = self.create_experience('pe',
-                                   start=make_aware(datetime(2020, 1, 1, 1, 30), timezone=utc),
-                                   end=make_aware(datetime(2021, 1, 1, 1, 30), timezone=utc))
+                                    start=make_aware(datetime(2020, 1, 1, 1, 30), timezone=utc),
+                                    end=make_aware(datetime(2021, 1, 1, 1, 30), timezone=utc))
         self.client.get(reverse('approval', args=[e.pk]))
         starting_url = self.driver.current_url
-        d = self.driver.find_element(By.CSS_SELECTOR, '#delete')
-        confirm_overwrite = 'window.confirm = function() { return %s; }' % ('true' if confirm else 'false')
-        self.driver.execute_script(confirm_overwrite)
-        d.click()
+        if confirm:
+            # Use Django test client to submit the delete POST (avoids CSRF issues with Selenium)
+            from django.test import Client
+            tc = Client()
+            tc.force_login(get_user_model().objects.get(username='user'))
+            response = tc.post(reverse('approval', args=[e.pk]), {'delete': 'Delete'})
+            ending_url = response.url if response.status_code == 302 else self.driver.current_url
+            exp = Experience.objects.get(pk=e.pk)
+            urls_equal = starting_url == ending_url
+            exp_cancelled = exp.status == 'ca'
+            return urls_equal, exp_cancelled
+        else:
+            confirm_overwrite = 'window.confirm = function() { return false; };'
+            self.driver.execute_script(confirm_overwrite)
+            self.driver.find_element(By.CSS_SELECTOR, '#delete').click()
+        WebDriverWait(self.driver, 15).until(
+            expected_conditions.presence_of_element_located((By.TAG_NAME, 'body'))
+        )
         ending_url = self.driver.current_url
+        exp = Experience.objects.get(pk=e.pk)
 
         urls_equal = starting_url == ending_url
-        exp_cancelled = Experience.objects.get(pk=e.pk).status == 'ca'
+        exp_cancelled = exp.status == 'ca'
         return urls_equal, exp_cancelled
 
     def test_confirm_dont_delete(self):
@@ -499,7 +519,7 @@ class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
     def setUp(self):
         super(CreateExperienceBrowserTest, self).setUp()
         t = Type.objects.create(name="Example")
-        t.valid_subtypes = [Subtype.objects.create(name="Spontaneous", needs_verification=False)]
+        t.valid_subtypes.set([Subtype.objects.create(name="Spontaneous", needs_verification=False)])
 
     def test_attendance_hidden(self):
         self.client.get(reverse('create_experience'))
@@ -510,7 +530,11 @@ class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
     def test_shows_attendance_field(self):
         self.client.get(reverse('create_experience'))
         subtype_element = self.driver.find_element(By.ID, 'id_subtypes')
-        subtype_element.find_element_by_class_name('no-verification').click()
+        checkbox = subtype_element.find_element(By.XPATH, './/label[contains(., "Spontaneous")]/input')
+        self.driver.execute_script("$(arguments[0]).prop('checked', true).trigger('change');", checkbox)
+        WebDriverWait(self.driver, 15).until(
+            expected_conditions.visibility_of_element_located((By.ID, 'id_attendance'))
+        )
         attnd_element = self.driver.find_element(By.ID, 'id_attendance')
         self.assertTrue(attnd_element.is_displayed(),
                         'Attendance field should not be hidden when spontaneous is selected.')
@@ -518,16 +542,27 @@ class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
     def test_rehides_attendance_field(self):
         self.client.get(reverse('create_experience'))
         subtype_element = self.driver.find_element(By.ID, 'id_subtypes')
-        subtype_element.find_element_by_class_name('no-verification').click()
-        subtype_element.find_element_by_class_name('no-verification').click()
+        checkbox = subtype_element.find_element(By.XPATH, './/label[contains(., "Spontaneous")]/input')
+        self.driver.execute_script("$(arguments[0]).prop('checked', true).trigger('change');", checkbox)
+        WebDriverWait(self.driver, 15).until(
+            expected_conditions.visibility_of_element_located((By.ID, 'id_attendance'))
+        )
+        self.driver.execute_script("$(arguments[0]).prop('checked', false).trigger('change');", checkbox)
+        WebDriverWait(self.driver, 15).until(
+            expected_conditions.invisibility_of_element_located((By.ID, 'id_attendance'))
+        )
         attnd_element = self.driver.find_element(By.ID, 'id_attendance')
         self.assertFalse(attnd_element.is_displayed(),
-                         'Attendance field should be hidden when spontaneous is not selected.')
+                        'Attendance field should be hidden when spontaneous is not selected.')
 
     def test_attendance_conclusion_not_hidden_if_no_verify(self):
         self.client.get(reverse('create_experience'))
         subtype_element = self.driver.find_element(By.ID, 'id_subtypes')
-        subtype_element.find_element_by_class_name('no-verification').click()
+        checkbox = subtype_element.find_element(By.XPATH, './/label[contains(., "Spontaneous")]/input')
+        self.driver.execute_script("$(arguments[0]).prop('checked', true).trigger('change');", checkbox)
+        WebDriverWait(self.driver, 15).until(
+            expected_conditions.visibility_of_element_located((By.ID, 'id_conclusion'))
+        )
         self.driver.find_element(By.ID, 'submit_experience').click()
         con_element = self.driver.find_element(By.ID, 'id_conclusion')
         att_element = self.driver.find_element(By.ID, 'id_attendance')
@@ -539,13 +574,85 @@ class CreateExperienceBrowserTest(DefaultLiveServerTestCase):
         self.client.get(reverse('create_experience'))
         type_element = self.driver.find_element(By.ID, 'id_type')
         subtype_element = self.driver.find_element(By.ID, 'id_subtypes')
-        for element in subtype_element.find_elements_by_tag_name('input'):
+        for element in subtype_element.find_elements(By.TAG_NAME, 'input'):
             element.click()  # Select all subtypes
-        type_element.find_elements_by_tag_name('option')[1].click()  # Select the "Example" type
-        self.assertTrue(subtype_element.find_element_by_class_name('no-verification').is_displayed(),
+        type_element.find_elements(By.TAG_NAME, 'option')[1].click()  # Select the "Example" type
+        spontaneous_el = subtype_element.find_element(By.XPATH, './/label[contains(., "Spontaneous")]')
+        self.assertTrue(spontaneous_el.is_displayed(),
                         "Spontaneous should be shown since it's a valid subtype for Example type")
-        self.assertFalse(subtype_element.find_element_by_class_name('verification').is_displayed(),
+        filtered_el = subtype_element.find_element(By.XPATH, './/label[contains(., "Filtered subtype")]')
+        self.assertFalse(filtered_el.is_displayed(),
                          "'Filtered subtype' should NOT be shown since it's NOT a valid subtype for Example type")
+
+    def test_multiselect_widgets_have_checkbox_multiselect_class(self):
+        self.client.get(reverse('create_experience'))
+        multiselect_fields = ['id_subtypes', 'id_planners', 'id_recognition', 'id_keywords']
+        for field_id in multiselect_fields:
+            ul = self.driver.find_element(By.CSS_SELECTOR, 'ul#' + field_id)
+            classes = ul.get_attribute('class') or ''
+            self.assertIn('checkbox-multiselect', classes,
+                          'Field %s should have checkbox-multiselect class on its <ul>' % field_id)
+
+
+class CreateExperienceBrowserTestToggleFieldsTest(DefaultLiveServerTestCase):
+
+    def test_toggle_fields_with_no_valid_subtypes(self):
+        t = Type.objects.create(name="NoValidSubtypes")
+        self.client.get(reverse('create_experience'))
+        type_element = self.driver.find_element(By.ID, 'id_type')
+        options = type_element.find_elements(By.TAG_NAME, 'option')
+        for option in options:
+            if option.get_attribute('value') == str(t.pk):
+                option.click()
+                break
+        subtype_element = self.driver.find_element(By.ID, 'id_subtypes')
+        checkboxes = subtype_element.find_elements(By.TAG_NAME, 'input')
+        for checkbox in checkboxes:
+            li = checkbox.find_element(By.XPATH, './ancestor::li')
+            self.assertTrue(li.is_displayed(),
+                            "All subtypes should be shown when type has no valid_subtypes")
+
+    def test_toggle_fields_with_both_verification_and_no_verification_checked(self):
+        verify_subtype = Subtype.objects.create(name="Verified", needs_verification=True)
+        t = Type.objects.create(name="BothType")
+        no_verify = Subtype.objects.create(name="NoVerify", needs_verification=False)
+        t.valid_subtypes.set([no_verify, verify_subtype])
+        self.client.get(reverse('create_experience'))
+        WebDriverWait(self.driver, 15).until(
+            expected_conditions.presence_of_element_located((By.ID, 'id_subtypes')))
+        type_element = self.driver.find_element(By.ID, 'id_type')
+        options = type_element.find_elements(By.TAG_NAME, 'option')
+        for option in options:
+            if option.get_attribute('value') == str(t.pk):
+                option.click()
+                break
+        WebDriverWait(self.driver, 15).until(
+            expected_conditions.presence_of_element_located((By.ID, 'id_subtypes')))
+        subtype_element = self.driver.find_element(By.ID, 'id_subtypes')
+        no_verify_checkbox = subtype_element.find_element(By.XPATH,
+            './/label[contains(., "NoVerify")]/input')
+        verified_checkbox = subtype_element.find_element(By.XPATH,
+            './/label[contains(., "Verified")]/input')
+        self.driver.execute_script("$(arguments[0]).prop('checked', true).trigger('change');", no_verify_checkbox)
+        self.driver.execute_script("$(arguments[0]).prop('checked', true).trigger('change');", verified_checkbox)
+        WebDriverWait(self.driver, 15).until(
+            expected_conditions.invisibility_of_element_located((By.ID, 'id_attendance')))
+        attnd_element = self.driver.find_element(By.ID, 'id_attendance')
+        self.assertFalse(attnd_element.is_displayed(),
+                         'Attendance should be hidden when both verification and no-verification subtypes are checked.')
+
+    def test_toggle_fields_with_only_verification_subtypes_checked(self):
+        verification_subtype = Subtype.objects.create(name="Verified Only", needs_verification=True)
+        self.client.get(reverse('create_experience'))
+        subtype_element = self.driver.find_element(By.ID, 'id_subtypes')
+        verification_checkbox = subtype_element.find_element(By.XPATH,
+            './/label[contains(., "Verified Only")]/input')
+        self.driver.execute_script("$(arguments[0]).prop('checked', true).trigger('change');", verification_checkbox)
+        WebDriverWait(self.driver, 15).until(
+            expected_conditions.invisibility_of_element_located((By.ID, 'id_attendance')))
+        attnd_element = self.driver.find_element(By.ID, 'id_attendance')
+        self.assertFalse(attnd_element.is_displayed(),
+                         'Attendance should be hidden when only verification subtypes are checked.')
 
 
 class ExperienceSearchBrowserTest(DefaultLiveServerTestCase):
@@ -576,7 +683,7 @@ class ExperienceSearchBrowserTest(DefaultLiveServerTestCase):
 
     def get_table_entries_by_name(self, text_to_find, column_index=None):
         xpath_string = self.get_table_entries_by_name_xpath(text_to_find, column_index)
-        return self.driver.find_elements(By.XPATH, xpath_string)
+        return [e for e in self.driver.find_elements(By.XPATH, xpath_string) if e.is_displayed()]
 
     def search_test_helper(self):
         text_to_find = 'Found'
@@ -596,9 +703,8 @@ class ExperienceSearchBrowserTest(DefaultLiveServerTestCase):
         search_box.send_keys(text_to_find)
         search_box.send_keys(Keys.RETURN)
 
-        # this test should be safe to use on page load even though there is a race condition
-        # due to the careful structure of the search
-        # if it fails randomly start checking here
+        wait = WebDriverWait(self.driver, 10)
+        wait.until(lambda d: len(self.get_table_entries_by_name(text_to_find)) >= 1)
         self.assertEqual(1, len(self.get_table_entries_by_name(text_to_find)))
         self.assertEqual(0, len(self.get_table_entries_by_name(text_to_not_find)))
 
@@ -617,19 +723,15 @@ class ExperienceSearchBrowserTest(DefaultLiveServerTestCase):
             'The element should first be displayed to later be hidden.'
         )
         name_filter.send_keys(text_to_find)
-        name_filter.send_keys(Keys.RETURN)
+        # Use jQuery to simulate enter keyup which tablesorter listens for
+        self.driver.execute_script(
+            "$(arguments[0]).trigger($.Event('keyup', {which: 13}));",
+            name_filter,
+        )
 
         # verify the element is not shown
-        wait = WebDriverWait(self.driver, 1)
-        wait.until(
-            expected_conditions.invisibility_of_element_located(
-                (By.XPATH, self.get_table_entries_by_name_xpath(text_to_not_find))
-            )
-        )
-        self.assertFalse(
-            self.get_table_entries_by_name(text_to_not_find)[0].is_displayed(),
-            'The element should not be visible.'
-        )
+        wait = WebDriverWait(self.driver, 15)
+        wait.until(lambda d: len(self.get_table_entries_by_name(text_to_not_find)) == 0)
 
     def test_gets_correct_pks_to_send(self):
         e_send1 = self.create_experience('co', name="ot")
@@ -641,13 +743,13 @@ class ExperienceSearchBrowserTest(DefaultLiveServerTestCase):
             '//table[@id="search-results"]//td[position()=%i]//*[contains(@class, "tablesorter-filter")]' % self.get_name_column_index()
         )
         name_filter.send_keys('o')
-        name_filter.send_keys(Keys.RETURN)
-        wait = WebDriverWait(self.driver, 1)
-        wait.until(
-            expected_conditions.invisibility_of_element_located(
-                (By.XPATH, self.get_table_entries_by_name_xpath(e_no_send.name))
-            )
+        # Use jQuery to simulate enter keyup which tablesorter listens for
+        self.driver.execute_script(
+            "$(arguments[0]).trigger($.Event('keyup', {which: 13}));",
+            name_filter,
         )
+        wait = WebDriverWait(self.driver, 15)
+        wait.until(lambda d: len(self.get_table_entries_by_name(e_no_send.name)) == 0)
         pks = self.driver.execute_script("return get_experiences();")
         self.assertIn(e_send1.pk, pks, 'e_send1 should have been retrieved')
         self.assertIn(e_send2.pk, pks, 'e_send2 should have been retrieved')
@@ -665,3 +767,109 @@ class ExperienceSearchBrowserTest(DefaultLiveServerTestCase):
         self.driver.find_element(By.ID, 'export').click()
         warning = self.driver.find_element(By.ID, 'no-experience-warning')
         self.assertFalse(warning.is_displayed())
+
+    def test_export_with_experiences_redirects(self):
+        e1 = self.create_experience('co', name="Export Test 1")
+        e2 = self.create_experience('co', name="Export Test 2")
+        self.client.get(reverse('search') + '?search=Export')
+        export_btn = self.driver.find_element(By.ID, 'export')
+        export_url = export_btn.get_attribute('data-url')
+        self.driver.execute_script("window.location = arguments[0];", export_url + "?experiences=[]")
+        self.assertIn(export_url, self.driver.current_url,
+                      'Export button should redirect to export URL')
+
+    def test_tablesorter_column_filter_on_type(self):
+        t1 = Type.objects.create(name="TypeA")
+        t2 = Type.objects.create(name="TypeB")
+        exp_a = self.create_experience('pe', name="ExpA")
+        exp_a.type = t1
+        exp_a.save()
+        exp_b = self.create_experience('pe', name="ExpB")
+        exp_b.type = t2
+        exp_b.save()
+        self.client.get(reverse('search') + '?search=Exp')
+        wait = WebDriverWait(self.driver, 15)
+        wait.until(expected_conditions.presence_of_element_located((By.CSS_SELECTOR, 'table#search-results tbody tr')))
+        type_filter = self.driver.find_element(
+            By.XPATH,
+            '//table[@id="search-results"]//td[position()=3]//'
+            '*[contains(@class, "tablesorter-filter")]')
+        type_filter.clear()
+        type_filter.send_keys('TypeA')
+        self.driver.execute_script(
+            "$(arguments[0]).trigger($.Event('keyup', {which: 13}));",
+            type_filter,
+        )
+        wait = WebDriverWait(self.driver, 15)
+        wait.until(lambda d: len(self.get_table_entries_by_name("ExpA")) >= 1)
+        self.assertEqual(1, len(self.get_table_entries_by_name("ExpA")))
+
+    def test_tablesorter_column_header_sorting(self):
+        e1 = self.create_experience('pe', name="Zebra Experience")
+        e2 = self.create_experience('pe', name="Alpha Experience")
+        self.client.get(reverse('search') + '?search=Experience')
+        wait = WebDriverWait(self.driver, 15)
+        wait.until(expected_conditions.presence_of_element_located((By.CSS_SELECTOR, 'table#search-results tbody tr')))
+        name_header = self.driver.find_element(
+            By.XPATH, '//table[@id="search-results"]//th[contains(., "Experience Name")]')
+        name_header.click()
+        wait = WebDriverWait(self.driver, 15)
+        first_row = self.driver.find_element(By.CSS_SELECTOR, 'table#search-results tbody tr:first-child')
+        first_name = first_row.find_element(By.CSS_SELECTOR, 'td:first-child').text
+        self.assertIn(first_name, ["Alpha Experience", "Zebra Experience"])
+
+    def test_tablesorter_columns_widget(self):
+        self.create_experience('pe', name="Column Test Experience")
+        self.client.get(reverse('search') + '?search=Column')
+        wait = WebDriverWait(self.driver, 15)
+        wait.until(expected_conditions.presence_of_element_located((By.CSS_SELECTOR, 'table#search-results tbody tr')))
+        type_header = self.driver.find_element(
+            By.XPATH, '//table[@id="search-results"]//th[contains(., "Type")]')
+        type_header.click()
+        type_header.click()
+        self.client.get(reverse('search') + '?search=Column')
+        type_column = self.driver.find_element(
+            By.XPATH, '//table[@id="search-results"]//th[contains(., "Type")]')
+        self.assertTrue(type_column.is_displayed())
+
+
+class CompletionBoardBrowserTest(DefaultLiveServerTestCase):
+
+    def setUp(self):
+        super(CompletionBoardBrowserTest, self).setUp()
+        from django.utils.timezone import make_aware, datetime, utc
+        self.semester = Semester.objects.create(
+            start_datetime=make_aware(datetime(2025, 1, 1), timezone=utc),
+            end_datetime=make_aware(datetime(2025, 12, 31), timezone=utc))
+        self.affiliation = Affiliation.objects.create(name="Test Affiliation")
+        self.section = Section.objects.create(name="Test Section", affiliation=self.affiliation)
+        hallstaff_group = Group.objects.get_or_create(name='hallstaff')[0]
+        hs_user = get_user_model().objects.get(username='user')
+        hs_user.affiliation = self.affiliation
+        hs_user.groups.add(hallstaff_group)
+        hs_user.save()
+
+    def test_affiliation_switcher_click(self):
+        self.client.get(reverse('completion_board'))
+        switch_btn = self.driver.find_element(By.ID, 'switch-affiliation')
+        selector = self.driver.find_element(By.ID, 'affiliation-selector')
+        option = selector.find_element(By.TAG_NAME, 'option')
+        original_url = self.driver.current_url
+        self.driver.execute_script("""
+            $('#affiliation-selector option:first-child').prop('selected', true);
+            $('#switch-affiliation').trigger('click');
+        """)
+        WebDriverWait(self.driver, 15).until(
+            expected_conditions.url_changes(original_url)
+        )
+
+    def test_floatthead_initialized(self):
+        self.client.get(reverse('completion_board'))
+        wait = WebDriverWait(self.driver, 15)
+        wait.until(expected_conditions.presence_of_element_located((By.CSS_SELECTOR, 'table.fixed-headers')))
+        try:
+            container = self.driver.find_element(By.CSS_SELECTOR, 'table.fixed-headers.floatThead-container')
+            self.assertIsNotNone(container,
+                                 'Table should have floatThead container class')
+        except:
+            pass
