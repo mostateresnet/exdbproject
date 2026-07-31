@@ -9,7 +9,7 @@ from django.utils.translation import gettext as _
 from django.forms import ModelForm
 from django.utils.timezone import utc
 from django.contrib.auth import get_user_model
-from exdb.models import Experience, ExperienceComment, Type, Subtype
+from exdb.models import Experience, ExperienceComment, Type, Subtype, Keyword
 
 
 class TypeSelect(forms.Select):
@@ -133,9 +133,11 @@ class ExperienceSaveForm(ModelForm):
         super(ExperienceSaveForm, self).__init__(*args, **kwargs)
         self.when = when
         self.approval_form = submit
-        self.fields['type'].queryset = Type.objects.prefetch_related('valid_subtypes')
+        self.fields['type'].queryset = Type.valid_objects.prefetch_related('valid_subtypes')
+        self.fields['subtypes'].queryset = Subtype.valid_objects.all()
         self.fields['next_approver'].queryset = get_user_model().objects.hallstaff()
         self.fields['planners'].queryset = get_user_model().objects.filter(is_active=True)
+        self.fields['keywords'].queryset = Keyword.valid_objects.all()
 
 
 class ExperienceSubmitForm(ExperienceSaveForm):
