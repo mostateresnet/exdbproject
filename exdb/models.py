@@ -228,7 +228,7 @@ class Experience(models.Model):
 
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     planners = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='planner_set', blank=True)
-    recognition = models.ManyToManyField(Section, blank=True)
+    recognition = models.ManyToManyField(Section, blank=True, verbose_name='Building/Floor')
     name = models.CharField(max_length=300)
     description = models.TextField(blank=True)
     start_datetime = models.DateTimeField()
