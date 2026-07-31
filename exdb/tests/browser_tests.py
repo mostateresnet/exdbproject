@@ -34,17 +34,39 @@ class CustomRunnerMetaClass(type):
         # lazily intiate browser driver
         if not hasattr(cls, '_perma_driver'):
             cls._perma_driver = CustomRunner.browser_driver()
+        else:
+            # driver may have been quit or crashed; verify it's still alive
+            try:
+                cls._perma_driver.current_window_handle
+            except Exception:
+                try:
+                    cls._perma_driver.quit()
+                except Exception:
+                    pass
+                delattr(cls, '_perma_driver')
+                cls._perma_driver = CustomRunner.browser_driver()
         return cls._perma_driver
 
     def exit_perma_driver(cls):
         # exit driver if it has been started
         if hasattr(cls, '_perma_driver'):
-            cls._perma_driver.quit()
+            try:
+                cls._perma_driver.close()
+            except Exception:
+                try:
+                    cls._perma_driver.quit()
+                except Exception:
+                    pass
+            try:
+                delattr(cls, '_perma_driver')
+            except AttributeError:
+                pass
 
 
 class CustomRunner(DiscoverRunner, metaclass=CustomRunnerMetaClass):
     _do_coverage = False
     skip_browser_tests = False
+    _headless = True
 
     def __init__(self, *args, **kwargs):
         # running DiscoverRunner constructor for default behavior
@@ -65,7 +87,16 @@ class CustomRunner(DiscoverRunner, metaclass=CustomRunnerMetaClass):
         else:
             default_driver = 'chrome'
             driver_obj = drivers.get(default_driver)
-        self.__class__.browser_driver = lambda: driver_obj.driver(*getattr(driver_obj, 'args', []), **getattr(driver_obj, 'kwargs', {}))
+
+        headless = kwargs.get('headless', True)
+        CustomRunner._headless = headless
+
+        def make_driver():
+            if hasattr(driver_obj, 'create_options'):
+                options = driver_obj.create_options(headless)
+                return driver_obj.driver(options=options)
+            return driver_obj.driver(*getattr(driver_obj, 'args', []), **getattr(driver_obj, 'kwargs', {}))
+        self.__class__.browser_driver = make_driver
 
         # setting the server location since the location may be relative to a remote host
         # if it looks like 0.0.0.0:\d+ then we should change the
@@ -91,8 +122,15 @@ class CustomRunner(DiscoverRunner, metaclass=CustomRunnerMetaClass):
         self.__class__.exit_perma_driver()
 
     def get_drivers(self):
-        def chrome(): return 'chrome'  # pylint: disable=multiple-statements
+        def chrome(headless=False):
+            return 'chrome'  # pylint: disable=multiple-statements
         chrome.driver = webdriver.Chrome
+        chrome.create_options = lambda headless: self._create_chrome_options(headless)
+
+        def headless_chrome(headless=True):
+            return 'headless_chrome'  # pylint: disable=multiple-statements
+        headless_chrome.driver = webdriver.Chrome
+        headless_chrome.create_options = lambda headless: self._create_chrome_options(True)
 
         def edge(): return 'edge'  # pylint: disable=multiple-statements
         edge.driver = webdriver.Edge
@@ -107,7 +145,10 @@ class CustomRunner(DiscoverRunner, metaclass=CustomRunnerMetaClass):
         none_obj.driver = 'none'
 
         def phantomjs(): return 'phantomjs'  # pylint: disable=multiple-statements
-        phantomjs.driver = webdriver.PhantomJS
+        try:
+            phantomjs.driver = webdriver.PhantomJS
+        except AttributeError:
+            phantomjs.driver = None
 
         def remote(): return 'remote'  # pylint: disable=multiple-statements
         remote.driver = webdriver.Remote
@@ -121,6 +162,7 @@ class CustomRunner(DiscoverRunner, metaclass=CustomRunnerMetaClass):
 
         return {
             'chrome': chrome,
+            'headless_chrome': headless_chrome,
             'edge': edge,
             'firefox': firefox,
             'ie': ie,
@@ -129,10 +171,32 @@ class CustomRunner(DiscoverRunner, metaclass=CustomRunnerMetaClass):
             'remote': remote,
         }
 
+    def _create_chrome_options(self, headless):
+        options = webdriver.ChromeOptions()
+        if headless:
+            options.add_argument('--headless=new')
+            options.add_argument('--no-sandbox')
+            options.add_argument('--disable-dev-shm-usage')
+            options.add_argument('--disable-gpu')
+            options.add_argument('--disable-extensions')
+            options.add_argument('--window-size=1920,1080')
+            options.add_argument('--disable-background-timer-throttling')
+            options.add_argument('--disable-backgrounding-occluded-windows')
+            options.add_argument('--disable-renderer-backgrounding')
+            options.add_argument('--disable-software-rasterizer')
+            options.add_argument('--disable-infobars')
+            options.add_argument('--disable-restore-session-state')
+            options.add_argument('--disable-features=ZygoteSandbox')
+        else:
+            options.add_argument('--window-size=1920,1080')
+        return options
+
     @classmethod
     def add_arguments(cls, parser):
         parser.add_argument('-b', '--browser')
         parser.add_argument('-c', '--coverage', action='store_true')
+        parser.add_argument('--headless', action='store_true', default=True,
+                            help='Run browser tests in headless mode (default)')
 
 
 class IstanbulCoverage(object):
@@ -259,12 +323,23 @@ class DefaultLiveServerTestCase(StaticLiveServerTestCase):
 
     class SeleniumClient:
 
-        def __init__(self, driver):
+        def __init__(self, driver, live_server_url):
             self.driver = driver
-            self.driver.set_window_size(1920, 1080)
+            self.live_server_url = live_server_url
+            try:
+                self.driver.set_window_size(1920, 1080)
+            except Exception:
+                pass  # window size already set via ChromeOptions
 
         def get(self, url):
-            self.driver.get(CustomRunner.live_server_url + url)
+            self.driver.get(self.live_server_url + url)
+            # Wait for page to load to prevent tab crashes in headless mode
+            try:
+                WebDriverWait(self.driver, 5).until(
+                    expected_conditions.title_contains('')
+                )
+            except Exception:
+                pass
 
         def force_login(self):
             'Login a browser without visiting the login page'
@@ -272,9 +347,18 @@ class DefaultLiveServerTestCase(StaticLiveServerTestCase):
             # avoid setting the password and force_login for speed
             user_object = get_user_model().objects.create(username='user', first_name="User")
             c.force_login(user_object)
-            if CustomRunner.live_server_url not in self.driver.current_url:
-                # if we would be trying to set a cross domain cookie change the domain
+            try:
+                if self.live_server_url not in self.driver.current_url:
+                    # if we would be trying to set a cross domain cookie change the domain
+                    self.get(reverse('login'))
+            except selenium.common.exceptions.WebDriverException:
+                # tab may have crashed; try to reload
                 self.get(reverse('login'))
+                try:
+                    if self.live_server_url not in self.driver.current_url:
+                        self.get(reverse('login'))
+                except selenium.common.exceptions.WebDriverException:
+                    pass
 
             cookie = {'name': 'sessionid', 'value': c.session.session_key, 'path': '/'}
             try:
@@ -291,7 +375,7 @@ class DefaultLiveServerTestCase(StaticLiveServerTestCase):
 
     def get_client_and_driver(self):
         self.driver = CustomRunner.perma_driver
-        self.client = self.SeleniumClient(self.driver)
+        self.client = self.SeleniumClient(self.driver, self.live_server_url)
 
     def setUp(self):
         self.get_client_and_driver()
@@ -323,9 +407,12 @@ class LiveLoginViewTest(DefaultLiveServerTestCase):
 
         # actually login
         driver = self.client.driver
-        driver.find_element_by_css_selector('[type=text]').send_keys(username)
-        driver.find_element_by_css_selector('[type=password]').send_keys(password)
-        driver.find_element_by_css_selector('[type=submit]').click()
+        driver.find_element(By.CSS_SELECTOR, '[type=text]').send_keys(username)
+        driver.find_element(By.CSS_SELECTOR, '[type=password]').send_keys(password)
+        driver.find_element(By.CSS_SELECTOR, '[type=submit]').click()
+        WebDriverWait(driver, 15).until(
+            lambda d: any(c['name'] == 'sessionid' for c in d.get_cookies())
+        )
 
         # check if we are logged in
         is_logged_in = False
